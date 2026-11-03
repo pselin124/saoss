@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Saoss.Core/Saoss.Core.csproj" />
+    <Project Path="src/Saoss.Game/Saoss.Game.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Saoss.Tests/Saoss.Tests.csproj" />
+  </Folder>
+</Solution>

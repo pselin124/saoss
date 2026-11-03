@@ -1,0 +1,11 @@
+<Project Sdk="MSTest.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Saoss.Core\Saoss.Core.csproj" />
+    <ProjectReference Include="..\..\src\Saoss.Game\Saoss.Game.csproj" />
+  </ItemGroup>
+</Project>

@@ -23,7 +23,9 @@ Note: the build files are Visual C++ 6 (`.dsp/.dsw`, `vc60.pdb`) plus a Linux `M
 - The simulation is a simple 2D plane at a fixed tick: gravity wells, friction, and circle collisions. It ports almost formula for formula.
 - Networking is TCP and host-authoritative, with raw struct `memcpy`. We will replace it with an explicit binary protocol. Compatibility with old clients is not needed.
 
-Main risks: hand-translating the ship geometry (24 ships, about 290 GLU primitive calls and 76 `glBegin` blocks), the flag cloth simulation (`lippu.cpp`, 1.8k lines), and very large functions with lots of global state.
+Main risks: hand-translating the ship geometry (24 ships, about 290 GLU primitive calls and 76 `glBegin` blocks), the 3D intro scene (`lippu.cpp`, 1.8k lines: waving cloth flag, flowers, mushrooms, planar shadows), and very large functions with lots of global state.
+
+The original `Release/saoss.exe` (Nov 2003 build) still runs on Windows 11 with the DLLs from `saoss2`. Reference screenshots are in `docs/reference/`.
 
 ## 3. Technology
 
@@ -55,7 +57,7 @@ Saoss.slnx
  src/Saoss.Network   net10.0      Protocol messages, serializer, host/client sessions, lobby, chat.
  src/Saoss.Game      net10.0-windows  MonoGame app: screens (menu, setup, lobby, game, results), rendering,
                                   camera, mesh builder, ship models, audio, input mapping, settings.
- tests/Saoss.Core.Tests
+ tests/Saoss.Tests   net10.0-windows  Unit tests for Core and the testable parts of Game.
 ```
 
 Principles:
@@ -77,8 +79,9 @@ Principles:
 | 256-color mode | `mode256`, `*_256.png` textures | Not needed | **Drop** |
 | Text | Bitmap font `teksti.png`, Finnish/English UI | BitmapFont via SpriteBatch, English only | Translate all UI strings |
 | Starfield, planet, black hole, asteroids, small figures, trails, debris | Custom GL code | Ported per effect | Straightforward |
-| CTF flag cloth | `lippu.cpp` cloth sim + render | Port to Core (sim) + Game (render) | Medium risk, port as one unit with tests |
-| Game modes | DM, random DM, Domination, CTF, Mushroom | Same, as `IGameMode` implementations | – |
+| Game modes | Deathmatch, random-ship deathmatch, Flower Domination, Capture The Flower, Eat The Mushroom | Same, as `IGameMode` implementations | – || Intro scene | `lippu.cpp`: 3D title scene with cloth flag, flowers, mushrooms, planar shadows | Same scene in Game | Medium risk. It is the first thing the player sees |
+| Menus | Drawn in 3D: perspective text in the bitmap font, rotating arrow models, 4:3 title picture | Same approach (done for the main menu) | – |
+| Credits mode | "Start With 400 Credits" variants in the local game menu (ships cost credits) | Same | Not yet analyzed |
 | AI | `Player::ailiiku()` | `AiPilot` producing the same input flags as a human | Behavior parity is checked by watching games |
 | Local multiplayer | Up to 4 humans on one keyboard + AI up to 16 | Same | Key remapping is a **new** optional feature. Gamepads are **optional** |
 | Camera | Follows/zooms to fit players, `cammode` | Same | – |
@@ -96,11 +99,11 @@ Principles:
 
 Each phase ends with a build that compiles and runs.
 
-0. **Preparation**
-   - `git init` the workspace and commit `original/` untouched as the reference.
-   - Try to run the original (`original/saoss/Release/saoss.exe` with DLLs from `saoss2`) and record screenshots/video of each ship, mode, and menu. These are the visual reference. If it doesn't run, use code reading only.
-   - Convert XM to OGG. Rename assets to English and copy them into `src/Saoss.Game/Assets`.
-1. **Skeleton**: solution and projects, `Directory.Build.props` (nullable, warnings as errors, analyzers), `.editorconfig`, and a MonoGame window that shows the background and the bitmap-font text.
+0. **Preparation** (done)
+   - Local git repo, `original/` committed untouched.
+   - The original runs. Reference screenshots are in `docs/reference/`.
+   - Assets are copied and renamed to English as each feature is ported, not all up front. XM to OGG conversion happens in phase 5.
+1. **Skeleton** (done): `Saoss.slnx`, Core/Game/Tests projects, central package versions, warnings as errors, `.editorconfig`. The main menu is ported: title picture, bitmap font, 3D arrows, `MeshBuilder` with a GL-style matrix stack and `gluSphere`.
 2. **Core simulation**: constants, ship definitions (all 24 stat blocks), ship movement and physics, weapons and special weapons, projectiles, collisions, death and respawn, planet/black hole/asteroids. Unit tests for each part.
 3. **Rendering**: MeshBuilder, camera, background/stars/planet, then ship models 0–23 (compare against the reference), effects, and HUD. Result: one human vs. idle targets is playable.
 4. **AI + game modes + local game**: AI pilot, all 5 modes including flag cloth and mushrooms, 4-player keyboard, results screen.
