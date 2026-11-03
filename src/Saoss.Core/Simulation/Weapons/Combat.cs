@@ -11,8 +11,11 @@ public static class Combat
     /// <summary>Collision circles are smaller than the nominal radii in the original.</summary>
     public const float RadiusScale = 0.785f;
 
-    private const float PlanetRadiusSquared = GameConstants.PlanetRadius * GameConstants.PlanetRadius;
-    private const float ProjectileGravityRangeSquared = 1600f;
+    /// <summary>Projectiles closer to the center than this squared distance hit the planet [planeettasadetoiseen].</summary>
+    public const float PlanetRadiusSquared = GameConstants.PlanetRadius * GameConstants.PlanetRadius;
+
+    /// <summary>Projectiles closer to the center than this squared distance feel planet gravity [gravitysadetoiseen].</summary>
+    public const float ProjectileGravityRangeSquared = 1600f;
 
     /// <summary>Ships that can currently be hit: in the game and flying.</summary>
     public static IEnumerable<Ship> Targets(World world) => world.Ships.Where(s => s.IsInGame && s.IsAlive);

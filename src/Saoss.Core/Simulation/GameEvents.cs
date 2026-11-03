@@ -57,6 +57,13 @@ public enum EffectKind
     /// plus the shot velocity, life 25-75 of max 75, size 0-0.6, red 0.5-2.5, green and blue 0-1.
     /// </summary>
     HeavyShotImpact,
+
+    /// <summary>
+    /// A Rollu leech crashed into the planet. Original: 50 sparks at the leech, each velocity component
+    /// random(25) / 50 - 0.25 (rerolled until the speed is below 0.3), no z motion, life 50-150 of max 150,
+    /// size not set, red, green and blue each 0-1.
+    /// </summary>
+    LeechPlanetImpact,
 }
 
 /// <summary>A visual effect at a position, optionally with a velocity it inherits.</summary>

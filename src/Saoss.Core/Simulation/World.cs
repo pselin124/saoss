@@ -91,6 +91,18 @@ public sealed class World
                 UpdateDeath(ship);
             }
         }
+
+        // The original advanced beams while drawing each living ship, i.e. once after every tick.
+        foreach (var ship in _ships)
+        {
+            if (ship.IsInGame && ship.IsAlive)
+            {
+                foreach (var beam in ship.Beams)
+                {
+                    beam.Update();
+                }
+            }
+        }
     }
 
     /// <summary>Queues an event for the presentation layer.</summary>
