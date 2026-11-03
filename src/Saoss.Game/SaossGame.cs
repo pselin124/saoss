@@ -18,14 +18,17 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly KeyboardTracker _keyboard = new();
+    private readonly bool _showShipGallery;
     private GameAssets? _assets;
     private IScreen? _screen;
 
     /// <summary>
     /// Creates the game window with the original 100 Hz update rate.
     /// </summary>
-    public SaossGame()
+    /// <param name="showShipGallery">Start in the developer ship gallery instead of the main menu.</param>
+    public SaossGame(bool showShipGallery = false)
     {
+        _showShipGallery = showShipGallery;
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = DefaultWidth,
@@ -45,6 +48,12 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
+        if (_showShipGallery)
+        {
+            ShowScreen(new ShipGalleryScreen(GraphicsDevice, Exit));
+            return;
+        }
+
         ShowMainMenu();
     }
 

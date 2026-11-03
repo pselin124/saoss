@@ -1,16 +1,17 @@
 using Saoss.Core;
 using Saoss.Core.Simulation;
 using Saoss.Game.Rendering.Legacy;
+using Saoss.Game.Rendering.Ships;
 
 namespace Saoss.Game.Rendering.Scene;
 
 /// <summary>
 /// Draws ships, their projectiles and effects, and the per-player HUD.
-/// Placeholder until the original ship drawing code is ported: ships are spheres in their team color
-/// and projectiles are glowing dots.
+/// Ships use the ported 3D models; projectiles are still placeholder glowing dots.
 /// </summary>
 public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedModels models, int detail)
 {
+    private readonly ShipModelRenderer _models = new(gl, textures, new ShipModels(gl, models, detail));
     /// <summary>Updates per-ship visual state and spawns particles for this tick's events.</summary>
     public void Update(World world, SceneState state)
     {
@@ -39,19 +40,7 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
     /// <summary>Draws a living ship with its projectiles.</summary>
     public void DrawShip(Ship ship, World world, SceneState state)
     {
-        gl.Enable(GlCapability.Lighting);
-        gl.Enable(GlCapability.DepthTest);
-        gl.Disable(GlCapability.Blend);
-        gl.Disable(GlCapability.Texture2D);
-        gl.PushMatrix();
-        gl.Translate(ship.X, ship.Y, GameConstants.ShipPlaneZ);
-        SceneDrawing.TeamColor(gl, ship.Team);
-        gl.Sphere(ship.Definition.Radius * 0.8f, 12, 8);
-        gl.Rotate(ship.Angle, 0, 0, 1);
-        gl.Translate(ship.Definition.Radius, 0, 0);
-        gl.Scale(0.3f, 0.3f, 0.3f);
-        gl.CallList(models.Cube);
-        gl.PopMatrix();
+        _models.Draw(ship, state);
 
         gl.Disable(GlCapability.Lighting);
         gl.Disable(GlCapability.DepthTest);
