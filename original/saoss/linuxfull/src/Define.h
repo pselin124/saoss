@@ -1,0 +1,85 @@
+#ifndef _def_in
+#define _def_in
+
+#define MAXGAMEMODE 4
+#define DEATHMATCH 0
+#define DEATHMATCHRANDOM 1
+#define DOMINATION 2
+#define CTF 3
+#define MUSHROOM 4
+#define kitka 0.006
+#define maxplayers 16
+#define palikkamaara 12
+#define maxlimat 30
+#define aluksia 24
+#define alustaso -35.0f
+#define maxx 160
+#define maxy 120
+#define minx -160
+#define miny -120
+#define pmassa 50000
+#define planeettasade 8.0f
+#define planeettasadetoiseen 64.0f
+#define gravitysadetoiseen 1600.0f
+#define PI 3.141592653589793238462643383279502884f
+#define planeettadamage 5
+#define gravity 0.0004
+#define maxviivat 60
+#define pikkuviive 50
+#define patigravity 0.1
+#define gravitysade 35.0f
+#define aukkogravity 0.08
+#define aukkogravitysade 40
+#define stars 500
+#define pikkumiehia 200
+#define kuolemisaika 150
+#define syntymisaika 200
+#define asteroideja 20
+#define asteroidienergia 10
+#define DRAW_CUBE list_int[0]
+#define DRAW_TRI list_int[1]
+#define DRAW_ALUS_1 list_int[4]
+#define DRAW_ALUS_2 list_int[2]
+#define	DRAW_ALUS_4_OSA_1 list_int[3]
+#define DRAW_ALUS_4_OSA_2 list_int[5]
+#define DRAW_ALUS_6_OSA_1 list_int[6]
+#define DRAW_ALUS_6_OSA_2 list_int[7]
+#define DRAW_ALUS_7 list_int[8]
+#define DRAW_ALUS_8 list_int[9]
+#define DRAW_ALUS_9 list_int[10]
+#define DRAW_ALUS_3 list_int[11]
+#define DRAW_ALUS_5 list_int[12]
+#define DRAW_ALUS_0_OSA_1 list_int[13]
+#define DRAW_ALUS_0_OSA_2 list_int[14]
+#define DRAW_ALUS_0_OSA_3 list_int[15]
+#define DRAW_ALUS_10 list_int[16]
+#define DRAW_ALUS_11 list_int[17]
+#define KUKKA1 list_int[19]
+#define KUKKA2 list_int[20]
+#define KUKKA3 list_int[21]
+#define KUKKA4 list_int[22]
+#define SIENI list_int[23]
+#define NUOLI list_int[24]
+#define DRAW_ALUS_12_OSA_1 list_int[18]
+#define DRAW_ALUS_12_OSA_2 list_int[25]
+#define DRAW_ALUS_13 list_int[26]
+#define DRAW_ALUS_14_OSA_1 list_int[27]
+#define DRAW_ALUS_14_OSA_2 list_int[28]
+#define DRAW_ALUS_15_OSA_1 list_int[29]
+#define DRAW_ALUS_15_OSA_2 list_int[30]
+#define DRAW_ALUS_15_OSA_3 list_int[31]
+#define DRAW_ALUS_16_OSA_1 list_int[32]
+#define DRAW_ALUS_16_OSA_2 list_int[33]
+#define DRAW_ALUS_17 list_int[34]
+#define DRAW_ALUS_18 list_int[35]
+#define DRAW_ALUS_18_SALAMA list_int[36]
+#define DRAW_ALUS_19 list_int[37]
+#define DRAW_ALUS_20 list_int[38]
+#define DRAW_ALUS_21_NORMAL list_int[39]
+#define DRAW_ALUS_21_SHADOW list_int[40]
+#define DRAW_ALUS_22 list_int[41]
+#define DRAW_ALUS_23 list_int[42]
+
+//maxlista:[18]
+
+#endif

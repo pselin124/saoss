@@ -1,0 +1,1 @@
+copy release\saoss.exe .\

@@ -1,0 +1,140 @@
+musics:0, effects:0Available Modes
+  1280 x 1024
+  1280 x 960
+  1280 x 768
+  1152 x 864
+  1024 x 768
+  800 x 600
+  640 x 480
+  640 x 400
+  512 x 384
+  480 x 360
+  400 x 300
+  320 x 240
+  320 x 200
+Video memory available 61024 kb
+Initialized in 1024x768 resolution
+Loading musics...
+ musics\rumpubasso.mp3
+ musics\love_me.mp3
+ musics\music1.xm
+ musics\music2.xm
+loading 1024*1024 font
+Demofps:=28.082192
+loading 1024*1024 font
+moi!There are 1 joinsockets with activity!
+game join signal received
+l‰hetettiin hostille 1 pelaajaa
+k=110
+luettunappi i=78, c=N
+k=105
+luettunappi i=105, c=i
+k=107
+luettunappi i=107, c=k
+k=111
+luettunappi i=111, c=o
+k=13
+k=99
+luettunappi i=67, c=C
+k=105
+luettunappi i=105, c=i
+k=110
+luettunappi i=110, c=n
+k=101
+luettunappi i=101, c=e
+k=114
+luettunappi i=114, c=r
+k=101
+luettunappi i=101, c=e
+k=13
+pl:4There are 1 joinsockets with activity!
+game join signal received
+l‰hetettiin hostille 2 pelaajaa
+game start signal received
+tiimit saatu lopullisesti
+tiimit saatu lopullisesti
+l‰hetettiin hostille tiimit saatu
+l‰hetettiin hostille tiimit saatu
+player[0].uudestaan(alus[17])
+player[1].uudestaan(alus[22])
+player[2].uudestaan(alus[16])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[5])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[19])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[22])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[5])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[7])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[18])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[23])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[9])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[2])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[18])
+r‰j‰ytet‰‰n 0
+r‰j‰ytet‰‰n 1
+player[0].uudestaan(alus[12])
+player[1].uudestaan(alus[12])
+r‰j‰ytet‰‰n 1
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[7])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[13])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[21])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[11])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[3])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[17])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[10])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[7])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[19])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[22])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[9])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[1])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[6])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[5])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[13])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[8])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[19])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[14])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[2])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[7])
+r‰j‰ytet‰‰n 0
+player[0].uudestaan(alus[6])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[1])
+r‰j‰ytet‰‰n 2
+player[2].uudestaan(alus[16])
+r‰j‰ytet‰‰n 1
+player[1].uudestaan(alus[4])
+r‰j‰ytet‰‰n 0
+frames drawn: 63729
+frames drawn: 21398, calculated frames:63728
+time: 738 secs
+drawn fps: 31.898224
+calculated fps: 95
+received 3832671 bytes gamedata in 63730 packets 60 bytes/packet

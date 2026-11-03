@@ -1,0 +1,557 @@
+#include "main.h"
+#include "net.h"
+#include "netgamesets.h"
+#include "scene.h"
+#include "glapi.h"
+
+int tempwidth, tempheight, tempfull, tempcam;
+int tempmus,tempef,tmv,tsv,tfp;
+int gamestartjuttu=false;
+
+void netGameSets(bool gamestarted){
+	gamestartjuttu=gamestarted;
+	bool menuready=false;
+	int selection=0;
+	bool pistevoitto=false;
+	int selectionmax=11;
+	if(!gamestarted) selectionmax--;
+	if(debugmode)selectionmax++;
+	saavalita=true;
+	printf("efects=%i\n",sets->efects);
+	bool menuquit=false;
+	tempwidth=sets->width;
+	tempheight=sets->height;
+	tempfull=sets->fullscreen;
+	tempmus=sets->musics;
+	tempef=sets->efects;
+	tmv=sets->musicvolume;
+	tsv=sets->soundvolume;
+	tfp=calculatefps;
+	tempcam=sets->cammode;
+	escpressed=false;
+	entterpressed=false;
+	player[0].pylos=false;
+	player[0].pfire=false;
+	player[0].pright=false;
+	player[0].pleft=false;
+	player[0].palas=false;
+
+	while(!menuquit){
+		while(!menuready){
+			player[0].pleft=false;
+			player[0].pright=false;
+			player[0].palas=false;
+			player[0].pylos=false;
+			player[0].pfire=false;
+			player[0].pease=false;
+			processEvents();
+			if(entterpressed){
+				entterpressed=false;
+				menuready=true;
+			}else if(player[0].pleft){
+				menuready=true;
+			}else if(player[0].pright){
+				menuready=true;
+			}else if(player[0].pylos){
+				if(selection>0) selection--;
+				else selection=selectionmax;
+				player[0].pylos=false;
+			}else if(player[0].palas){
+				if(selection<selectionmax) selection++;
+				else selection=0;
+				player[0].palas=false;
+			}else if(escpressed){
+				selection=selectionmax;
+				menuready=true;
+				escpressed=false;
+			}
+			do{
+				currenttime=SDL_GetTicks()-starttime;
+				framecounter=calculatefps*currenttime/1000.0;
+				if(framecounter==oldframecounter)  SDL_Delay(1);
+			}	while (oldframecounter==framecounter);
+			if(framecounter-oldframecounter>10) oldframecounter=framecounter-1;
+			skipframes=framecounter-oldframecounter;
+			if(gamestarted){
+				for (;skipframes>0;skipframes--){
+				/*	if(hostpeli){
+						hostKuuntelePeli();
+					}
+					if(joinpeli){
+						joinPeliNetwork();
+					}
+					calculatedframes++;
+					calculateFrame(++oldframecounter);
+					if(hostpeli) hostLahetaPeli();
+*/
+					if(hostpeli){
+						hostKuuntelePeli();
+						int i;
+						for(i=0;i<players;i++){
+							if(playeruudestaan[i]==1){
+								int temp3=random(aluksia);
+								if(gamemode!=DOMINATION && gamemode!=CTF && gamemode!=MUSHROOM){
+									while(player[i].pisteet<alus[temp3].pistemaara){
+										temp3=random(aluksia);
+									}
+									player[i].pisteet-=alus[temp3].pistemaara;
+								}
+								player[i].uudestaan(alus[temp3]);
+								player[i].laitaAlkuSirpaleet();
+								player[i].kuolema--;
+							}
+						}
+						for(i=0;i<players;i++){
+							if(playeruudestaan[i]==3){
+								playeruudestaan[i]=1;
+							}
+						}
+					}
+
+					if(joinpeli){
+						joinPeliNetwork();
+					}
+					calculatedframes++;
+					calculateFrame(++oldframecounter);
+					if(hostpeli) netframe++;
+					if(joinpeli){
+						//netframe++;
+						netframe2=netframe;
+					}
+					if(hostpeli) hostLahetaPeli();
+
+				}
+			}else {
+				oldframecounter=framecounter;
+			}
+			netGameSetsDraw(selection);
+			updateAudio();
+		}
+		menuready=false;
+		if(selection==8){
+			if(player[0].pright){
+				if(sets->detail>sets->maxdetail-1) sets->detail=0;
+				else sets->detail++;
+			}else{
+				if(sets->detail<1) sets->detail=sets->maxdetail;
+				else sets->detail--;
+			}
+		}else if(selection==10) {
+			menuquit=true;
+		}else if(selection==11){
+			netGameQuit=true;
+			menuquit=true;
+		}else if(selection==0){//resolution
+			if(player[0].pright){
+
+				if(tempwidth==320){
+						tempwidth=400;
+				}else if(tempwidth==400){
+						tempwidth=512;
+				}else if(tempwidth==512){
+						tempwidth=640;
+				}else if(tempwidth==640){
+						tempwidth=800;
+				}else if(tempwidth==800){
+						tempwidth=1024;
+				}else if(tempwidth==1024){
+						tempwidth=1152;
+				}else if(tempwidth==1152){
+						tempwidth=1280;
+				}else if(tempwidth==1280){
+						tempwidth=1600;
+				}else if(tempwidth==1600){
+						tempwidth=1792;
+				}else if(tempwidth==1792){
+						tempwidth=1800;
+				}else if(tempwidth==1800){
+						tempwidth=320;
+				}
+			}else{
+				 if(tempwidth==1800){
+					tempwidth=1792;
+				 }else if(tempwidth==1792){
+					tempwidth=1600;
+				 }else if(tempwidth==1600){
+					tempwidth=1280;
+				 }else if(tempwidth==1280){
+					tempwidth=1152;
+				 }else if(tempwidth==1152){
+					tempwidth=1024;
+				 }else if(tempwidth==1024){
+					tempwidth=800;
+				}else if(tempwidth==800){
+					tempwidth=640;
+				}else if(tempwidth==640){
+					tempwidth=512;
+				}else if(tempwidth==512){
+					tempwidth=400;
+				}else if(tempwidth==400){
+					tempwidth=320;
+				}else{
+					tempwidth=1800;
+				}
+			}
+
+
+				if(tempwidth==320){
+						tempheight=240;
+				}else if(tempwidth==400){
+						tempheight=300;
+				}else if(tempwidth==512){
+						tempheight=384;
+				}else if(tempwidth==640){
+						tempheight=480;
+				}else if(tempwidth==800){
+						tempheight=600;
+				}else if(tempwidth==1024){
+						tempheight=768;
+				}else if(tempwidth==1152){
+						tempheight=864;
+				}else if(tempwidth==1280){
+						tempheight=1024;
+				}else if(tempwidth==1600){
+						tempheight=1200;
+				}else if(tempwidth==1792){
+						tempheight=1344;
+				}else if(tempwidth==1800){
+						tempheight=1440;
+				}
+		}
+		
+		else if(selection==1){//fullscreen
+			if(tempfull!=0) tempfull=0;
+			else tempfull=1;
+		}
+		
+		else if(selection==2){//kameramode
+			if(tempcam!=0) tempcam=0;
+			else tempcam=1;
+		}
+		
+		else if(selection==3){//musiikit
+			if(tempmus!=0) tempmus=0;
+			else tempmus=1;
+		}
+		
+		else if(selection==4){//efektit
+			if(tempef!=0) tempef=0;
+			else tempef=1;
+		}
+
+		else if(selection==5){
+			if(player[0].pright){
+				if(player[0].pfire || player[1].pfire) tsv++;
+				else tsv+=5;
+				if(tsv>100) tsv=0;
+			}else{
+				if(player[0].pfire || player[1].pfire) tsv--;
+				else tsv-=5;
+				if(tsv<0) tsv=100;
+			}
+			if(count>0 && sets->musics) backgroundsong->setVolume(tmv/100.0f);
+		}
+
+		else if(selection==6){
+			if(player[0].pright){
+				if(player[0].pfire || player[1].pfire) tmv++;
+				else tmv+=5;
+				if(tmv>100) tmv=0;
+			}else{
+				if(player[0].pfire || player[1].pfire) tmv--;
+				else tmv-=5;
+				if(tmv<0) tmv=100;
+			}
+		}
+		
+		else if(selection==7){//fps
+			if(!joinpeli && !gamestarted){
+				if(!player[0].pleft){
+					if(tfp>=100) tfp+=10;
+					else tfp+=5;
+					if(tfp>200) tfp=50;
+				}else{
+					if(tfp>=110) tfp-=10;
+					else tfp-=5;
+					if(tfp<50)tfp=200;
+				}
+			}
+		}
+
+		else if(selection==9){	//apply & save
+
+			//asetukset talteen
+			sets->width=tempwidth;
+			sets->height=tempheight;
+			sets->musics=tempmus;
+			sets->efects=tempef;
+			sets->musicvolume=tmv;
+			sets->soundvolume=tsv;
+			sets->fullscreen=tempfull;
+			sets->fps=tfp;
+			calculatefps=tfp;
+			sirpaleita=1000+sets->detail*500;
+			alkusirpaleita=sirpaleita/12.5f;
+			screenwidth=tempwidth;
+			screenheight=tempheight;
+
+			//säädetään kuva.
+			const SDL_VideoInfo *info;
+			SDL_Surface *surface;
+			int screenbpp;
+
+			info=SDL_GetVideoInfo();
+			if (!info){
+				printf("Could not get video info with SDL: %s.\n",SDL_GetError());
+				exitProgram(2);
+			}
+			screenbpp=info->vfmt->BitsPerPixel;
+			if(tempfull>0){
+				if (!SDL_SetVideoMode(screenwidth,screenheight,screenbpp,SDL_OPENGL | SDL_FULLSCREEN)){
+					fprintf(stderr,"Couldn't set %i*%i*%i opengl video mode: %s\n",screenwidth,screenheight,screenbpp,SDL_GetError());
+					exitProgram(-1);
+				}
+			}else if (!SDL_SetVideoMode(screenwidth,screenheight,screenbpp,SDL_RESIZABLE | SDL_OPENGL)){
+				fprintf(stderr,"Couldn't set %i*%i*%i opengl video mode: %s\n",screenwidth,screenheight,screenbpp,SDL_GetError());
+					exitProgram(-1);
+			}
+			setupOpengl(screenwidth, screenheight);
+			surface=SDL_GetVideoSurface();
+			screenwidth=surface->w;
+			screenheight=surface->h;
+			tempwidth=surface->w;
+			tempheight=surface->h;
+			
+			//printf("debug1\n");
+			//säädetään musat
+			if(!musiikkipaalla && tempmus!=0) {
+				musiikkipaalla=true;
+				int gah=random(count);
+				if(count>0){
+					backgroundsong=new Sound(names[gah]);
+					backgroundsong->play();
+					backgroundsong->setStopCallback(test);
+					backgroundsong->setVolume(sets->musicvolume/100.0f);
+				}
+			} else if(tempmus==0 && musiikkipaalla){
+				musiikkipaalla=false;
+				if(count>0)backgroundsong->stop();
+			}
+			//printf("debug2\n");
+			if(!tempef) efektitpaalla=false;
+			else efektitpaalla=true;
+			setSoundVolumes();	
+			//printf("debug3\n");
+			int i;
+			if(gamestarted && efektitpaalla) for(i=0;i<players;i++){
+				if(player[i].ampumisaani!=NULL) delete player[i].ampumisaani;
+				if(player[i].eampumisaani!=NULL) delete player[i].eampumisaani;
+				if(player[i].osumisaani!=NULL) delete player[i].osumisaani;
+				if(player[i].eosumisaani!=NULL) delete player[i].eosumisaani;
+
+				if(player[i].alus.ampumisaani!=NULL) player[i].ampumisaani=new Sound(player[i].alus.ampumisaani);
+				else player[i].ampumisaani=NULL;
+				if(player[i].alus.eampumisaani!=NULL) player[i].eampumisaani=new Sound(player[i].alus.eampumisaani);
+				else player[i].eampumisaani=NULL;
+				if(player[i].alus.osumisaani!=NULL) player[i].osumisaani=new Sound(player[i].alus.osumisaani);
+				else player[i].osumisaani=NULL;
+				if(player[i].alus.eosumisaani!=NULL) player[i].eosumisaani=new Sound(player[i].alus.eosumisaani);
+				else player[i].eosumisaani=NULL;
+			}
+			delete sirpale;
+			sirpale=new Sirpale[sirpaleita];
+			for(i=0;i<MAXNETPLAYERS;i++){
+				delete player[i].alkusirpale;
+				player[i].alkusirpale=(Sirpale *) malloc(sizeof(Sirpale)*alkusirpaleita);
+				memset(player[i].alkusirpale,0,sizeof(Sirpale)*alkusirpaleita);
+			}
+			//printf("debug4\n");
+			if(sets->saveFile()!=1){
+				printf("Saving settings not finished\n");
+			}
+			//printf("debug5\n");
+
+			
+		}
+		player[0].pright=false;
+		player[0].pleft=false;
+	}
+}
+
+void netGameSetsDraw(int selection){
+	glDisable(GL_LIGHTING);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_COLOR);	
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_2D);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);			
+	gluPerspective(45.0f,(GLfloat)screenwidth/(GLfloat)screenheight,0.5f,80.0f);
+	glLoadIdentity();							
+	glMatrixMode(GL_MODELVIEW);
+
+
+	glColor4f(1.0f,1.0f,1.0f,1.0f);		
+	glBindTexture(GL_TEXTURE_2D, texture[31]);	//27			
+	float tempkoko=(float)screenheight/(float)screenwidth;
+	//float tempkoko=0.6f;
+	glBegin(GL_QUADS);
+		glNormal3f(0,0,1.0f);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f, -1.0f*tempkoko, -1.8);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f, -1.0f*tempkoko, -1.8);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f,  1.0f*tempkoko, -1.8);
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f,  1.0f*tempkoko, -1.8);
+	glEnd();
+
+	gluLookAt(0,0,15,
+	0,0,0,
+	0,1,0);
+
+	char numero3[10];
+	itoa( fullcredits, numero3, 10);
+
+	char *vekotin[]={	"game settings menu",
+						"resolution:",
+						"fullscreen:",
+						"camera mode:",
+						"musics:",
+						"sound effects:",
+						"music volume:",
+						"sound volume:",
+						"fps:",
+						"detail:",
+						"apply & save settings",
+						"resume",
+						"exit multiplayer"};
+	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_ALPHA);	
+
+	tempkoko=2;
+	glPushMatrix();
+//	glTranslatef(-0.5,-0.45,0);
+//	glScalef(1.1,0.5,1);
+	glColor4f(0,0,0,0.6);
+	glBegin(GL_QUADS);
+		glNormal3f(0,0,1.0f);
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(-2.35f, -1.75f, 10);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.7f, -1.75f, 10);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.7f,  0.55f, 10);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(-2.35f,  0.55f, 10);
+	glEnd();
+	glPopMatrix();
+	glBlendFunc(GL_ONE,GL_ONE_MINUS_SRC_COLOR);	
+
+	glTranslatef(0.1,0.1,0.01);
+	glColor4f(0,0,1,1);
+	gl_println(-25, 8, -40,vekotin[0],1.4f);
+	glColor4f(1,0,0,1);
+	int i,j;
+	if(gamestartjuttu) j=12;
+	else j=11;
+	for(i=0;i<j;i++){
+		gl_println(-22,  4-2*i,-40,vekotin[1+i]);
+	}
+
+	char numero1[10];
+	char numero2[10];
+	char numero4[10];
+	char numero5[10];
+	char numero6[10];
+	char numero7[10];
+	itoa(tempwidth,  numero1, 10);
+	itoa(tempheight, numero2, 10);
+	itoa(tmv,	  numero5, 10);
+	itoa(tsv,	  numero6, 10);
+	itoa(tfp,	  numero4, 10);
+	itoa(sets->detail,	  numero7, 10);
+
+	char *vekotin2[]={	"on",
+						"off",
+						"x",
+						"2d",
+						"3d",
+						numero1,
+						numero2,
+						numero6,
+						numero5,
+						numero4,
+						numero7};
+
+	//resolution
+	gl_println(  3, 4,-40,vekotin2[5]);
+	gl_println( 11, 4,-40,vekotin2[2]);
+	gl_println( 13, 4,-40,vekotin2[6]);
+
+	//fullscreen
+	if(tempfull!=0) gl_println( 3,  2,-40,vekotin2[0]);
+	else gl_println( 3,  2,-40,vekotin2[1]);
+
+	//cammode
+	if(tempcam==0) gl_println( 3,  0,-40,vekotin2[4]);
+	else gl_println( 3,  0,-40,vekotin2[3]);
+
+	//sound effects
+	if(tempmus) gl_println( 3,  -2,-40,vekotin2[0]);
+	else gl_println( 3,  -2,-40,vekotin2[1]);
+
+	//musics
+	if(tempef) gl_println( 3,  -4,-40,vekotin2[0]);
+	else gl_println( 3,  -4,-40,vekotin2[1]);
+
+	//sound volume
+	gl_println( 3,  -6,-40,vekotin2[7]);
+
+	//music volume
+	gl_println( 3,  -8,-40,vekotin2[8]);
+
+	//fps
+	gl_println( 3,  -10,-40,vekotin2[9]);
+
+	//detail
+	gl_println( 3,  -12,-40,vekotin2[10]);
+
+/*	glBindTexture(GL_TEXTURE_2D, texture[18]);				
+	glColor4f(1.0f,1.0f,1.0f,1.0f);		
+	glPushMatrix();
+	glTranslatef(-7.5,1.0f-0.55*selection,0);
+	tempkoko=0.6;
+	glBegin(GL_QUADS);
+		glNormal3f(0,0,1.0f);
+		glTexCoord2f(0.0f, 0.0f); glVertex3f(-1.0f*tempkoko, -1.0f*tempkoko, 0);
+		glTexCoord2f(1.0f, 0.0f); glVertex3f( 1.0f*tempkoko, -1.0f*tempkoko, 0);
+		glTexCoord2f(1.0f, 1.0f); glVertex3f( 1.0f*tempkoko,  1.0f*tempkoko, 0);
+		glTexCoord2f(0.0f, 1.0f); glVertex3f(-1.0f*tempkoko,  1.0f*tempkoko, 0);
+	glEnd();
+	glPopMatrix();
+*/
+
+GLfloat specular[4] = {2, 2, 2, 1};
+glMaterialfv(GL_FRONT, GL_SPECULAR, specular);
+glMaterialf(GL_FRONT, GL_SHININESS, 120);	
+glLightfv(GL_LIGHT0,GL_SPECULAR,specular);
+GLfloat lightdiffuse[4]= {0.5, 0.5, 0.5, 0.5};
+glLightfv(GL_LIGHT0,GL_DIFFUSE, lightdiffuse);
+GLfloat lightposition[4] = {0, 0, 2, 0};
+glLightfv(GL_LIGHT0,GL_POSITION,lightposition);
+//glGetLightfv(GL_LIGHT0,GL_POSITION,lightposition);
+//printf("%f,%f,%f,%f\n",lightposition[0],lightposition[1],lightposition[2],lightposition[3]);
+
+  glPushMatrix();
+		glEnable(GL_LIGHTING);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_TEXTURE_2D);
+
+	glTranslatef(-7.3,1.0f-0.55*selection,0);
+
+		glRotatef(nuolirot,1,0,0);
+		glScalef(0.3,0.3,0.3);
+		glCallList(NUOLI);
+		nuolirot+=2.5;
+		if(nuolirot>180)nuolirot-=360;
+	glPopMatrix();
+
+
+	glEnable(GL_BLEND);
+	SDL_GL_SwapBuffers();
+//	delete[] vekotin;
+//	delete[] vekotin2;
+}

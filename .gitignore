@@ -1,0 +1,21 @@
+# .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+artifacts/
+
+# Legacy VC6 build intermediates in original/
+original/**/*.pch
+original/**/*.obj
+original/**/*.ilk
+original/**/*.idb
+original/**/*.ncb
+original/**/*.opt
+original/**/*.aps
+original/**/*.plg
+
+# Local runnable copy of the original game
+reference-run/

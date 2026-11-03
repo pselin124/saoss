@@ -1,0 +1,1589 @@
+#include "h/main.h"
+#include "lippu.h"
+#include "net.h"
+
+#ifdef WIN32
+#include <windows.h>
+#endif
+#include <malloc.h>
+#ifndef NULL
+#define NULL null
+#endif
+#ifdef WIN32
+#define TEXFILE(x) "textures\\" x
+#else
+#define TEXFILE(x) "textures/" x
+#endif
+
+#include "LippuStart.h"
+#include <sys/timeb.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+vertex *vertexit;
+triangle *trianglet;
+GLfloat hold1[3], hold2[3];
+float tuulenvoimakkuus=0.0004 , tuulikulma=3.14/2;
+
+void normVectorProd(GLfloat *v1, GLfloat *v2, float *norm) {
+  GLfloat lenght;
+
+  norm[0] = v1[1]*v2[2] - v1[2]*v2[1];
+  norm[1] = v1[2]*v2[0] - v1[0]*v2[2];
+  norm[2] = v1[0]*v2[1] - v1[1]*v2[0];
+  
+  lenght = sqrt(pow(norm[0],2)+pow(norm[1],2)+pow(norm[2],2) );
+
+  norm[0] /= lenght;
+  norm[1] /= lenght;
+  norm[2] /= lenght;
+}
+
+
+
+/* Hoitaa kaiken laskennan - eli simuloi tuulen vaikutusta ja lipun liehuntaa 
+   -> laskee vertexien uudet sijainnit */
+
+void calculate(int framecount){
+  int i,j,k;
+	tuulikulma=sin((framecount-600)/400.0f);
+	tuulenvoimakkuus=0.001*sin(framecount/1000.0f-1.0f);
+  /* Tuulen vaikutus - k‰yd‰‰n kaikki kolmiot l‰pi
+     ja lis‰t‰‰n kolmioiden kaikkiin vertekseihin kolmioon kohdistuva voima. */
+  float tuulix=sin(tuulikulma)*tuulenvoimakkuus*0.2;
+  float tuuliy=0;
+  float tuuliz=cos(tuulikulma)*tuulenvoimakkuus*0.2;
+
+  for(i=0;i<(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT-1)*2;i++){
+    //force = unitvector(normal) * dotproduct(normal, wind)
+    //add force to all points making up this triangle 
+
+    float voima[3];
+    float pistetulo = trianglet[i].normal[0]*tuulix+
+                      trianglet[i].normal[1]*tuuliy+
+                      trianglet[i].normal[2]*tuuliz;
+    for(k=0;k<3;k++){
+      voima[k]=trianglet[i].normal[k]*pistetulo;
+    }
+    for(j=0;j<3;j++){
+      for(k=0;k<3;k++){
+				trianglet[i].kulmat[j]->force[k]+=voima[k];
+      }
+    }
+  }
+
+
+  // Lasketaan jokaisen vertexin jokaiselle naapurille voimavektori
+   
+  int n;
+  double lepoetaisyys=LIPUN_LEVEYS/LIPUN_X_VERTEXIT;//lepoetaisyys
+  double lepoetaisyys2=sqrt(2)*lepoetaisyys;//lepoetaisyys vinossa oleville vertexeille
+	/*	Seuraavassa i osoittaa suoraan k‰sitelt‰v‰‰n vertexiin,
+		k on sarakkeen numero ja n on rivin numero. j on suora osoitus
+		k‰sitelt‰v‰‰n naapurivertexiin. */
+  for(i=0,k=0,n=0;i<LIPUN_Y_VERTEXIT*LIPUN_X_VERTEXIT;i++,k++){
+    if(k==LIPUN_X_VERTEXIT){
+      k=0;
+      n++;
+    }
+    vertexit[i].force[1]-=0.000058;//gravity
+    
+    // Ensin lasketaan vieress‰ olevat jouset. 
+    if((n%2==0 && k%2==0) || (n%2==1 && k%2==1)){
+      for(j=0;j<vertexit[i].naapureidenMaara;j++){
+				float et[3];
+				int ij;
+				for(ij=0;ij<3;ij++){
+					et[ij]=(vertexit[i].position[ij])//+vertexit[i].v[ij])
+						-(vertexit[i].naapurit[j]->position[ij]);//+vertexit[i].naapurit[j]->v[ij]);
+				}
+				float etaisyys=sqrt(et[0]*et[0]+et[1]*et[1]+et[2]*et[2]);//etaisyysvektorin pituus
+				float suhde;
+				float etaisyystemp=1.0f/etaisyys;
+				suhde=(etaisyys-lepoetaisyys)/lepoetaisyys;
+				et[0]=et[0]*etaisyystemp;
+				et[1]=et[1]*etaisyystemp;
+				et[2]=et[2]*etaisyystemp;
+				if(etaisyys!=0){
+					float force[3];
+					force[0]=et[0]*suhde*gravitaatiovakio;
+					force[1]=et[1]*suhde*gravitaatiovakio;
+					force[2]=et[2]*suhde*gravitaatiovakio;
+	  
+					vertexit[i].force[0]-=force[0];
+					vertexit[i].force[1]-=force[1];
+					vertexit[i].force[2]-=force[2];
+
+				  vertexit[i].naapurit[j]->force[0]+=force[0];
+					vertexit[i].naapurit[j]->force[1]+=force[1];
+					vertexit[i].naapurit[j]->force[2]+=force[2];
+				}
+      }
+    }
+
+    // Sitten vinosuunnassa olevat jouset. 
+    if(k%2==0){
+      for(j=4;j<vertexit[i].naapureidenMaara2+4;j++){
+				float et[3];
+				int ij;
+				for(ij=0;ij<3;ij++){
+					et[ij]=(vertexit[i].position[ij])//+vertexit[i].v[ij])
+						-(vertexit[i].naapurit[j]->position[ij]);//+vertexit[i].naapurit[j]->v[ij]);
+				}
+				float etaisyys=sqrt(et[0]*et[0]+et[1]*et[1]+et[2]*et[2]);//etaisyysvektorin pituus
+				float suhde;
+				float etaisyystemp=1/etaisyys;
+				suhde=(etaisyys-lepoetaisyys2)/lepoetaisyys2;
+				et[0]=et[0]*etaisyystemp;
+				et[1]=et[1]*etaisyystemp;
+				et[2]=et[2]*etaisyystemp;
+				if(etaisyys!=0){
+					float force[3];
+					force[0]=et[0]*suhde*gravitaatiovakio;
+					force[1]=et[1]*suhde*gravitaatiovakio;
+					force[2]=et[2]*suhde*gravitaatiovakio;
+	  
+					vertexit[i].force[0]-=force[0];
+					vertexit[i].force[1]-=force[1];
+					vertexit[i].force[2]-=force[2];
+		  
+				  vertexit[i].naapurit[j]->force[0]+=force[0];
+					vertexit[i].naapurit[j]->force[1]+=force[1];
+					vertexit[i].naapurit[j]->force[2]+=force[2];
+				}
+      }
+    }
+
+    // Huolehditaan ett‰ reuna pysyy l‰hell‰ tankoa. 
+    if(k==0){
+      if(i==0 || i==(LIPUN_Y_VERTEXIT-1)*LIPUN_X_VERTEXIT){
+				float et[3];
+				et[0]=vertexit[i].position[0];
+				et[2]=vertexit[i].position[2];
+				if(i==0){
+					et[1]=vertexit[i].position[1]-TANGON_KORKEUS;
+				}else{
+					et[1]=vertexit[i].position[1]-(TANGON_KORKEUS-LIPUN_KORKEUS-1.3);
+				}
+				double etaisyys=sqrt(et[0]*et[0]+et[1]*et[1]+et[2]*et[2]);
+				if(etaisyys>0.3){
+					vertexit[i].force[0]-=et[0]*pow((etaisyys-0.3),3)*0.2;
+					vertexit[i].force[1]-=et[1]*pow((etaisyys-0.3),3)*0.2;
+					vertexit[i].force[2]-=et[2]*pow((etaisyys-0.3),3)*0.2;
+				}
+      }
+    }
+  
+    //lasketaan lopuksi kitka jottei lippu j‰isi pyˆrim‰‰n tuulen lakatessa.
+    int l;
+    for(l=0;l<3;l++)
+      vertexit[i].v[l]/=1.00185f;
+  }
+
+
+  /* Lis‰t‰‰n voimavektorit vertexien sijaintiin.. */
+  for(i=0;i<LIPUN_Y_VERTEXIT*LIPUN_X_VERTEXIT;i++){
+    float etaisyys=sqrt(pow(vertexit[i].position[0]+vertexit[i].force[0],2)+
+			pow(vertexit[i].position[2]+vertexit[i].force[2],2));
+    for(k=0;k<3;k++){
+      vertexit[i].v[k]+=vertexit[i].force[k];
+      vertexit[i].force[k]=0;
+    }
+    if(etaisyys>0.29){
+      for(k=0;k<3;k++){
+/*				if(framecount==3){
+					printf("vertex %i position %i=%i\n",i,k,(int) vertexit[i].position[k]);
+				}*/
+			vertexit[i].position[k]+=vertexit[i].v[k];
+      }
+    }else{
+      vertexit[i].position[0]=(vertexit[i].position[0]+vertexit[i].v[0])/etaisyys*0.29f;
+      vertexit[i].position[2]=(vertexit[i].position[2]+vertexit[i].v[2])/etaisyys*0.29f;
+      vertexit[i].v[0]=0;
+      vertexit[i].v[2]=0;
+      vertexit[i].v[1]=0;
+    }
+  }
+
+  /* Lasketaan jokaiselle lipun kolmiolle normaalit */
+  for (i=0; i<2*(LIPUN_X_VERTEXIT-1)*(LIPUN_Y_VERTEXIT-1); i++) {
+    for (j=0; j<3; j++) {
+      hold1[j] = trianglet[i].kulmat[1]->position[j] - 
+	         trianglet[i].kulmat[0]->position[j];
+      hold2[j] = trianglet[i].kulmat[2]->position[j] - 
+	         trianglet[i].kulmat[0]->position[j];
+    }
+    normVectorProd(hold1,hold2,trianglet[i].normal);
+  }  
+
+  /* Lasketaan jokaiselle lipun vertexille normaalit */
+  for(i=0;i<(LIPUN_X_VERTEXIT)*(LIPUN_Y_VERTEXIT); i++) {
+    GLfloat normaali[3]={0,0,0};
+    for(j=0;j<vertexit[i].kolmiomaara;j++){
+      normaali[0]+=trianglet[vertexit[i].kolmiot[j]].normal[0];
+      normaali[1]+=trianglet[vertexit[i].kolmiot[j]].normal[1];
+      normaali[2]+=trianglet[vertexit[i].kolmiot[j]].normal[2];
+    }
+    normaali[0]/=vertexit[i].kolmiomaara;
+    normaali[1]/=vertexit[i].kolmiomaara;
+    normaali[2]/=vertexit[i].kolmiomaara;
+    vertexit[i].normal[0]=normaali[0];
+    vertexit[i].normal[1]=normaali[1];
+    vertexit[i].normal[2]=normaali[2];
+  }
+}
+
+
+
+/*	Kukkasille teht‰v‰ v‰‰ntely varjon piirt‰miseksi sopivaan tasoon..
+ */
+void varjoOperaatio(){
+  glTranslatef(0.0,0.02,0.0);
+  glScalef(1.0,0.01,1.0);
+  glRotatef( 35,0,0,1);
+}
+
+
+/*	Maanpiirtofunktio
+*/
+void drawGround() {
+  GLUquadricObj *temp=gluNewQuadric();
+
+  gluQuadricTexture(temp, GL_TRUE);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+  glBindTexture(GL_TEXTURE_2D, texturet[0]);    
+  
+  glPushMatrix();
+    glColor4f(0.1,0.5,0.0,0.5);
+    glRotatef(-90,1,0,0);
+    gluDisk(temp,0.0,30.0,30+10*sets->detail,1+1*sets->detail);
+  glPopMatrix();
+  gluDeleteQuadric(temp); 
+}
+
+
+/*	Lipputangon piirtofunktio ilman naruja.
+*/
+void drawPole() {
+  GLUquadricObj *temp=gluNewQuadric();
+  gluQuadricTexture(temp, GL_TRUE);
+  glBindTexture(GL_TEXTURE_2D, texturet[0]);    
+  
+  glColor4f(0.8,0.7,0.8,0.5);
+
+  glPushMatrix();
+    glRotatef(-90.0,1,0,0);
+    gluCylinder(temp,0.17,0.17,TANGON_KORKEUS,15+5*sets->detail,1+2*sets->detail);
+  glPopMatrix();
+
+  glColor4f(1,0.8,0.1,0.5);
+  glPushMatrix();
+    glTranslatef(0,TANGON_KORKEUS,0);
+    gluSphere(temp,0.32,15+8*sets->detail,10+10*sets->detail);
+  glPopMatrix();
+
+  gluDeleteQuadric(temp); 
+}
+
+int lipputekstuuri=1;
+int detail=1;
+int tekstuurinVaihto=0;
+GLfloat rotX, rotY, dist=20.0;
+
+
+/*	Ruudunp‰ivitysfunktio.
+	Ensin piirret‰‰n tavalliset objektit, sitten varjot.
+	Viimeiseksi ymp‰ristˆ ja ohjausnapit.
+*/
+
+float alkux,alkuy,alkuz;
+int anumero;
+
+void draw(){
+  int i,j;	//yleismuuttujat
+
+  /*	Piirt‰misen aluksi s‰‰det‰‰n katselukulma oikeaan kohtaan ja s‰‰det‰‰n valo
+	paikalleen.
+  */
+	//gluPerspective(65.0f,(GLfloat)screenwidth/(GLfloat)screenheight,0.1,100);
+  glLoadIdentity();	
+	glMatrixMode(GL_MODELVIEW);
+  glPushMatrix();
+
+	dist=20+cos(framecounter/574.0f)*4.0f;
+	rotX=sin(framecounter/400.0f)*18.0f+cos(framecounter/150.0f)*8.0f+15.0f;
+	rotY=cos(framecounter/600.0f)*50.0f+sin(framecounter/100.0f)*10.0f;
+  glTranslatef(0.0,-7.5,-1*dist);
+  glRotatef(rotX,1.0,0.0,0.0);
+  glRotatef(rotY,0.0,1.0,0.0);
+
+
+  glLightfv(GL_LIGHT0, GL_POSITION, light0position);
+  glEnable(GL_LIGHT0);
+
+  /* Piirret‰‰n tuulen suuntaa kuvaava nuoli */
+/*  glPushMatrix();
+    glRotatef(tuulikulma*360/6.28,0.0,1.0,0.0);
+    glScalef(1.0,1.0,0.2+pow(tuulenvoimakkuus,0.5)*75);
+    glCallList(NUOLI2);
+  glPopMatrix();
+  */
+
+
+
+  /**********************************************
+   Piirret‰‰n kaikki tavalliset objektit.
+  */
+  glEnable(GL_TEXTURE_2D);
+  /* Draw the ground */
+	glPushMatrix();
+		glCallList(MAA);
+	glPopMatrix();
+
+	glPushMatrix();
+//				glRotatef(kulma-90.0f, 0, 0, 1);
+		glDisable(GL_LIGHTING);
+		glEnable(GL_TEXTURE_2D);
+		glDisable(GL_DEPTH_TEST);	
+		glColor4f(1,1,1,0);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ZERO,GL_SRC_COLOR);	
+		glRotatef(-90,1,0,0);
+				gl_println(-13, 22,	0, "TGO &",	1.1);
+				gl_println(-13, 18,	0, "Cinere",	1.1);
+				gl_println(-5, 20,	0, "/ THP Presents",	1.1);
+				gl_println(-5, 15,	0, "Saoss",	1.6);
+//		glEnable(GL_CULL_FACE);
+
+	  glEnable(GL_DEPTH_TEST);
+		glEnable(GL_LIGHTING);
+		glDisable(GL_BLEND);
+		glEnable(GL_TEXTURE_2D);
+		glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); //s‰‰det‰‰n sopiva blendi
+		glDisable(GL_CULL_FACE);
+
+
+
+	glPopMatrix();
+  /* Draw the pole */
+	glPushMatrix();
+		glCallList(TANKO);
+	glPopMatrix();
+  glDisable(GL_TEXTURE_2D);
+ 
+
+  /* Draw the flag, ensin valitaan sopiva tekstuuri ja s‰‰det‰‰n
+     piirtomode kuntoon. Sitten piirret‰‰n kolmio kerrallaan lippu.
+     Normaalit on laskettu jokaiselle vertexille varjostuksen
+     parantamiseksi. */
+  glColor3f(0.9,1.0,0.9);  
+  glEnable(GL_TEXTURE_2D);
+  glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+  glBindTexture(GL_TEXTURE_2D, texturet[lipputekstuuri]);    
+  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+
+  for(i=0;i<(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT-1)*2;i++){
+    glBegin(GL_TRIANGLES);
+      for(j=0;j<3;j++){
+        glNormal3fv(trianglet[i].kulmat[j]->normal);
+        glTexCoord2fv(trianglet[i].kulmat[j]->texCoord);
+        glVertex3fv(trianglet[i].kulmat[j]->position);
+				int ij;
+				for(ij=0;ij<3;ij++){
+					if(fabs(trianglet[i].kulmat[j]->position[ij])>100){
+							printf("tr:%i,%i,%i,%f\n",i,j,ij,trianglet[i].kulmat[j]->position[ij]);
+							trianglet[i].kulmat[j]=&vertexit[0];
+							printf("tr2:%i,%i,%i,%f\n",i,j,ij,trianglet[i].kulmat[j]->position[ij]);
+							trianglet[i].kulmat[j]->position[ij]=0;
+
+					}
+				}
+      }
+    glEnd();
+  }
+  glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
+  glDisable(GL_TEXTURE_2D);
+  
+  glEnable(GL_CULL_FACE);
+
+  // Piirret‰‰n sienet ja kukat 
+
+	//sienet
+		if(sets->detail>-1){
+			glPushMatrix();
+				glTranslatef(5.0,0,0); glCallList(SIENI2);
+				glTranslatef(1.0,0,2); glCallList(SIENI2);
+	    glPopMatrix();
+		}
+	  if(sets->detail>0){
+			glPushMatrix();
+				glTranslatef(4,0,1.5); glCallList(SIENI2);
+				glTranslatef(-1.0,0, 0.5); glCallList(SIENI2);
+				glTranslatef(-0.2,0, 1.3); glCallList(SIENI2);
+	    glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(3,0,-1); glCallList(SIENI2);
+				glTranslatef(-1.0,0,1.2); glCallList(SIENI2);
+				glTranslatef( 0.3,0,0.9); glCallList(SIENI2);
+				glTranslatef( 0.1,0,1.2); glCallList(SIENI2);
+	    glPopMatrix();
+		}if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef( 0.5,0,1.5); glCallList(SIENI2);
+				glTranslatef( 0.2,0,1.5); glCallList(SIENI2);
+				glTranslatef( 0.4,0,1.5); glCallList(SIENI2);
+				glTranslatef(-0.5,0,1.5); glCallList(SIENI2);
+				glTranslatef(-0.8,0,0.5); glCallList(SIENI2);
+	    glPopMatrix();
+		}
+
+		//kukka1
+		if(sets->detail>-1){
+		  glPushMatrix();
+				glTranslatef(0,0,-5); glCallList(KUKKA5);
+				glTranslatef(2,0,0); glCallList(KUKKA22);
+			glPopMatrix();
+		}		
+		if(sets->detail>0){
+		  glPushMatrix();
+				glTranslatef(0.5,0,-1.5); glCallList(KUKKA5);
+				glTranslatef(-2.0,0,-1.5); glCallList(KUKKA22);
+				glTranslatef(-2.0,0,-1.0); glCallList(KUKKA5);
+				glTranslatef(-2.0,0,-1.0); glCallList(KUKKA22);
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+		  glPushMatrix();
+				glTranslatef(-0.7,0, 1.0); glCallList(KUKKA5);
+				glTranslatef( 0.1,0,-8.0); glCallList(KUKKA22);
+				glTranslatef(-1.7,0, 2.0); glCallList(KUKKA5);
+				glTranslatef( 0.1,0,-3.0); glCallList(KUKKA22);
+				glTranslatef(-0.7,0, 1.0); glCallList(KUKKA5);
+				glTranslatef( 0.1,0,-3.0); glCallList(KUKKA22);
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+		  glPushMatrix();
+				glTranslatef(-0.2,0, 5.0); glCallList(KUKKA5);
+				glTranslatef(-2.1,0,-2.8); glCallList(KUKKA22);
+				glTranslatef(-0.7,0, -1.0); glCallList(KUKKA5);
+				glTranslatef(-0.6,0, 1.2); glCallList(KUKKA22);
+				glTranslatef(-1.7,0, 2.0); glCallList(KUKKA5);
+				glTranslatef(-0.3,0,-1.5); glCallList(KUKKA22);
+				glTranslatef( 1.7,0, 1.2); glCallList(KUKKA5);
+				glTranslatef( 1.1,0, 0.0); glCallList(KUKKA22);
+	    glPopMatrix();
+		}
+
+		//kukka2
+		if(sets->detail>-1){
+		  glPushMatrix();
+				glTranslatef(5,0,-5); glCallList(KUKKA33);
+				glTranslatef(0,0,-1.5); glCallList(KUKKA33);
+      glPopMatrix();
+		}
+		if(sets->detail>0){
+		  glPushMatrix();
+				glTranslatef(4.5,0,-4.1); glCallList(KUKKA33);
+				glTranslatef(0.2,0,1.5); glCallList(KUKKA33);
+				glTranslatef(3.2,0,1.5); glCallList(KUKKA33);
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(4.0,0,2.8); glCallList(KUKKA33);
+				glTranslatef(0.2,0,1.5); glCallList(KUKKA33);
+				glTranslatef(-1.2,0,0.4); glCallList(KUKKA33);
+				glTranslatef(0.2,0,1.5); glCallList(KUKKA33);
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef(-1.3,0, 2.8); glCallList(KUKKA33);
+				glTranslatef(-0.4,0, 1.4); glCallList(KUKKA33);
+				glTranslatef(-0.8,0,-5.3); glCallList(KUKKA33);
+				glTranslatef(-0.7,0,-0.8); glCallList(KUKKA33);
+				glTranslatef(-0.9,0,-3.5); glCallList(KUKKA33);
+				glTranslatef(-0.9,0,-0.8); glCallList(KUKKA33);
+			glPopMatrix();
+		}
+
+		//kukka3
+		if(sets->detail>-1){
+			glPushMatrix();
+				glTranslatef(-3,0, 5); glCallList(KUKKA44);
+				glTranslatef(-1,0, 1); glCallList(KUKKA44);
+			glPopMatrix();
+		}
+		if(sets->detail>0){
+			glPushMatrix();
+				glTranslatef(2,0, -3.5); glCallList(KUKKA44);
+				glTranslatef(1.4,0, -0.75); glCallList(KUKKA44);
+				glTranslatef(-0.5,0, 1.75); glCallList(KUKKA44);
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(5.5,0, 4.2); glCallList(KUKKA44);
+				glTranslatef(1.4,0, 0.75); glCallList(KUKKA44);
+				glTranslatef(-1,0, -2); glCallList(KUKKA44);
+				glTranslatef(0,0, -2.5); glCallList(KUKKA44);
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef(-5,0, -3); glCallList(KUKKA44);
+				glTranslatef( 1,0, -4.5); glCallList(KUKKA44);
+				glTranslatef(-1.5,0, 0); glCallList(KUKKA44);
+				glTranslatef(-1,0, -1); glCallList(KUKKA44);
+				glTranslatef( 7,0, -1.5); glCallList(KUKKA44);
+				glTranslatef(-1,0, 0.3); glCallList(KUKKA44);
+			glPopMatrix();
+		}
+
+/* Vieraan jutun alku */
+//Piirret‰‰n aluksia ja tekstej‰
+	int frametemp=framecounter%2400;
+	int frametemp2=framecounter%2700-400.0f;
+	int frametemp3=framecounter%1500;
+	debugmode=true;
+//	if(frametemp>0 && frametemp<1200){
+
+		if(sets->detail>0){
+			glPushMatrix();
+				glTranslatef( 10,2.2, -5); 
+				glRotatef(90,0,0,1);
+				glRotatef(-45,1,0,0);
+				alus[21].piirra(0,0,0,0,0,0);		
+			glPopMatrix();
+		}
+
+		glPushMatrix();
+			glRotatef(180,0,1,0);
+			glTranslatef(cos((frametemp)/(2400.0f/(2.0f*PI)))*20.0f,12,sin((frametemp)/(2400.0f/(2.0f*PI)))*25.0f);//*(15.0f+frametemp*0.03));
+			glRotatef(-90,1,0,0);
+			glRotatef(cos(frametemp/(2400.0f/(2.0f*PI)))*180.0f/3.14-180.0f,0,0,1);
+			glRotatef(20,1,0,0);
+			glScalef(1.5,1.5,1.5);
+			alus[8].piirra(0,0,0,0,0,0);		
+		glPopMatrix();
+
+
+//	}
+
+	if(frametemp>250 && frametemp<750){
+		glPushMatrix();
+			glRotatef(180,0,1,0);
+			glTranslatef(sin((frametemp)/100.0f)*35.0f-20,cos((frametemp)/300.0f)*40+20,34);
+//			glRotatef(-90,1,0,0);
+			glRotatef(-cos(frametemp/400.0f)*180.0f/3.14,0,0,1);
+			glRotatef(-20,1,0,0);
+			glScalef(1.5,1.5,1.5);
+			alus[12].piirra(0,0,0,0,0,0);		
+		glPopMatrix();
+	}
+
+	if(frametemp2<-350){
+		alkux=random(10)+95.0f;
+		alkuy=random(10)-32.0f;
+		alkuz=random(150)/5.0f-15.0f;
+	}
+	if(frametemp2>=-350){
+		glPushMatrix();
+			glRotatef(90,0,1,0);
+			glTranslatef(alkux-frametemp2*0.1f,alkuy+frametemp2*0.05,alkuz);
+			glRotatef(180,0,1,0);
+			glRotatef(frametemp2/1.6f,1,0,0);
+			alus[14].piirra(0,0,0,0,0,0);		
+		glPopMatrix();
+	}
+
+	if(frametemp3<30){
+			int tempnumero=random(15);
+			switch(tempnumero){
+			case 0:
+				anumero=1;
+				break;
+			case 1:
+				anumero=2;
+				break;
+			case 2:
+				anumero=6;
+				break;
+			case 3:
+				anumero=8;
+				break;
+			case 4:
+				anumero=9;
+				break;
+			case 5:
+				anumero=11;
+				break;
+			case 6:
+				anumero=12;
+				break;
+			case 8:
+				anumero=14;
+				break;
+			case 9:
+				anumero=15;
+				break;
+			case 10:
+				anumero=17;
+				break;
+			case 11:
+				anumero=19;
+				break;
+			case 12:
+				anumero=21;
+				break;
+			case 13:
+				anumero=22;
+				break;
+			default:
+				anumero=23;
+				break;
+			}
+	}else{
+		glPushMatrix();
+//			glRotatef(90,0,1,0);
+			glTranslatef(75-frametemp3*0.1,6, 8);
+			glRotatef(180,0,1,0);
+			glScalef(0.6,0.6,0.6);
+			glRotatef(-90,1,0,0);
+			alus[anumero].piirra(0,0,0,0,0,0);		
+		glPopMatrix();
+
+	}
+	debugmode=false;
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glBindTexture(GL_TEXTURE_2D, texturet[lipputekstuuri]);    
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
+	glDisable(GL_TEXTURE_2D);
+	glEnable(GL_CULL_FACE);
+  glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+
+/*Vieraan jutun loppu */
+
+ // Piirret‰‰n lipun narut 
+  glDisable(GL_LIGHTING);
+  double kulma=atan2(vertexit[(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT)].position[0],
+		     vertexit[(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT)].position[2]);
+  glBegin(GL_LINE_STRIP);
+    glColor3f(0.9,0.8,0.7);  
+    glVertex3f(sin(kulma)*0.17,TANGON_KORKEUS-0.2,cos(kulma)*0.17);
+    glVertex3fv(vertexit[0].position);
+    glVertex3fv(vertexit[(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT)].position);
+    glVertex3f(sin(kulma)*0.17,0,cos(kulma)*0.17);
+  glEnd();
+
+
+
+
+
+
+  
+  /**********************************************
+    Piirret‰‰n varjot. Varjot on toteutettu piirt‰m‰ll‰ kaikki objektit
+    muuten tavallisesti, paitsi sopivasti k‰‰nnettyn‰ sopivaan tasoon. 
+    Stencil-bufferia on k‰ytetty blendatun varjon piirt‰miseen. 
+  */  
+
+  glEnable(GL_STENCIL_TEST);
+  glStencilFunc(GL_GREATER, 1.0f, 1);
+//  glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	glPolygonOffset(0,-1);
+
+
+
+  glPushMatrix();
+	//k‰‰nnet‰‰n akselin vinoon ja skaalataan maailma l‰tyksi..
+    glDisable(GL_CULL_FACE);
+    glRotatef( 90,0,0,1);
+    glScalef(0.1,7.0f/10.0f,1);
+    glEnable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+    glBlendFunc(GL_NONE,GL_ONE_MINUS_SRC_ALPHA); //s‰‰det‰‰n sopiva blendi
+    glCallList(TANKO);//piirret‰‰n tanko
+    glTranslatef(0.4,0,0);
+    glScalef(0.01f,1.0f,1);
+    // Piirret‰‰n lippu 
+    for(i=0;i<(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT-1)*2;i++){
+      glBegin(GL_TRIANGLES);
+        for(j=0;j<3;j++){
+	  glNormal3fv(trianglet[i].kulmat[j]->normal);
+	  glTexCoord2fv(trianglet[i].kulmat[j]->texCoord);
+	  glVertex3fv(trianglet[i].kulmat[j]->position);
+	}
+      glEnd();
+    }
+  
+    glEnable(GL_CULL_FACE);	
+
+  // Piirret‰‰n lipun narut 
+  
+    glDisable(GL_LIGHTING);
+    glBegin(GL_LINE_STRIP);
+      glColor4f(0.9,0.8,0.7,0.5);  
+      glVertex3f(0,TANGON_KORKEUS,0);
+      glVertex3fv(vertexit[0].position);
+      glVertex3fv(vertexit[(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT)].position);
+      glVertex3f(sin(kulma)*0.1,0,cos(kulma)*0.1);
+    glEnd();
+  glPopMatrix();
+
+
+
+
+  // Piirret‰‰n sienet ja kukat 
+	//sienet
+		if(sets->detail>-1){
+			glPushMatrix();
+				glTranslatef(5.0,0,0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2);  glPopMatrix();
+				glTranslatef(1.0,0,2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+	    glPopMatrix();
+		}
+	  if(sets->detail>0){
+			glPushMatrix();
+				glTranslatef(4,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef(-1.0,0, 0.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef(-0.2,0, 1.3); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+	    glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(3,0,-1); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef(-1.0,0,1.2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef( 0.3,0,0.9); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef( 0.1,0,1.2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+	    glPopMatrix();
+		}if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef( 0.5,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef( 0.2,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef( 0.4,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef(-0.5,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+				glTranslatef(-0.8,0,0.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(SIENI2); glPopMatrix();
+	    glPopMatrix();
+		}
+
+		//kukka1
+		if(sets->detail>-1){
+		  glPushMatrix();
+				glTranslatef(0,0,-5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(2,0,0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+			glPopMatrix();
+		}		
+		if(sets->detail>0){
+		  glPushMatrix();
+				glTranslatef(0.5,0,-1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(-2.0,0,-1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef(-2.0,0,-1.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(-2.0,0,-1.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+		  glPushMatrix();
+				glTranslatef(-0.7,0, 1.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef( 0.1,0,-8.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef(-1.7,0, 2.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef( 0.1,0,-3.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef(-0.7,0, 1.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef( 0.1,0,-3.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+		  glPushMatrix();
+				glTranslatef(-0.2,0, 5.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(-2.1,0,-2.8); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef(-0.7,0, -1.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(-0.6,0, 1.2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef(-1.7,0, 2.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef(-0.3,0,-1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+				glTranslatef( 1.7,0, 1.2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA5); glPopMatrix();
+				glTranslatef( 1.1,0, 0.0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA22); glPopMatrix();
+	    glPopMatrix();
+		}
+
+		//kukka2
+		if(sets->detail>-1){
+		  glPushMatrix();
+				glTranslatef(5,0,-5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(0,0,-1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+      glPopMatrix();
+		}
+		if(sets->detail>0){
+		  glPushMatrix();
+				glTranslatef(4.5,0,-4.1); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(0.2,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(3.2,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(4.0,0,2.8); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(0.2,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-1.2,0,0.4); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(0.2,0,1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef(-1.3,0, 2.8); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-0.4,0, 1.4); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-0.8,0,-5.3); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-0.7,0,-0.8); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-0.9,0,-3.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+				glTranslatef(-0.9,0,-0.8); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA33); glPopMatrix();
+			glPopMatrix();
+		}
+
+		//kukka3
+		if(sets->detail>-1){
+			glPushMatrix();
+				glTranslatef(-3,0, 5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-1,0, 1); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>0){
+			glPushMatrix();
+				glTranslatef(2,0, -3.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(1.4,0, -0.75); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-0.5,0, 1.75); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>1){
+			glPushMatrix();
+				glTranslatef(5.5,0, 4.2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(1.4,0, 0.75); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-1,0, -2); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(0,0, -2.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+			glPopMatrix();
+		}
+		if(sets->detail>2){
+			glPushMatrix();
+				glTranslatef(-5,0, -3); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef( 1,0, -4.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-1.5,0, 0); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-1,0, -1); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef( 7,0, -1.5); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+				glTranslatef(-1,0, 0.3); 
+				glPushMatrix(); varjoOperaatio(); glCallList(KUKKA44); glPopMatrix();
+			glPopMatrix();
+		}
+
+		//keppialus
+		debugmode=true;
+		varjomode=true;
+		glPushMatrix();
+			glTranslatef( 8.5,0.0, -5); 
+			varjoOperaatio();
+			glRotatef(90,0,0,1);
+			glRotatef(-45,1,0,0);
+			alus[21].piirra(0,0,0,0,0,0);		
+		glPopMatrix();
+		debugmode=false;
+		varjomode=false;
+
+
+	glDisable(GL_POLYGON_OFFSET_FILL);
+  glDisable(GL_STENCIL_TEST);
+
+  
+
+
+  /**********************************************
+   Piirret‰‰n namiskuukkelit.. 
+  */
+
+  glPopMatrix();//popataan alkuper‰ismatriisi..
+  glDisable(GL_DEPTH_TEST);
+  glEnable(GL_TEXTURE_2D);
+  glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA); //s‰‰det‰‰n sopiva blendi
+
+
+
+  glEnable(GL_DEPTH_TEST);
+  glDisable(GL_BLEND);
+  glDisable(GL_TEXTURE_2D);
+  glDisable(GL_CULL_FACE);
+  glEnable(GL_LIGHTING);
+}
+
+
+bool varjomode=false;
+int newframecounter = 0;
+
+void lisaaKolmio(int kolmio, int vertexi){
+	if(vertexit[vertexi].kolmiomaara<6){
+		vertexit[vertexi].kolmiot[vertexit[vertexi].kolmiomaara]=kolmio;
+		vertexit[vertexi].kolmiomaara++;
+	}
+
+}
+
+void alustaLippu(){
+  int i,j;
+
+  /*	Alustetaan kaikki vertexit antamalla niille sijainnit ja laskemalla niille
+		naapuriverteksit*/
+	//printf("Varataan muistia %i tavua\n",sizeof(vertex)*LIPUN_Y_VERTEXIT*LIPUN_X_VERTEXIT);
+  vertexit=(vertex*)malloc(sizeof(vertex)*LIPUN_Y_VERTEXIT*LIPUN_X_VERTEXIT);
+  for(i=0;i<LIPUN_Y_VERTEXIT;i++){
+    for(j=0;j<LIPUN_X_VERTEXIT;j++){
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].kolmiomaara = 0;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].position[0] =
+				0.2f+(float)j/(float)LIPUN_X_VERTEXIT*LIPUN_LEVEYS;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].position[1] =
+				TANGON_KORKEUS-0.3f-(float)i/(float)LIPUN_Y_VERTEXIT*LIPUN_KORKEUS;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].position[2]= 0;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].texCoord[0]=(float)j/(LIPUN_X_VERTEXIT-1);
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].texCoord[1]=(float)i/(LIPUN_Y_VERTEXIT-1);
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].force[0]=0;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].force[1]=0;
+      vertexit[(i*LIPUN_X_VERTEXIT)+j].force[2]=0;
+			vertexit[(i*LIPUN_X_VERTEXIT)+j].v[0]=0;
+			vertexit[(i*LIPUN_X_VERTEXIT)+j].v[1]=0;
+			vertexit[(i*LIPUN_X_VERTEXIT)+j].v[2]=0;
+//		  printf("vertex %i, %i pos:%i,%i,%i\n",j,i
+//																							,(int)vertexit[(i*LIPUN_X_VERTEXIT)+j].position[0]
+//																							,(int)vertexit[(i*LIPUN_X_VERTEXIT)+j].position[1]
+//																							,(int)vertexit[(i*LIPUN_X_VERTEXIT)+j].position[2]);
+		}
+	}
+	  /*	Naapurivertexej‰ varten k‰yd‰‰n l‰pi kaikki mahdollisuudet,
+			eli kulmat, reunat ja sisus.
+	  */
+  for(i=0;i<LIPUN_Y_VERTEXIT;i++){
+    for(j=0;j<LIPUN_X_VERTEXIT;j++){
+      if(i==0){
+				if(j==0){
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[1];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[LIPUN_X_VERTEXIT];
+	  
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=1;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[LIPUN_X_VERTEXIT+1];
+				}else if(j==LIPUN_X_VERTEXIT-1){
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[LIPUN_X_VERTEXIT-2];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[LIPUN_X_VERTEXIT*2-1];
+
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=1;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[LIPUN_X_VERTEXIT*2-2];
+				}else{
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=3;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[j-1];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[LIPUN_X_VERTEXIT+j];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[2]=&vertexit[j+1];
+	  
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[LIPUN_X_VERTEXIT+j-1];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[5]=&vertexit[LIPUN_X_VERTEXIT+j+1];
+				}
+			}else if(i==LIPUN_Y_VERTEXIT-1){
+				if(j==0){
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[(i*LIPUN_X_VERTEXIT)+1];
+	  
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=1;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+1];
+				}else if(j==LIPUN_X_VERTEXIT-1){
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[(i*LIPUN_X_VERTEXIT)+j-1];
+
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=1;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j-1];
+				}else{
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=3;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[(i*LIPUN_X_VERTEXIT)+j-1];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[2]=&vertexit[(i*LIPUN_X_VERTEXIT)+j+1];
+	  
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=2;
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j-1];
+					vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[5]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j+1];
+				}
+      }else if(j==0){
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=3;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[(i*LIPUN_X_VERTEXIT)+1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[2]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)];
+
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=2;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[5]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+1];
+      }else if(j==LIPUN_X_VERTEXIT-1){
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=3;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[(i*LIPUN_X_VERTEXIT)+j-1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[2]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j];
+			
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=2;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j-1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[5]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j-1];
+      }else{
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara=4;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[0]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[1]=&vertexit[(i*LIPUN_X_VERTEXIT)+j-1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[2]=&vertexit[(i*LIPUN_X_VERTEXIT)+j+1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[3]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j];
+				
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapureidenMaara2=4;
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[4]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j-1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[5]=&vertexit[((i-1)*LIPUN_X_VERTEXIT)+j+1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[6]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j-1];
+				vertexit[(i*LIPUN_X_VERTEXIT)+j].naapurit[7]=&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j+1];
+	
+      }
+    }
+  }
+
+
+  //alustetaan kaikki polygonit keksim‰ll‰ niille pointterit sopiviin vertexeihin
+  //tehd‰‰n t‰m‰ kaksi polygonia kerrallaan.
+  trianglet=(triangle*)malloc(sizeof(triangle)*(LIPUN_Y_VERTEXIT-1)*(LIPUN_X_VERTEXIT-1)*2);
+	int trix=(LIPUN_X_VERTEXIT-1)*2;
+	int triy=(LIPUN_Y_VERTEXIT-1);
+  for(i=0;i<LIPUN_Y_VERTEXIT-1;i++){
+    for(j=0;j<LIPUN_X_VERTEXIT-1;j++){
+		//ensimm‰inen kolmio
+      trianglet[(j*2)+(i*trix)].kulmat[0]=
+				&vertexit[(i*LIPUN_X_VERTEXIT)+j];
+      trianglet[(j*2)+(i*trix)].kulmat[1]=
+				&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j];
+      trianglet[(j*2)+(i*trix)].kulmat[2]=
+				&vertexit[(i*LIPUN_X_VERTEXIT)+j+1];
+      //ilmoitetaan vertexeille ett‰ ne on liitetty polygoniin
+      lisaaKolmio((j*2)+(i*trix),(i*LIPUN_X_VERTEXIT)+j);
+      lisaaKolmio((j*2)+(i*trix),((i+1)*LIPUN_X_VERTEXIT)+j);
+      lisaaKolmio((j*2)+(i*trix),(i*LIPUN_X_VERTEXIT)+j+1);
+	
+	  //toinen kolmio
+      trianglet[(j*2+1)+(i*trix)].kulmat[0]=
+				&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j+1];
+      trianglet[(j*2+1)+(i*trix)].kulmat[1]=
+				&vertexit[(i*LIPUN_X_VERTEXIT)+j+1];
+      trianglet[(j*2+1)+(i*trix)].kulmat[2]=
+				&vertexit[((i+1)*LIPUN_X_VERTEXIT)+j];
+	  //ilmoitetaan myˆs toisen kolmion vertexeille ett‰ ne on liitetty polygoniin
+      lisaaKolmio((j*2+1)+(i*trix),((i+1)*LIPUN_X_VERTEXIT)+j+1);
+      lisaaKolmio((j*2+1)+(i*trix),(i*LIPUN_X_VERTEXIT)+j+1);
+      lisaaKolmio((j*2+1)+(i*trix),((i+1)*LIPUN_X_VERTEXIT)+j);
+    }
+  }
+
+}
+
+
+
+/* idleFuncina toimiva p‰‰luuppi */
+GLvoid runGL(GLvoid){
+	boolean ready=false;
+	framecounter=(int)calculatefps*currenttime/1000.0;
+	int newframecounter=framecounter;
+	while(!ready){
+		processEvents();
+		if(entterpressed || escpressed){
+			entterpressed=false;
+			escpressed=false;
+			ready=true;
+		}
+		if(!ready){
+			do{
+				currenttime=SDL_GetTicks()-starttime;
+				newframecounter=calculatefps*currenttime/1000.0;
+				if(oldframecounter==newframecounter) SDL_Delay(1);
+			}	while (oldframecounter==newframecounter);
+
+			int skipframes=newframecounter-oldframecounter;
+			oldframecounter=newframecounter;
+			for(;skipframes>0;skipframes--){
+				framecounter++;
+				calculate(framecounter);
+			}
+		  Display();
+			framesdrawn++;
+		}
+	}
+}
+
+
+
+/*	Alustetaan Opengl ja tarvittavat muut arvot
+	ja pistet‰‰n ohjelma pyˆrim‰‰n */
+int AlotaLippu()
+{
+   Init(); /* l‰hinn‰ opengl:‰n alustamista */
+   starttime = SDL_GetTicks();
+   alustaLippu();
+
+	 calculatefps=150;
+   
+   runGL();
+	 calculatefps=sets->fps;
+   return 0;
+}
+
+
+void luoDisplayListat(){
+	GLUquadricObj *temp;
+	int i;
+
+	glGenLists(150);
+	glNewList(MAA, GL_COMPILE);
+	  drawGround();
+	glEndList();
+	glNewList(TANKO, GL_COMPILE);
+	  drawPole();
+	glEndList();
+
+	glNewList(SIENI2, GL_COMPILE);
+	  glPushMatrix();
+			temp=gluNewQuadric();
+			glPushMatrix();
+				glColor4f(0.8,0.8,0.8,0.5);
+				glRotatef(-90,1,0,0);
+				gluCylinder(temp,0.1,0.1,1,5+2*sets->detail,1+0*sets->detail);
+			glPopMatrix();
+			glTranslatef(0,1,0);
+			glPushMatrix();
+				glColor4f(0.8,0.1,0.1,0.5);
+				glScalef(1,0.25,1);
+				gluSphere(temp,0.5,8+5*sets->detail,5+3*sets->detail);
+			glPopMatrix();
+			glPushMatrix();
+				glColor4f(0.8,0.9,0.9,0.5);
+				glTranslatef(0.25,0.09,-0.1);
+				gluSphere(temp,0.075,4+2*sets->detail,3+1*sets->detail);
+				glTranslatef(-0.1,0,0.35);
+				gluSphere(temp,0.075,4+2*sets->detail,3+1*sets->detail);
+				glTranslatef(-0.2,0,-0.1);
+				gluSphere(temp,0.075,4+2*sets->detail,3+1*sets->detail);
+				glTranslatef(0.05,0, -0.15);
+				gluSphere(temp,0.075,4+2*sets->detail,3+1*sets->detail);
+				glTranslatef(-0.15,0, -0.1);
+				gluSphere(temp,0.075,4+2*sets->detail,3+1*sets->detail);
+			glPopMatrix();
+			gluDeleteQuadric(temp);
+	  glPopMatrix();
+	glEndList();
+
+	glNewList(KUKKA5, GL_COMPILE);
+	  glPushMatrix();
+	  temp=gluNewQuadric();
+		glPushMatrix();
+			glColor4f(0.1,0.8,0.1,0.5);
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.075,0.075,1,5+2*sets->detail,1+0*sets->detail);
+		glPopMatrix();
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glColor4f(0.1,0.1,0.8,0.5);
+			glScalef(1,0.75,1);
+			gluSphere(temp,0.25,6+2*sets->detail,5+2*sets->detail);
+		glPopMatrix();
+		glColor4f(0.7,0.3,0.3,0.5);
+		for(i=0;i<6;i++){
+			glPushMatrix();
+				glRotatef(i*60,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(25,1,0,0);
+				glScalef(0.5,0.25,1);
+				gluSphere(temp,0.4,6+2*sets->detail,4+2*sets->detail);
+			glPopMatrix();
+		}
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(KUKKA22, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		glPushMatrix();
+			glColor4f(0.1,0.8,0.1,0.5);
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.075,0.075,1,5+1*sets->detail,1+0*sets->detail);
+		glPopMatrix();
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glColor4f(0.8,0.2,0.2,0.5);
+			glScalef(1,0.75,1);
+			gluSphere(temp,0.25,6+3*sets->detail,5+2*sets->detail);
+		glPopMatrix();
+		glColor4f(0.3,0.3,0.7,0.5);
+		for(i=0;i<6;i++){
+			glPushMatrix();
+				glRotatef(i*60,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(25,1,0,0);
+				glScalef(0.5,0.25,1);
+				gluSphere(temp,0.4,6+3*sets->detail,4+3*sets->detail);
+			glPopMatrix();
+		}
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(KUKKA33, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		glPushMatrix();
+			glColor4f(0.1,0.8,0.1,0.5);
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.05,0.05,1,5+2*sets->detail,1+0*sets->detail);
+		glPopMatrix();
+		glColor4f(0.1,0.6,0.1,0.5);
+		for(i=0;i<3;i++){
+			glPushMatrix();
+				glRotatef(i*120+30,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(45,1,0,0);
+				glScalef(0.5,0.15,1);
+				gluSphere(temp,0.6,5+3*sets->detail,3+2*sets->detail);
+			glPopMatrix();
+		}
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glColor4f(0.8,0.2,0.8,0.5);
+			gluSphere(temp,0.25,5+3*sets->detail,4+3*sets->detail);
+			glColor4f(0.2,0.2,0.8,0.5);
+			glScalef(0.2,0.2,1);
+			gluSphere(temp,0.45,4+2*sets->detail,3+2*sets->detail);
+			glScalef(5,1,0.2);
+			gluSphere(temp,0.45,4+2*sets->detail,3+2*sets->detail);
+			glScalef(0.2,5,0.2);
+			gluSphere(temp,0.45,4+2*sets->detail,3+2*sets->detail);
+		glPopMatrix();
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(KUKKA44, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		glPushMatrix();
+			glColor4f(0.1,0.8,0.1,0.5);
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.05,0.05,1,5+2*sets->detail,1+0*sets->detail);
+		glPopMatrix();
+		glColor4f(0.1,0.6,0.1,0.5);
+		for(i=0;i<3;i++){
+			glPushMatrix();
+				glRotatef(i*120+30,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(45,1,0,0);
+				glScalef(0.5,0.15,1);
+				gluSphere(temp,0.6,5+3*sets->detail,3+2*sets->detail);
+			glPopMatrix();
+		}
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glScalef(1,0.2,1);
+			glColor4f(0.4,0.4,0.10,0.5);
+			gluSphere(temp,0.5,8+5*sets->detail,5+3*sets->detail);
+			glScalef(1,5,1);
+			glColor4f(1.0,0.75,0.4,0.5);
+			gluSphere(temp,0.2,5+2*sets->detail,4+2*sets->detail);
+		glPopMatrix();
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(VARJOSIENI, GL_COMPILE);
+	  glPushMatrix();
+		temp=gluNewQuadric();
+		glPushMatrix();
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.1,0.1,1,5,1);
+		glPopMatrix();
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glRotatef(-90,1,0,0);
+			gluDisk(temp, 0, 0.5, 8+3*sets->detail, 1);
+		glPopMatrix();
+		gluDeleteQuadric(temp);
+	  glPopMatrix();
+	glEndList();
+
+	glNewList(VARJOKUKKA, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		glPushMatrix();
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.075,0.075,1,5,1);
+		glPopMatrix();
+		glTranslatef(0,1,0);
+		for(i=0;i<6;i++){
+			glPushMatrix();
+				glRotatef(i*60,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(25,1,0,0);
+				glRotatef(-90,1,0,0);
+				glScalef(0.5,1,1);
+				gluDisk(temp,0,0.5,8+3*sets->detail,1);
+			glPopMatrix();
+		}
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(VARJOKUKKA2, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		glPushMatrix();
+			glRotatef(-90,1,0,0);
+			gluCylinder(temp,0.075,0.075,1,5,1);
+		glPopMatrix();
+		glTranslatef(0,1,0);
+		for(i=0;i<6;i++){
+			glPushMatrix();
+				glRotatef(i*60,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(25,1,0,0);
+				glRotatef(-90,1,0,0);
+				glScalef(0.5,1,1);
+				gluDisk(temp,0,0.5,8+3*sets->detail,1);
+			glPopMatrix();
+		}
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(VARJOKUKKA3, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		for(i=0;i<3;i++){
+			glPushMatrix();
+				glRotatef(i*120+30,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(45,1,0,0);
+				glRotatef(-90,1,0,0);
+				gluDisk(temp,0,0.6,3,1);
+			glPopMatrix();
+		}
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glRotatef(-90,1,0,0);
+			gluDisk(temp,0,0.25,6+3*sets->detail,1);
+			glScalef(1,0.2,1.0);
+			gluDisk(temp,0,0.45,4,1);
+			glRotatef(-90,0,1,0);
+			glScalef(0.2,5,1);
+			gluDisk(temp,0,0.45,4,1);
+		glPopMatrix();
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+	glNewList(VARJOKUKKA4, GL_COMPILE);
+	  temp=gluNewQuadric();
+	  glPushMatrix();
+		for(i=0;i<3;i++){
+			glPushMatrix();
+				glRotatef(i*120+30,0,1,0);
+				glTranslatef(0,0.05,-0.25);
+				glRotatef(45,1,0,0);
+				glRotatef(-90,1,0,0);
+				gluDisk(temp,0,0.6,3,1);
+			glPopMatrix();
+		}
+		glTranslatef(0,1,0);
+		glPushMatrix();
+			glScalef(1,0.2,1);
+			glRotatef(-90,1,0,0);
+			gluDisk(temp,0,0.5,8+3*sets->detail,1);
+		glPopMatrix();
+	  glPopMatrix();
+	  gluDeleteQuadric(temp);
+	glEndList();
+
+
+	glNewList(NUOLI2, GL_COMPILE);
+	  glDisable(GL_LIGHTING);
+	  glColor3f(0.0,0.0,0.0);
+	  glBegin(GL_LINES);
+	    glVertex3f(0.0,17.0,0.0);
+	    glVertex3f(0.0,17.0,1.0);
+	    glColor3f(0.0,0.0,0.0);
+	    glVertex3f(0.0,17.0,1.0);
+	    glVertex3f(-0.2,17.0,0.8);
+	    glVertex3f(0.0,17.0,1.0);
+	    glVertex3f(0.2,17.0,0.8);
+	  glEnd();
+	  glEnable(GL_LIGHTING);
+	glEndList();
+}
+
+void Reshape( int width, int height )
+{
+  screenwidth = width;
+  screenheight = height;
+  glViewport(0, 0, screenwidth , screenheight);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(PERSPEKTIIVI, 1.0, 0.1, 100.0);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+}
+
+
+void Display( void )
+{
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	Reshape(screenwidth, screenheight);
+//  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  draw();
+  glFlush();
+	SDL_GL_SwapBuffers();
+}
+
+
+
+
+int texturecount=5;
+GLuint texturet[5]; //osoitteet kaikkiin tekstuureihin
+
+GLfloat light0ambient[] = {0.2,0.2,0.2,1.0};
+GLfloat light0diffuse[] = {0.9,0.9,0.9,1.0};
+GLfloat light0specular[] = {1.0,1.0,1.0,1.0};
+GLfloat light0position[] = {7.0,10.0,0.0,0.0};
+
+GLfloat one[] = {1.0,1.0,1.0,1.0};
+GLfloat zero[] = {0.0,0.0,0.0,0.0};
+
+
+
+void Init( void )
+{
+  glLightfv(GL_LIGHT0, GL_AMBIENT, light0ambient);
+  glLightfv(GL_LIGHT0, GL_DIFFUSE, light0diffuse);
+  glLightfv(GL_LIGHT0, GL_SPECULAR, light0specular);
+  
+  glEnable(GL_DEPTH_TEST);
+  glDepthRange(0.0, 30.0);
+  glShadeModel(GL_SMOOTH);
+  glClearColor(0.4,0.4,0.8,1.0);
+
+  glEnable(GL_LIGHTING);
+
+  glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+  glEnable(GL_COLOR_MATERIAL);
+
+  glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE);
+    
+  glGenTextures(texturecount, &texturet[0]);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE,1);
+//	detail=sets->detail;
+	LoadGLTextures();
+	setLists();
+  loadTextures();
+  luoDisplayListat();
+}
+
+
+void loadTexture(char *filename, GLuint *texture){
+
+
+		SDL_Surface *image[1];
+		image[0]=NULL;
+
+		image[0]=IMG_Load(filename);
+		glGenTextures(1, texture);		
+		glBindTexture(GL_TEXTURE_2D, *texture);
+ 		glTexImage2D(GL_TEXTURE_2D, 0, 3, image[0]->w, image[0]->h, 0, GL_RGB, GL_UNSIGNED_BYTE, image[0]->pixels);
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);	
+		glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);	
+		SDL_FreeSurface(image[0]);
+
+		
+
+}
+
+
+void loadTextures(){
+#ifdef WIN32
+  loadTexture("textures\\ground.png", &texturet[0]);
+  loadTexture("textures\\alkukuva.png",  &texturet[1]);
+//  loadTexture("textures\\suomi.png",  &texturet[1]);
+#else
+  loadTexture("textures/ground.png", &texturet[0]);
+  loadTexture("textures/alkukuva.png",  &texturet[1]);
+#endif
+}
