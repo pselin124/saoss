@@ -17,6 +17,9 @@ public sealed class ParticleSystem
         _particles = [.. Enumerable.Range(0, 1000 + (detail * 500)).Select(_ => new Particle())];
     }
 
+    /// <summary>Number of slots in the pool [sirpaleita].</summary>
+    public int Capacity => _particles.Length;
+
     /// <summary>
     /// Fills up to <paramref name="count"/> free slots, calling <paramref name="initialize"/> for each one.
     /// </summary>

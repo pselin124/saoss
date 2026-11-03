@@ -62,8 +62,9 @@ public sealed class GameScreen : IScreen, IDisposable
             _inputs[i].AfterStep(issued[i], humans[i].Controls);
         }
 
-        _state.Update(_world);
+        // Like the original, particles spawned this tick already move once at the end of it.
         _ships.Update(_world, _state);
+        _state.Update(_world);
     }
 
     /// <inheritdoc/>

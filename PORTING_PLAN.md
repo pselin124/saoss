@@ -117,7 +117,13 @@ Each phase ends with a build that compiles and runs.
    - Follow-ups for later phases:
      - The Moth special clears the held special button in the original. The input layer must make specials trigger on key press, not while held.
      - Effects (debris, sparks, exhaust) are `EffectEvent`s whose docs list the original particle parameters, to be drawn in phase 3.
-3. **Rendering**: MeshBuilder, camera, background/stars/planet, then ship models 0–23 (compare against the reference), effects, and HUD. Result: one human vs. idle targets is playable.
+3. **Rendering** (done):
+   - 3a: an OpenGL 1.x emulation layer (`Rendering/Legacy/LegacyGl`): matrix stacks, immediate mode, display lists, GLU quadrics with Mesa's tessellation, and fixed-function lighting computed on the CPU (point lights, specular, color material), batched to MonoGame. This lets the original drawing code be translated call by call.
+   - Scene (`drawFrame`): camera, galaxies, stars incl. the "THP" letters, planet, asteroids, pickups, border stars and flowers, particles.
+   - 3b: all 24 ship models (`aluspiirto.cpp`, `Alus::piirra`); developer gallery with `Saoss.exe --ship-gallery`.
+   - 3c: projectiles, slime, beams, exhaust trails, respawn sparks, thrust and damage particles, explosions, all weapon effects, HUD.
+   - Result: one human against idle ships is playable from Main menu > Local Game.
+   - Left for later phases: game-mode markers and HUD (phase 4), credits line in the HUD, nicknames (phase 6), beam line width (MonoGame has no wide lines).
 4. **AI + game modes + local game**: AI pilot, all 5 modes including flag cloth and mushrooms, 4-player keyboard, results screen.
 5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
 6. **Networking**: protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
