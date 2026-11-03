@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Saoss.Core;
+using Saoss.Core.Simulation;
 using Saoss.Game.Input;
 using Saoss.Game.Rendering;
 using Saoss.Game.Screens;
@@ -44,7 +45,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
-        _screen = new MainMenuScreen(GraphicsDevice, _assets, Exit);
+        ShowMainMenu();
     }
 
     /// <inheritdoc/>
@@ -67,6 +68,30 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     {
         _screen?.Draw();
         base.Draw(gameTime);
+    }
+
+    private void ShowScreen(IScreen screen)
+    {
+        (_screen as IDisposable)?.Dispose();
+        _screen = screen;
+    }
+
+    private void ShowMainMenu() => ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, StartLocalGame));
+
+    // Until the local game menu is ported: one human against idle ships, like the original default settings.
+    private void StartLocalGame()
+    {
+        var settings = new MatchSettings
+        {
+            Players =
+            [
+                new PlayerSetup(Team: 0, IsHuman: true),
+                new PlayerSetup(Team: 1, IsHuman: false),
+                new PlayerSetup(Team: 2, IsHuman: false),
+                new PlayerSetup(Team: 3, IsHuman: false),
+            ],
+        };
+        ShowScreen(new GameScreen(GraphicsDevice, settings, Environment.TickCount, ShowMainMenu));
     }
 
     private void OnClientSizeChanged(object? sender, EventArgs e)

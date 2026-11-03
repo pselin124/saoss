@@ -12,6 +12,7 @@ namespace Saoss.Game.Screens;
 /// </summary>
 public sealed class MainMenuScreen : IScreen, IDisposable
 {
+    private const int LocalGameIndex = 0;
     private const int QuitIndex = 4;
     private const float ArrowSpinDegreesPerTick = 2.5f;
 
@@ -38,17 +39,19 @@ public sealed class MainMenuScreen : IScreen, IDisposable
     private readonly GraphicsDevice _graphicsDevice;
     private readonly GameAssets _assets;
     private readonly Action _quit;
+    private readonly Action _startLocalGame;
     private readonly BasicEffect _effect;
     private readonly VertexPositionColorTexture[] _quad = new VertexPositionColorTexture[6];
     private int _selection;
     private float _arrowSpinDegrees;
 
-    /// <summary>Creates the menu. <paramref name="quit"/> is called when the player chooses Quit.</summary>
-    public MainMenuScreen(GraphicsDevice graphicsDevice, GameAssets assets, Action quit)
+    /// <summary>Creates the menu. The callbacks run when the player chooses Quit or Local Game.</summary>
+    public MainMenuScreen(GraphicsDevice graphicsDevice, GameAssets assets, Action quit, Action startLocalGame)
     {
         _graphicsDevice = graphicsDevice;
         _assets = assets;
         _quit = quit;
+        _startLocalGame = startLocalGame;
         _effect = new BasicEffect(graphicsDevice);
     }
 
@@ -77,6 +80,10 @@ public sealed class MainMenuScreen : IScreen, IDisposable
         else if (keyboard.WasPressed(Keys.Enter) && _selection == QuitIndex)
         {
             _quit();
+        }
+        else if (keyboard.WasPressed(Keys.Enter) && _selection == LocalGameIndex)
+        {
+            _startLocalGame();
         }
     }
 
