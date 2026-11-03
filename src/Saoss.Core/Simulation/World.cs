@@ -69,7 +69,7 @@ public sealed class World
                 ShipMovement.Update(ship, this);
                 behavior.UpdatePrimaryProjectiles(ship, this);
                 behavior.UpdateSpecialProjectiles(ship, this);
-                behavior.UpdateProjectileClashes(ship, this);
+                ProjectileClashes.Update(ship, this);
             }
         }
 

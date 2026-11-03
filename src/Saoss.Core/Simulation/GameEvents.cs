@@ -45,3 +45,19 @@ public sealed record ShipRespawning(int ShipIndex) : GameEvent;
 
 /// <summary>An asteroid broke up at the given position.</summary>
 public sealed record AsteroidExploded(float X, float Y) : GameEvent;
+
+/// <summary>
+/// Purely visual effects requested by weapons. Each value documents the particles the original spawned,
+/// so the presentation layer can reproduce them.
+/// </summary>
+public enum EffectKind
+{
+    /// <summary>
+    /// Tringu or Trek shot hit a ship. Original: 150 + 50 * detail sparks at the target, speed up to 0.2 in a disc
+    /// plus the shot velocity, life 25-75 of max 75, size 0-0.6, red 0.5-2.5, green and blue 0-1.
+    /// </summary>
+    HeavyShotImpact,
+}
+
+/// <summary>A visual effect at a position, optionally with a velocity it inherits.</summary>
+public sealed record EffectEvent(EffectKind Kind, float X, float Y, float VelocityX = 0, float VelocityY = 0) : GameEvent;
