@@ -63,6 +63,28 @@ public static class Combat
         }
     }
 
+    /// <summary>
+    /// Planet effect used by several special-cased weapons: like <see cref="ApplyPlanet"/>, but gravity also pulls a
+    /// projectile that just hit the planet. Returns whether it hit the planet.
+    /// </summary>
+    public static bool ApplyPlanetAndPull(Projectile projectile)
+    {
+        var distanceSquared = Square(projectile.X) + Square(projectile.Y);
+        var hitPlanet = distanceSquared < PlanetRadiusSquared;
+        if (hitPlanet)
+        {
+            projectile.Lifetime = 0;
+        }
+
+        if (distanceSquared < ProjectileGravityRangeSquared)
+        {
+            projectile.VelocityX -= projectile.X / distanceSquared * GameConstants.ProjectileGravity;
+            projectile.VelocityY -= projectile.Y / distanceSquared * GameConstants.ProjectileGravity;
+        }
+
+        return hitPlanet;
+    }
+
     /// <summary>Returns the first free slot among the first <paramref name="count"/> entries, or null.</summary>
     public static Projectile? FreeSlot(Projectile[] pool, int count)
     {

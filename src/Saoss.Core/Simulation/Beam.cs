@@ -38,6 +38,19 @@ public sealed class Beam
     /// <summary>Whether the beam is visible.</summary>
     public bool IsActive => Lifetime > 0;
 
+    /// <summary>Shows the beam between two points; the velocity is left unchanged.</summary>
+    public void Set(float x1, float y1, float x2, float y2, float red, float green, float blue, int lifetime)
+    {
+        X1 = x1;
+        Y1 = y1;
+        X2 = x2;
+        Y2 = y2;
+        Red = red;
+        Green = green;
+        Blue = blue;
+        Lifetime = lifetime;
+    }
+
     /// <summary>Moves the beam and counts down its lifetime [laskeViivat].</summary>
     public void Update()
     {

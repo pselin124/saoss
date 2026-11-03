@@ -53,7 +53,7 @@ public sealed class RolluBehavior : ShipBehavior
             projectile.Lifetime--;
             projectile.X += projectile.VelocityX;
             projectile.Y += projectile.VelocityY;
-            ApplyPlanet(projectile);
+            Combat.ApplyPlanetAndPull(projectile);
 
             var isBomb = i == 0;
             if (isBomb)
@@ -146,30 +146,11 @@ public sealed class RolluBehavior : ShipBehavior
                 leech.Angle = (MathF.Atan2(dy, dx) * 180f / MathF.PI) - 180f;
             }
 
-            if (ApplyPlanet(leech))
+            if (Combat.ApplyPlanetAndPull(leech))
             {
                 world.Emit(new EffectEvent(EffectKind.LeechPlanetImpact, leech.X, leech.Y));
             }
         }
-    }
-
-    // Unlike the standard rule, gravity also pulls a projectile that just hit the planet.
-    private static bool ApplyPlanet(Projectile projectile)
-    {
-        var distanceSquared = Combat.Square(projectile.X) + Combat.Square(projectile.Y);
-        var hitPlanet = distanceSquared < Combat.PlanetRadiusSquared;
-        if (hitPlanet)
-        {
-            projectile.Lifetime = 0;
-        }
-
-        if (distanceSquared < Combat.ProjectileGravityRangeSquared)
-        {
-            projectile.VelocityX -= projectile.X / distanceSquared * GameConstants.ProjectileGravity;
-            projectile.VelocityY -= projectile.Y / distanceSquared * GameConstants.ProjectileGravity;
-        }
-
-        return hitPlanet;
     }
 
     private static void KeepInArena(Projectile bomb)

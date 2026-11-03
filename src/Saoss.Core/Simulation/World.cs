@@ -127,13 +127,13 @@ public sealed class World
                 continue;
             }
 
+            // Every ship touching the pickup in the same tick gets the hit point.
             foreach (var ship in _ships)
             {
                 if (ship.IsInGame && ship.IsAlive && Distance(pickup.X - ship.X, pickup.Y - ship.Y) < ship.Definition.Radius)
                 {
                     ship.Energy++;
                     pickup.Lifetime = 0;
-                    break;
                 }
             }
         }

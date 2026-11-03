@@ -64,6 +64,13 @@ public enum EffectKind
     /// size not set, red, green and blue each 0-1.
     /// </summary>
     LeechPlanetImpact,
+
+    /// <summary>
+    /// A Rayska drifting mine hit a ship. Original: 150 + 50 * detail sparks at the target, each velocity component
+    /// random(200) / 1000 - 0.1 (rerolled until the speed is at most 0.1) plus the mine velocity, no z motion,
+    /// life 25-75 of max 75, size 0-0.4, grey: red 0.2-1.45 with green and blue equal to red.
+    /// </summary>
+    DriftMineImpact,
 }
 
 /// <summary>A visual effect at a position, optionally with a velocity it inherits.</summary>
