@@ -104,7 +104,12 @@ Each phase ends with a build that compiles and runs.
    - The original runs. Reference screenshots are in `docs/reference/`.
    - Assets are copied and renamed to English as each feature is ported, not all up front. XM to OGG conversion happens in phase 5.
 1. **Skeleton** (done): `Saoss.slnx`, Core/Game/Tests projects, central package versions, warnings as errors, `.editorconfig`. The main menu is ported: title picture, bitmap font, 3D arrows, `MeshBuilder` with a GL-style matrix stack and `gluSphere`.
-2. **Core simulation**: constants, ship definitions (all 24 stat blocks), ship movement and physics, weapons and special weapons, projectiles, collisions, death and respawn, planet/black hole/asteroids. Unit tests for each part.
+2. **Core simulation**, in sub-steps:
+   - 2a (done): ship catalog for all 24 types, generated from `Alustuksia.cpp` by a script.
+   - 2b (done): `World` step, movement (`liiku`), planet gravity and impacts, ship and asteroid collisions, health pickups, death and respawn, presentation events. Visual-only code (debris, exhaust, spawn sparks) moves to the Game layer.
+   - 2c: primary weapons (`ammu`, `liikutaPadit`, `tarkistaHajosikoPadit`), one behavior class per ship type.
+   - 2d: special weapons (`ease`, `liikutaePadit`).
+   - Every ship's weapon and special type equals its ship index, so behaviors are keyed by `ShipType`.
 3. **Rendering**: MeshBuilder, camera, background/stars/planet, then ship models 0–23 (compare against the reference), effects, and HUD. Result: one human vs. idle targets is playable.
 4. **AI + game modes + local game**: AI pilot, all 5 modes including flag cloth and mushrooms, 4-player keyboard, results screen.
 5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
