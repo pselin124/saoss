@@ -25,6 +25,10 @@ public static class ShipBehaviors
     private static readonly ShipBehavior PowerVacuum = new PowerVacuumBehavior();
     private static readonly ShipBehavior Bulldog = new BulldogBehavior();
     private static readonly ShipBehavior Wiiii = new WiiiiBehavior();
+    private static readonly ShipBehavior Elephant = new ElephantBehavior();
+    private static readonly ShipBehavior Cubix = new CubixBehavior();
+    private static readonly ShipBehavior Electra = new ElectraBehavior();
+    private static readonly ShipBehavior Tongu = new TonguBehavior();
 
     /// <summary>Returns the behavior for the ship type.</summary>
     public static ShipBehavior For(ShipType type) => type switch
@@ -45,6 +49,10 @@ public static class ShipBehaviors
         ShipType.PowerVacuum => PowerVacuum,
         ShipType.Bulldog => Bulldog,
         ShipType.Wiiii => Wiiii,
+        ShipType.Elephant => Elephant,
+        ShipType.Cubix => Cubix,
+        ShipType.Electra => Electra,
+        ShipType.Tongu => Tongu,
         _ => Standard,
     };
 }
