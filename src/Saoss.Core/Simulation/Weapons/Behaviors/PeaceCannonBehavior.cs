@@ -7,8 +7,6 @@ namespace Saoss.Core.Simulation.Weapons.Behaviors;
 public sealed class PeaceCannonBehavior : ShipBehavior
 {
     private const float BeamStartDistance = 1.6f;
-    private const int BeamSamples = 10;
-    private const float BeamHitMargin = 0.2f;
     private const float DropDistance = 1.1f;
     private const float BoundsPush = 0.02f;
     private const float HoleGravity = 0.08f;
@@ -48,7 +46,7 @@ public sealed class PeaceCannonBehavior : ShipBehavior
         var backward = MathF.Atan2(beam.Y1 - beam.Y2, beam.X1 - beam.X2);
         foreach (var other in world.Ships.Where(s => s.IsInGame && s.Index != ship.Index))
         {
-            if (other.IsAlive && Crosses(beam, backward, weapon.Radius, other.X, other.Y, other.Definition.Radius))
+            if (other.IsAlive && Combat.BeamCrosses(beam, backward, weapon.Radius, other.X, other.Y, other.Definition.Radius))
             {
                 other.Energy -= weapon.Damage;
             }
@@ -122,31 +120,13 @@ public sealed class PeaceCannonBehavior : ShipBehavior
         }
     }
 
-    // Samples the beam from its start point forward; the samples reach a bit past the beam's drawn end.
-    private static bool Crosses(Beam beam, float backward, float length, float x, float y, float radius)
-    {
-        var reachSquared = Combat.Square(BeamHitMargin + (radius * Combat.RadiusScale));
-        for (var j = 0; j < BeamSamples; j++)
-        {
-            var offset = (float)j / BeamSamples * length;
-            var dx = x - beam.X1 + (MathF.Cos(backward) * offset);
-            var dy = y - beam.Y1 + (MathF.Sin(backward) * offset);
-            if ((dx * dx) + (dy * dy) < reachSquared)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static void Burn(Ship ship, Beam beam, float backward, Projectile[] pool, int count, float radius)
     {
         var weapon = ship.Definition.Primary;
         for (var i = 0; i < count; i++)
         {
             var projectile = pool[i];
-            if (projectile.IsActive && Crosses(beam, backward, weapon.Radius, projectile.X, projectile.Y, radius))
+            if (projectile.IsActive && Combat.BeamCrosses(beam, backward, weapon.Radius, projectile.X, projectile.Y, radius))
             {
                 Weaken(projectile, weapon.Damage);
             }

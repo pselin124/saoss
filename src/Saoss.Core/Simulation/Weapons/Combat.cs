@@ -17,6 +17,9 @@ public static class Combat
     /// <summary>Projectiles closer to the center than this squared distance feel planet gravity [gravitysadetoiseen].</summary>
     public const float ProjectileGravityRangeSquared = 1600f;
 
+    private const int BeamSamples = 10;
+    private const float BeamHitMargin = 0.2f;
+
     /// <summary>Ships that can currently be hit: in the game and flying.</summary>
     public static IEnumerable<Ship> Targets(World world) => world.Ships.Where(s => s.IsInGame && s.IsAlive);
 
@@ -116,6 +119,28 @@ public static class Combat
         projectile.VelocityY = (headingY * weapon.Speed) + ship.VelocityY;
         projectile.Angle = ship.Angle;
         projectile.Energy = weapon.ProjectileEnergy;
+    }
+
+    /// <summary>
+    /// Whether a circle touches a beam, sampled at 10 points from the beam's start along <paramref name="length"/>.
+    /// <paramref name="backward"/> is the angle from the beam's end to its start, as in the original; the samples may
+    /// reach past the drawn end.
+    /// </summary>
+    public static bool BeamCrosses(Beam beam, float backward, float length, float x, float y, float radius)
+    {
+        var reachSquared = Square(BeamHitMargin + (radius * RadiusScale));
+        for (var j = 0; j < BeamSamples; j++)
+        {
+            var offset = (float)j / BeamSamples * length;
+            var dx = x - beam.X1 + (MathF.Cos(backward) * offset);
+            var dy = y - beam.Y1 + (MathF.Sin(backward) * offset);
+            if ((dx * dx) + (dy * dy) < reachSquared)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Pushes the target by the projectile's velocity times the knockback factor.</summary>

@@ -71,6 +71,14 @@ public enum EffectKind
     /// life 25-75 of max 75, size 0-0.4, grey: red 0.2-1.45 with green and blue equal to red.
     /// </summary>
     DriftMineImpact,
+
+    /// <summary>
+    /// A Bulldog used its boost; the velocity is the ship's velocity after the boost. Original: 50 sparks at the ship
+    /// (offset by minus cos/sin of the heading taken as radians), each velocity component random(25) / 50 - 0.25
+    /// (rerolled until the speed squared is at most 0.015) plus 0.5-1.5 straight backward plus the ship velocity,
+    /// no z motion, life 50-150 of max 100, size 0.2-0.4, red 0.6-1.0, green and blue 0-0.2.
+    /// </summary>
+    BulldogBoostExhaust,
 }
 
 /// <summary>A visual effect at a position, optionally with a velocity it inherits.</summary>

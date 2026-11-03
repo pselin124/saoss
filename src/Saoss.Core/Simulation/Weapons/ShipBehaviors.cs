@@ -20,6 +20,11 @@ public static class ShipBehaviors
     private static readonly ShipBehavior Rayska = new RayskaBehavior();
     private static readonly ShipBehavior PeaceCannon = new PeaceCannonBehavior();
     private static readonly ShipBehavior Bloddu = new BlodduBehavior();
+    private static readonly ShipBehavior Shapperi = new ShapperiBehavior();
+    private static readonly ShipBehavior Moth = new MothBehavior();
+    private static readonly ShipBehavior PowerVacuum = new PowerVacuumBehavior();
+    private static readonly ShipBehavior Bulldog = new BulldogBehavior();
+    private static readonly ShipBehavior Wiiii = new WiiiiBehavior();
 
     /// <summary>Returns the behavior for the ship type.</summary>
     public static ShipBehavior For(ShipType type) => type switch
@@ -35,6 +40,11 @@ public static class ShipBehaviors
         ShipType.Rayska => Rayska,
         ShipType.PeaceCannon => PeaceCannon,
         ShipType.Bloddu => Bloddu,
+        ShipType.Shapperi => Shapperi,
+        ShipType.Moth => Moth,
+        ShipType.PowerVacuum => PowerVacuum,
+        ShipType.Bulldog => Bulldog,
+        ShipType.Wiiii => Wiiii,
         _ => Standard,
     };
 }

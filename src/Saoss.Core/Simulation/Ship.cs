@@ -18,6 +18,11 @@ public sealed class Ship
     private const int RespawnFireCooldown = 40;
     private const int RespawnSpecialCooldown = 20;
     private const float MinRespawnDistanceFromCenter = GameConstants.PlanetRadius * 10f;
+    private const int SlimeLifetime = 400;
+    private const float SlimeSpreadRoll = 1500f;
+    private const float SlimeSpreadDivisor = 1000f;
+    private const float SlimeRadiusScale = 0.785f;
+    private const float SlimeOffset = 0.75f;
 
     /// <summary>Creates an empty slot; call <see cref="Respawn"/> before the ship is used.</summary>
     public Ship(int index, int team, bool isHuman)
@@ -202,6 +207,24 @@ public sealed class Ship
         WeaponCharge = 0;
         WeaponCounter = 0;
         ResetTail();
+    }
+
+    /// <summary>
+    /// Sticks one slime blob at a random spot on the ship, unless it is already fully covered [lisaalima].
+    /// Slime never wears off; only a respawn clears it.
+    /// </summary>
+    public void AddSlime(GameRandom random)
+    {
+        if (SlimeCount >= GameConstants.MaxSlimes)
+        {
+            return;
+        }
+
+        var slime = Slimes[SlimeCount];
+        slime.Lifetime = SlimeLifetime;
+        slime.X = (random.Next(SlimeSpreadRoll) / SlimeSpreadDivisor * Definition.Radius * SlimeRadiusScale) - SlimeOffset;
+        slime.Y = (random.Next(SlimeSpreadRoll) / SlimeSpreadDivisor * Definition.Radius * SlimeRadiusScale) - SlimeOffset;
+        SlimeCount++;
     }
 
     /// <summary>Records the current position as the newest tail entry after shifting older ones back.</summary>
