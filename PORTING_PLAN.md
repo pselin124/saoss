@@ -107,9 +107,16 @@ Each phase ends with a build that compiles and runs.
 2. **Core simulation**, in sub-steps:
    - 2a (done): ship catalog for all 24 types, generated from `Alustuksia.cpp` by a script.
    - 2b (done): `World` step, movement (`liiku`), planet gravity and impacts, ship and asteroid collisions, health pickups, death and respawn, presentation events. Visual-only code (debris, exhaust, spawn sparks) moves to the Game layer.
-   - 2c: primary weapons (`ammu`, `liikutaPadit`, `tarkistaHajosikoPadit`), one behavior class per ship type.
-   - 2d: special weapons (`ease`, `liikutaePadit`).
+   - 2c (done): primary weapons (`ammu`, `liikutaPadit`), one behavior class per ship type, plus a generic port of projectile-vs-projectile clashes (`tarkistaHajosikoPadit`).
+   - 2d (done): special weapons (`ease`, `liikutaePadit`).
    - Every ship's weapon and special type equals its ship index, so behaviors are keyed by `ShipType`.
+   - Result: ~5,700 lines of C# in `Saoss.Core` and 102 tests, including a smoke test that flies every ship type for 600 ticks. Gameplay quirks of the original (e.g. damage applied twice) are kept and marked with comments.
+   - Deliberate changes from the original:
+     - Ships that are exploded or respawning cannot be hit and don't collide with asteroids or pick up health (the original let invisible wrecks absorb shots).
+     - A few loops that could overrun arrays or read uninitialised variables now stop safely.
+   - Follow-ups for later phases:
+     - The Moth special clears the held special button in the original. The input layer must make specials trigger on key press, not while held.
+     - Effects (debris, sparks, exhaust) are `EffectEvent`s whose docs list the original particle parameters, to be drawn in phase 3.
 3. **Rendering**: MeshBuilder, camera, background/stars/planet, then ship models 0–23 (compare against the reference), effects, and HUD. Result: one human vs. idle targets is playable.
 4. **AI + game modes + local game**: AI pilot, all 5 modes including flag cloth and mushrooms, 4-player keyboard, results screen.
 5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
