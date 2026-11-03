@@ -79,6 +79,13 @@ public enum EffectKind
     /// no z motion, life 50-150 of max 100, size 0.2-0.4, red 0.6-1.0, green and blue 0-0.2.
     /// </summary>
     BulldogBoostExhaust,
+
+    /// <summary>
+    /// A Popper mine exploded. Original: 200 + 50 * detail sparks at the mine, each velocity component
+    /// random(100) / 200 - 0.25 (rerolled until the speed squared is at most 0.0625), no z motion,
+    /// life 100-400 of max 400, size 0-0.7, red 0.5-1.0, green and blue 0-0.3.
+    /// </summary>
+    PopperMineExplosion,
 }
 
 /// <summary>A visual effect at a position, optionally with a velocity it inherits.</summary>

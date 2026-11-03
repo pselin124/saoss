@@ -143,6 +143,24 @@ public static class Combat
         return false;
     }
 
+    /// <summary>
+    /// Common special projectile hit: every ship it touches, including its owner and teammates, loses the special's
+    /// damage and is pushed, and the projectile is removed.
+    /// </summary>
+    public static void HitShipsWithSpecial(Ship owner, World world, Projectile projectile)
+    {
+        var special = owner.Definition.Special;
+        foreach (var target in Targets(world))
+        {
+            if (Touches(target, projectile, owner.Definition.Primary.Radius))
+            {
+                projectile.Lifetime = 0;
+                target.Energy -= special.Damage;
+                Knock(target, projectile, special.Knockback);
+            }
+        }
+    }
+
     /// <summary>Pushes the target by the projectile's velocity times the knockback factor.</summary>
     public static void Knock(Ship target, Projectile projectile, float knockback)
     {

@@ -29,6 +29,10 @@ public static class ShipBehaviors
     private static readonly ShipBehavior Cubix = new CubixBehavior();
     private static readonly ShipBehavior Electra = new ElectraBehavior();
     private static readonly ShipBehavior Tongu = new TonguBehavior();
+    private static readonly ShipBehavior SpaceTurtle = new SpaceTurtleBehavior();
+    private static readonly ShipBehavior StickInsect = new StickInsectBehavior();
+    private static readonly ShipBehavior StarWorm = new StarWormBehavior();
+    private static readonly ShipBehavior Popper = new PopperBehavior();
 
     /// <summary>Returns the behavior for the ship type.</summary>
     public static ShipBehavior For(ShipType type) => type switch
@@ -53,6 +57,10 @@ public static class ShipBehaviors
         ShipType.Cubix => Cubix,
         ShipType.Electra => Electra,
         ShipType.Tongu => Tongu,
+        ShipType.SpaceTurtle => SpaceTurtle,
+        ShipType.StickInsect => StickInsect,
+        ShipType.StarWorm => StarWorm,
+        ShipType.Popper => Popper,
         _ => Standard,
     };
 }
