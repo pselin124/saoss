@@ -32,6 +32,7 @@ public sealed class IntroScene : IDisposable
     private readonly GraphicsDevice _device;
     private readonly LegacyGl _gl;
     private readonly SceneTextures _textures;
+    private readonly Texture2D _flagTexture;
     private readonly IntroModels _models;
     private readonly GlText _text;
     private readonly IntroShips _ships;
@@ -50,6 +51,7 @@ public sealed class IntroScene : IDisposable
         _detail = detail;
         _gl = new LegacyGl(device);
         _textures = new SceneTextures(device);
+        _flagTexture = FlagTexture.Create(device);
         _models = new IntroModels(_gl, _textures.Ground, detail);
         _text = new GlText(_gl, _textures.Font);
         var shipModels = new ShipModels(_gl, new SharedModels(_gl, detail), detail);
@@ -115,6 +117,7 @@ public sealed class IntroScene : IDisposable
     {
         _gl.Dispose();
         _textures.Dispose();
+        _flagTexture.Dispose();
     }
 
     private void InitializeState()
@@ -183,14 +186,15 @@ public sealed class IntroScene : IDisposable
         gl.PopMatrix();
     }
 
-    // The title picture on the cloth, lit from both sides with the averaged vertex normals.
+    // The flag picture (FlagTexture, the original used the title picture slightly tinted green) on the cloth, lit from
+    // both sides with the averaged vertex normals.
     private void DrawFlag(ClothFlag flag)
     {
         var gl = _gl;
-        gl.Color(0.9f, 1.0f, 0.9f);
+        gl.Color(1.0f, 1.0f, 1.0f);
         gl.Enable(GlCapability.Texture2D);
         gl.TexEnv(GlTexEnv.Modulate);
-        gl.BindTexture(_textures.Title);
+        gl.BindTexture(_flagTexture);
         gl.LightModelTwoSide(true);
         EmitFlagTriangles(flag);
         gl.LightModelTwoSide(false);
@@ -334,7 +338,7 @@ public sealed class IntroScene : IDisposable
     {
         var gl = _gl;
         gl.TexEnv(GlTexEnv.Modulate);
-        gl.BindTexture(_textures.Title);
+        gl.BindTexture(_flagTexture);
         gl.LightModelTwoSide(true);
         gl.Disable(GlCapability.Texture2D);
         gl.Enable(GlCapability.CullFace);

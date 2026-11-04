@@ -4,18 +4,20 @@ using Saoss.Game.Rendering.Intro;
 namespace Saoss.Tests.Rendering;
 
 /// <summary>
-/// Tests the intro's cloth flag simulation (lippu.cpp alustaLippu and calculate).
+/// Tests the intro's cloth flag simulation (lippu.cpp alustaLippu and calculate, with stretch, rope and pole constraints).
 /// </summary>
 [TestClass]
 public sealed class ClothFlagTests
 {
     private const float Tolerance = 1e-5f;
-    // The cloth is pushed back to about 0.29 from the axis, not exactly (the visible pole is 0.17 thick).
-    private const float PoleClearance = 0.25f;
-    // Vertices closer to the axis than this are stuck to the pole (lippu.cpp pushes them out to 0.29 and stops them).
-    private const float OnPoleRadius = 0.3f;
-    // The cubic ties are slack, so the cloth's weight lets the corners sag about a unit from their points.
-    private const float AnchorReach = 1.5f;
+    // Below the knob the cloth is kept 0.23 from the pole's axis (the visible pole is 0.17 thick).
+    private const float PoleClearance = 0.22f;
+    // Vertices closer to the axis than this lie against the pole.
+    private const float OnPoleRadius = 0.25f;
+    // The ropes let the top corner hang up to 0.35 from its tie 0.3 below the knob and the bottom one a unit from its
+    // point; pushing the cloth off the pole can add a little.
+    private const float TopReach = 0.7f;
+    private const float BottomReach = 1.05f;
     private static readonly Vector3 TopAnchor = new(0, ClothFlag.PoleHeight, 0);
     private static readonly Vector3 BottomAnchor = new(0, 9.2f, 0);
 
@@ -48,22 +50,50 @@ public sealed class ClothFlagTests
     }
 
     [TestMethod]
-    public void Step_AfterCatchingOnThePole_ComesLooseAgain()
+    public void Step_NeverStaysWoundRoundThePole()
     {
-        // The cloth first catches on the pole about 26 seconds in. Evaluated in float precision it wound up round the
-        // pole for good there; with the original's double-precision arithmetic it is free again within two minutes.
-        const int CaughtFrame = 60 * 150;
-        const int DeadlineFrame = 120 * 150;
+        // The original stopped every vertex that touched the pole, so a wound flag could stay frozen there for good.
+        const int Seconds = 120;
+        const int FramesPerSecond = 150;
+        const int MaxWoundSeconds = 5;
         var flag = new ClothFlag();
 
-        var loose = false;
-        for (var frame = 1; frame <= DeadlineFrame && !loose; frame++)
+        var wound = 0;
+        var longestWound = 0;
+        for (var frame = 1; frame <= Seconds * FramesPerSecond; frame++)
         {
             flag.Step(frame);
-            loose = frame > CaughtFrame && flag.Positions.All(p => (p.X * p.X) + (p.Z * p.Z) > OnPoleRadius * OnPoleRadius);
+            if (frame % FramesPerSecond == 0)
+            {
+                var onPole = flag.Positions.Count(p => (p.X * p.X) + (p.Z * p.Z) < OnPoleRadius * OnPoleRadius);
+                wound = onPole > flag.Positions.Count / 3 ? wound + 1 : 0;
+                longestWound = Math.Max(longestWound, wound);
+            }
         }
 
-        Assert.IsTrue(loose);
+        Assert.IsTrue(longestWound < MaxWoundSeconds, $"Wound round the pole for {longestWound} s.");
+    }
+
+    [TestMethod]
+    public void Step_InAStorm_StaysTiedAndHardlyStretches()
+    {
+        // Five times the intro's strongest wind; the original's soft springs blew apart (NaN) under it. The flag is 6
+        // wide, and in the intro's own wind the original stretched it to reach 8.4 from the pole.
+        var storm = new Vector3(0.001f, 0, 0.0003f);
+        const float MaxReach = 8f;
+        var flag = new ClothFlag();
+
+        var reach = 0f;
+        for (var i = 0; i < 3000; i++)
+        {
+            flag.Step(storm);
+            reach = MathF.Max(reach, flag.Positions.Max(p => MathF.Sqrt((p.X * p.X) + (p.Z * p.Z))));
+        }
+
+        Assert.IsTrue(flag.Positions.All(IsFinite));
+        Assert.IsTrue(reach < MaxReach, $"The cloth reached {reach} from the pole.");
+        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.TopLeft], TopAnchor) < TopReach);
+        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.BottomLeft], BottomAnchor) < BottomReach);
     }
 
     [TestMethod]
@@ -75,13 +105,13 @@ public sealed class ClothFlagTests
         for (var frame = 1; frame <= 3000; frame++)
         {
             flag.Step(frame);
-            closest = MathF.Min(closest, flag.Positions.Min(p => MathF.Sqrt((p.X * p.X) + (p.Z * p.Z))));
+            closest = MathF.Min(closest, flag.Positions.Where(p => p.Y < ClothFlag.PoleHeight).Min(p => MathF.Sqrt((p.X * p.X) + (p.Z * p.Z))));
         }
 
         Assert.IsTrue(closest >= PoleClearance);
 
-        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.TopLeft], TopAnchor) < AnchorReach);
-        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.BottomLeft], BottomAnchor) < AnchorReach);
+        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.TopLeft], TopAnchor) < TopReach);
+        Assert.IsTrue(Vector3.Distance(flag.Positions[ClothFlag.BottomLeft], BottomAnchor) < BottomReach);
     }
 
     [TestMethod]

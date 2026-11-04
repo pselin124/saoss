@@ -6,7 +6,8 @@ namespace Saoss.Game.Rendering.Scene;
 /// <summary>
 /// All textures used by the game scene, loaded from Content/Textures or generated like the original.
 /// Each property notes the original texture slot (texture[n] in glapi.cpp) and file. Original slots
-/// that were never loaded (0, 1, 3, 7, 9-12, 24, 27, 32, 35-37) mean "no texture" and map to null.
+/// that were never loaded (0, 1, 3, 7, 9-12, 24, 27, 32, 35-37) mean "no texture" and map to null. The title
+/// picture (slot 31) is only the menus' background here (GameAssets); the intro flag has its own FlagTexture.
 /// </summary>
 public sealed class SceneTextures : IDisposable
 {
@@ -65,7 +66,6 @@ public sealed class SceneTextures : IDisposable
         Font = Load("font.png");
         Background2 = Load("background-2.png");
         Background3 = Load("background-3.png");
-        Title = Load("title-background.png");
         Shot15 = Load("shot-15.png");
         SpaceTurtle = Load("space-turtle.png");
         Special18 = Load("special-18.png");
@@ -138,9 +138,6 @@ public sealed class SceneTextures : IDisposable
 
     /// <summary>[texture[30]] tausta3.png.</summary>
     public Texture2D Background3 { get; }
-
-    /// <summary>[texture[31]] alkukuva.png, the title picture.</summary>
-    public Texture2D Title { get; }
 
     /// <summary>[texture[33]] pati15.png.</summary>
     public Texture2D Shot15 { get; }

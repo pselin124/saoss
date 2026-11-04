@@ -79,7 +79,7 @@ Principles:
 | 256-color mode | `mode256`, `*_256.png` textures | Not needed | **Drop** |
 | Text | Bitmap font `teksti.png`, Finnish/English UI | BitmapFont via SpriteBatch, English only | Translate all UI strings |
 | Starfield, planet, black hole, asteroids, small figures, trails, debris | Custom GL code | Ported per effect | Straightforward |
-| Game modes | Deathmatch, random-ship deathmatch, Flower Domination, Capture The Flower, Eat The Mushroom | Same, as `IGameMode` implementations | – || Intro scene | `lippu.cpp`: 3D title scene with cloth flag, flowers, mushrooms, planar shadows | Same scene in Game | Medium risk. It is the first thing the player sees |
+| Game modes | Deathmatch, random-ship deathmatch, Flower Domination, Capture The Flower, Eat The Mushroom | Same, as `IGameMode` implementations | – || Intro scene | `lippu.cpp`: 3D title scene with cloth flag, flowers, mushrooms, planar shadows | Same scene in Game. The flag's cloth gets stretch, rope and pole constraints and bending springs, and shows a painted Finnish-style flag with a ship instead of the title picture | Medium risk. It is the first thing the player sees |
 | Menus | Drawn in 3D: perspective text in the bitmap font, rotating arrow models, 4:3 title picture | Same approach (done for the main menu) | – |
 | Credits mode | "Start With 400 Credits" variants in the local game menu (ships cost credits) | Same | Not yet analyzed |
 | AI | `Player::ailiiku()` | `AiPilot` producing the same input flags as a human | Behavior parity is checked by watching games |

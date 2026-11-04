@@ -3,16 +3,18 @@ using Microsoft.Xna.Framework;
 namespace Saoss.Game.Rendering.Intro;
 
 /// <summary>
-/// The intro's waving flag, a port of the mass-spring cloth in lippu.cpp (<c>alustaLippu</c>, <c>calculate</c>):
+/// The intro's waving flag, based on the mass-spring cloth in lippu.cpp (<c>alustaLippu</c>, <c>calculate</c>):
 /// a grid of vertices joined by straight and diagonal springs, pulled by gravity and by wind on each triangle, with
-/// the left corners tied to the pole by cubic springs and every vertex kept outside the pole. One <see cref="Step(int)"/>
-/// is one original intro frame (150 per second).
+/// the left corners tied to the pole by cubic springs. One <see cref="Step(int)"/> is one original intro frame (150 per
+/// second).
 /// </summary>
 /// <remarks>
-/// The cloth is chaotic, and a flag wound tightly round the pole can stay frozen there for good (stopped vertices
-/// only move when a spring tugs them off the pole). Which way it goes depends on rounding, so the arithmetic follows
-/// the original's x87 build: values are stored as floats but every expression is evaluated in double precision. Done
-/// with float math instead, the flag winds up half a minute in and never comes loose.
+/// Additions to the original, which let the soft springs stretch far in strong wind (and blow apart in a storm) and
+/// froze every vertex touching the pole, so the flag could wind round it for good: weak bending springs over two grid
+/// steps for broad folds; after each step, edges are kept within 10% of their length, the corners within rope's
+/// reach of their tie points and the cloth outside the pole and its knob; and velocities are taken from the
+/// corrected motion, with friction while sliding on the pole. The original's arithmetic (float storage, double
+/// precision expressions as in its x87 build) is kept.
 /// </remarks>
 public sealed class ClothFlag
 {
@@ -41,8 +43,16 @@ public sealed class ClothFlag
     private const double AnchorSlack = 0.3;
     private const double AnchorStiffness = 0.2;
     private const double BottomAnchorExtraDrop = 1.3;
-    private const double PoleClearance = 0.3;
-    private const float PoleSnapRadius = 0.29f;
+    private const float BendStiffness = 0.04f;
+    private const float MaxStretch = 1.1f;
+    private const float HardMaxStretch = 1.25f;
+    private const int ConstraintPasses = 4;
+    private const float TopRopeLength = 0.35f;
+    private const float TopTieDrop = 0.3f;
+    private const float BottomRopeLength = 1.0f;
+    private const float PoleContactRadius = 0.23f;
+    private const float KnobContactRadius = 0.38f;
+    private const float PoleFriction = 0.1f;
     private const int MaxTrianglesPerVertex = 6;
     private const float WindAngleFrameOffset = 600f;
     private const float WindAngleFramePeriod = 400f;
@@ -53,8 +63,16 @@ public sealed class ClothFlag
 
     private static readonly double RestLength = FlagWidth / Columns;
     private static readonly double DiagonalRestLength = Math.Sqrt(2) * RestLength;
+    private static readonly double BendRestLength = 2 * RestLength;
+    private static readonly float MaxEdgeLength = (float)RestLength * MaxStretch;
+    private static readonly float HardMaxEdgeLength = (float)RestLength * HardMaxStretch;
+    private static readonly Vector3 TopTie = new(0, PoleHeight - TopTieDrop, 0);
+    private static readonly Vector3 BottomAnchor = new(0, (float)(PoleHeight - FlagHeight - BottomAnchorExtraDrop), 0);
+    private static readonly Vector3 KnobCenter = new(0, PoleHeight, 0);
 
     private readonly Vector3[] _positions = new Vector3[Columns * Rows];
+    private readonly Vector3[] _previous = new Vector3[Columns * Rows];
+    private readonly Vector3[] _poleContacts = new Vector3[Columns * Rows];
     private readonly Vector3[] _forces = new Vector3[Columns * Rows];
     private readonly Vector3[] _velocities = new Vector3[Columns * Rows];
     private readonly Vector3[] _normals = new Vector3[Columns * Rows];
@@ -115,7 +133,7 @@ public sealed class ClothFlag
 
     /// <summary>
     /// Advances the cloth by one frame. Steps: wind force on every triangle, springs and anchors per vertex,
-    /// velocity and position update, normals.
+    /// position update, constraints (stretch, corner ropes, pole), velocities from the actual motion, normals.
     /// </summary>
     public void Step(Vector3 wind)
     {
@@ -126,6 +144,8 @@ public sealed class ClothFlag
         }
 
         Integrate();
+        SatisfyConstraints();
+        UpdateVelocities();
         UpdateNormals();
     }
 
@@ -167,6 +187,17 @@ public sealed class ClothFlag
             }
         }
 
+        // Weak springs over two grid steps resist bending, so the cloth folds in broad waves instead of crumpling.
+        if (column + 2 < Columns)
+        {
+            ApplySpring(i, i + 2, BendRestLength, BendStiffness);
+        }
+
+        if (row + 2 < Rows)
+        {
+            ApplySpring(i, i + (2 * Columns), BendRestLength, BendStiffness);
+        }
+
         if (i == TopLeft)
         {
             ApplyAnchor(i, PoleHeight);
@@ -182,7 +213,7 @@ public sealed class ClothFlag
         _velocities[i].Z /= Damping;
     }
 
-    private void ApplySpring(int i, int neighbor, double restLength)
+    private void ApplySpring(int i, int neighbor, double restLength, float stiffness = SpringStiffness)
     {
         var offset = _positions[i] - _positions[neighbor];
         var distance = (float)Math.Sqrt(((double)offset.X * offset.X) + ((double)offset.Y * offset.Y) + ((double)offset.Z * offset.Z));
@@ -192,9 +223,9 @@ public sealed class ClothFlag
         if (distance != 0)
         {
             var force = new Vector3(
-                (float)((double)direction.X * stretch * SpringStiffness),
-                (float)((double)direction.Y * stretch * SpringStiffness),
-                (float)((double)direction.Z * stretch * SpringStiffness));
+                (float)((double)direction.X * stretch * stiffness),
+                (float)((double)direction.Y * stretch * stiffness),
+                (float)((double)direction.Z * stretch * stiffness));
             _forces[i] -= force;
             _forces[neighbor] += force;
         }
@@ -215,27 +246,146 @@ public sealed class ClothFlag
         }
     }
 
-    // Vertices that would end inside the pole are put on its surface and stopped. The clearance is measured with the
-    // force added instead of the velocity, as in the original.
+    // Moves every vertex by its velocity, remembering where it was so the constraints' corrections become motion too.
     private void Integrate()
     {
         for (var i = 0; i < _positions.Length; i++)
         {
-            var x = (double)_positions[i].X + _forces[i].X;
-            var z = (double)_positions[i].Z + _forces[i].Z;
-            var clearance = (float)Math.Sqrt((x * x) + (z * z));
             _velocities[i] += _forces[i];
             _forces[i] = Vector3.Zero;
-            if (clearance > PoleClearance)
+            _previous[i] = _positions[i];
+            _positions[i] += _velocities[i];
+        }
+    }
+
+    // Constraints are projected a few times in turn, so each mostly holds after the others have moved the vertices.
+    private void SatisfyConstraints()
+    {
+        for (var pass = 0; pass < ConstraintPasses; pass++)
+        {
+            LimitStretch();
+            if (pass == 0)
             {
-                _positions[i] += _velocities[i];
+                CapRowStretch();
+            }
+
+            TieCorner(TopLeft, TopTie, TopRopeLength);
+            TieCorner(BottomLeft, BottomAnchor, BottomRopeLength);
+            KeepOffPole();
+        }
+    }
+
+    // Edges stretched beyond the limit are pulled back from both ends (Provot), so strong wind cannot draw the soft
+    // springs out; real cloth hardly stretches.
+    private void LimitStretch()
+    {
+        for (var row = 0; row < Rows; row++)
+        {
+            for (var column = 0; column < Columns; column++)
+            {
+                var i = (row * Columns) + column;
+                if (column + 1 < Columns)
+                {
+                    LimitEdge(i, i + 1, MaxEdgeLength, outerOnly: false);
+                }
+
+                if (row + 1 < Rows)
+                {
+                    LimitEdge(i, i + Columns, MaxEdgeLength, outerOnly: false);
+                }
+            }
+        }
+    }
+
+    // A correction from both ends needs a pass per edge to reach across the flag, so in a storm the rows could still
+    // stretch far. A sweep out from the pole moving only the outer vertex caps each row in one go; it is kept for
+    // extreme stretch because it also brakes the fly, twisting the cloth flat if used all the time.
+    private void CapRowStretch()
+    {
+        for (var row = 0; row < Rows; row++)
+        {
+            for (var column = 0; column + 1 < Columns; column++)
+            {
+                var i = (row * Columns) + column;
+                LimitEdge(i, i + 1, HardMaxEdgeLength, outerOnly: true);
+            }
+        }
+    }
+
+    private void LimitEdge(int a, int b, float maxLength, bool outerOnly)
+    {
+        var offset = _positions[b] - _positions[a];
+        var length = offset.Length();
+        if (length > maxLength)
+        {
+            var excess = offset * ((length - maxLength) / length);
+            if (outerOnly)
+            {
+                _positions[b] -= excess;
             }
             else
             {
-                _positions[i].X = (float)(((double)_positions[i].X + _velocities[i].X) / clearance * PoleSnapRadius);
-                _positions[i].Z = (float)(((double)_positions[i].Z + _velocities[i].Z) / clearance * PoleSnapRadius);
-                _velocities[i] = Vector3.Zero;
+                _positions[a] += excess * 0.5f;
+                _positions[b] -= excess * 0.5f;
             }
+        }
+    }
+
+    // The corner cannot pull its rope further than the rope's length from the tie point.
+    private void TieCorner(int i, Vector3 anchor, float ropeLength)
+    {
+        var offset = _positions[i] - anchor;
+        var length = offset.Length();
+        if (length > ropeLength)
+        {
+            _positions[i] = anchor + (offset * (ropeLength / length));
+        }
+    }
+
+    // Vertices inside the pole or its knob are pushed out to the surface (plus a little for the cloth's thickness).
+    private void KeepOffPole()
+    {
+        for (var i = 0; i < _positions.Length; i++)
+        {
+            var position = _positions[i];
+            var fromKnob = position - KnobCenter;
+            var knobDistance = fromKnob.Length();
+            if (knobDistance < KnobContactRadius)
+            {
+                var away = knobDistance > 0 ? fromKnob / knobDistance : Vector3.UnitX;
+                position = KnobCenter + (away * KnobContactRadius);
+                _positions[i] = position;
+                _poleContacts[i] = away;
+            }
+
+            // Pushing straight out from the axis only moves the vertex further from the knob, so both hold.
+            var axisDistance = MathF.Sqrt((position.X * position.X) + (position.Z * position.Z));
+            if (position.Y < PoleHeight && axisDistance < PoleContactRadius)
+            {
+                var away = axisDistance > 0 ? new Vector3(position.X / axisDistance, 0, position.Z / axisDistance) : Vector3.UnitX;
+                _positions[i] = new Vector3(away.X * PoleContactRadius, position.Y, away.Z * PoleContactRadius);
+                _poleContacts[i] = away;
+            }
+        }
+    }
+
+    // The velocity is what the vertex really moved. Against the pole it keeps moving away freely, but sliding along
+    // the pole is slowed by friction, so the cloth clings for a moment and then peels off.
+    private void UpdateVelocities()
+    {
+        for (var i = 0; i < _positions.Length; i++)
+        {
+            var velocity = _positions[i] - _previous[i];
+            var away = _poleContacts[i];
+            if (away != Vector3.Zero)
+            {
+                var outward = Vector3.Dot(velocity, away);
+                var slide = velocity - (away * outward);
+                velocity = (away * MathF.Max(outward, 0)) + (slide * (1 - PoleFriction));
+                _poleContacts[i] = Vector3.Zero;
+            }
+
+            _velocities[i] = velocity;
         }
     }
 
