@@ -8,6 +8,12 @@ namespace Saoss.Game.Rendering.Intro;
 /// the left corners tied to the pole by cubic springs and every vertex kept outside the pole. One <see cref="Step(int)"/>
 /// is one original intro frame (150 per second).
 /// </summary>
+/// <remarks>
+/// The cloth is chaotic, and a flag wound tightly round the pole can stay frozen there for good (stopped vertices
+/// only move when a spring tugs them off the pole). Which way it goes depends on rounding, so the arithmetic follows
+/// the original's x87 build: values are stored as floats but every expression is evaluated in double precision. Done
+/// with float math instead, the flag winds up half a minute in and never comes loose.
+/// </remarks>
 public sealed class ClothFlag
 {
     /// <summary>Vertices per row [LIPUN_X_VERTEXIT].</summary>
@@ -30,12 +36,12 @@ public sealed class ClothFlag
     private const float StartX = 0.2f;
     private const float StartDrop = 0.3f;
     private const float SpringStiffness = 0.055f;
-    private const float Gravity = 0.000058f;
+    private const double Gravity = 0.000058;
     private const float Damping = 1.00185f;
     private const double AnchorSlack = 0.3;
     private const double AnchorStiffness = 0.2;
     private const double BottomAnchorExtraDrop = 1.3;
-    private const float PoleClearance = 0.3f;
+    private const double PoleClearance = 0.3;
     private const float PoleSnapRadius = 0.29f;
     private const int MaxTrianglesPerVertex = 6;
     private const float WindAngleFrameOffset = 600f;
@@ -99,9 +105,9 @@ public sealed class ClothFlag
     /// </summary>
     public static Vector3 WindAt(int frame)
     {
-        var angle = MathF.Sin((frame - WindAngleFrameOffset) / WindAngleFramePeriod);
-        var strength = (float)(WindStrength * MathF.Sin((frame / WindStrengthFramePeriod) - WindStrengthPhase));
-        return new Vector3((float)(MathF.Sin(angle) * strength * WindScale), 0, (float)(MathF.Cos(angle) * strength * WindScale));
+        var angle = (float)Math.Sin((frame - WindAngleFrameOffset) / WindAngleFramePeriod);
+        var strength = (float)(WindStrength * Math.Sin((frame / WindStrengthFramePeriod) - WindStrengthPhase));
+        return new Vector3((float)(Math.Sin(angle) * strength * WindScale), 0, (float)(Math.Cos(angle) * strength * WindScale));
     }
 
     /// <summary>Advances the cloth by intro frame <paramref name="frame"/> with that frame's wind [calculate].</summary>
@@ -129,7 +135,8 @@ public sealed class ClothFlag
         for (var t = 0; t < _triangleNormals.Length; t++)
         {
             var normal = _triangleNormals[t];
-            var force = normal * Vector3.Dot(normal, wind);
+            var facing = (float)(((double)normal.X * wind.X) + ((double)normal.Y * wind.Y) + ((double)normal.Z * wind.Z));
+            var force = normal * facing;
             for (var corner = 0; corner < 3; corner++)
             {
                 _forces[_triangleCorners[(t * 3) + corner]] += force;
@@ -143,7 +150,7 @@ public sealed class ClothFlag
     {
         var column = i % Columns;
         var row = i / Columns;
-        _forces[i].Y -= Gravity;
+        _forces[i].Y = (float)(_forces[i].Y - Gravity);
         if ((row + column) % 2 == 0)
         {
             foreach (var neighbor in _neighbors[i])
@@ -166,34 +173,45 @@ public sealed class ClothFlag
         }
         else if (i == BottomLeft)
         {
-            ApplyAnchor(i, (float)(PoleHeight - FlagHeight - BottomAnchorExtraDrop));
+            ApplyAnchor(i, PoleHeight - FlagHeight - BottomAnchorExtraDrop);
         }
 
-        _velocities[i] /= Damping;
+        // Divided per component: Vector3's division multiplies by the reciprocal, which rounds differently.
+        _velocities[i].X /= Damping;
+        _velocities[i].Y /= Damping;
+        _velocities[i].Z /= Damping;
     }
 
     private void ApplySpring(int i, int neighbor, double restLength)
     {
         var offset = _positions[i] - _positions[neighbor];
-        var distance = MathF.Sqrt(Vector3.Dot(offset, offset));
+        var distance = (float)Math.Sqrt(((double)offset.X * offset.X) + ((double)offset.Y * offset.Y) + ((double)offset.Z * offset.Z));
+        var inverseDistance = (float)(1.0 / distance);
         var stretch = (float)((distance - restLength) / restLength);
-        var direction = offset * (1f / distance);
+        var direction = offset * inverseDistance;
         if (distance != 0)
         {
-            var force = direction * stretch * SpringStiffness;
+            var force = new Vector3(
+                (float)((double)direction.X * stretch * SpringStiffness),
+                (float)((double)direction.Y * stretch * SpringStiffness),
+                (float)((double)direction.Z * stretch * SpringStiffness));
             _forces[i] -= force;
             _forces[neighbor] += force;
         }
     }
 
     // A slack cubic spring pulls the corner back toward its point on the pole axis.
-    private void ApplyAnchor(int i, float anchorHeight)
+    private void ApplyAnchor(int i, double anchorHeight)
     {
-        var offset = _positions[i] - new Vector3(0, anchorHeight, 0);
-        var distance = Math.Sqrt((offset.X * offset.X) + (offset.Y * offset.Y) + (offset.Z * offset.Z));
+        var offset = new Vector3(_positions[i].X, (float)(_positions[i].Y - anchorHeight), _positions[i].Z);
+        var distance = Math.Sqrt(((double)offset.X * offset.X) + ((double)offset.Y * offset.Y) + ((double)offset.Z * offset.Z));
         if (distance > AnchorSlack)
         {
-            _forces[i] -= offset * (float)(Math.Pow(distance - AnchorSlack, 3) * AnchorStiffness);
+            var pull = Math.Pow(distance - AnchorSlack, 3) * AnchorStiffness;
+            _forces[i] = new Vector3(
+                (float)(_forces[i].X - (offset.X * pull)),
+                (float)(_forces[i].Y - (offset.Y * pull)),
+                (float)(_forces[i].Z - (offset.Z * pull)));
         }
     }
 
@@ -203,9 +221,9 @@ public sealed class ClothFlag
     {
         for (var i = 0; i < _positions.Length; i++)
         {
-            var x = _positions[i].X + _forces[i].X;
-            var z = _positions[i].Z + _forces[i].Z;
-            var clearance = MathF.Sqrt((x * x) + (z * z));
+            var x = (double)_positions[i].X + _forces[i].X;
+            var z = (double)_positions[i].Z + _forces[i].Z;
+            var clearance = (float)Math.Sqrt((x * x) + (z * z));
             _velocities[i] += _forces[i];
             _forces[i] = Vector3.Zero;
             if (clearance > PoleClearance)
@@ -214,8 +232,8 @@ public sealed class ClothFlag
             }
             else
             {
-                _positions[i].X = (_positions[i].X + _velocities[i].X) / clearance * PoleSnapRadius;
-                _positions[i].Z = (_positions[i].Z + _velocities[i].Z) / clearance * PoleSnapRadius;
+                _positions[i].X = (float)(((double)_positions[i].X + _velocities[i].X) / clearance * PoleSnapRadius);
+                _positions[i].Z = (float)(((double)_positions[i].Z + _velocities[i].Z) / clearance * PoleSnapRadius);
                 _velocities[i] = Vector3.Zero;
             }
         }
@@ -228,8 +246,12 @@ public sealed class ClothFlag
             var origin = _positions[_triangleCorners[t * 3]];
             var edge1 = _positions[_triangleCorners[(t * 3) + 1]] - origin;
             var edge2 = _positions[_triangleCorners[(t * 3) + 2]] - origin;
-            var cross = Vector3.Cross(edge1, edge2);
-            _triangleNormals[t] = cross / cross.Length();
+            var cross = new Vector3(
+                (float)(((double)edge1.Y * edge2.Z) - ((double)edge1.Z * edge2.Y)),
+                (float)(((double)edge1.Z * edge2.X) - ((double)edge1.X * edge2.Z)),
+                (float)(((double)edge1.X * edge2.Y) - ((double)edge1.Y * edge2.X)));
+            var length = (float)Math.Sqrt(((double)cross.X * cross.X) + ((double)cross.Y * cross.Y) + ((double)cross.Z * cross.Z));
+            _triangleNormals[t] = new Vector3(cross.X / length, cross.Y / length, cross.Z / length);
         }
 
         for (var i = 0; i < _normals.Length; i++)

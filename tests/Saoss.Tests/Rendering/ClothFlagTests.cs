@@ -12,6 +12,8 @@ public sealed class ClothFlagTests
     private const float Tolerance = 1e-5f;
     // The cloth is pushed back to about 0.29 from the axis, not exactly (the visible pole is 0.17 thick).
     private const float PoleClearance = 0.25f;
+    // Vertices closer to the axis than this are stuck to the pole (lippu.cpp pushes them out to 0.29 and stops them).
+    private const float OnPoleRadius = 0.3f;
     // The cubic ties are slack, so the cloth's weight lets the corners sag about a unit from their points.
     private const float AnchorReach = 1.5f;
     private static readonly Vector3 TopAnchor = new(0, ClothFlag.PoleHeight, 0);
@@ -43,6 +45,25 @@ public sealed class ClothFlagTests
 
         Assert.IsTrue(flag.Positions.All(IsFinite));
         Assert.IsTrue(flag.Normals.All(IsFinite));
+    }
+
+    [TestMethod]
+    public void Step_AfterCatchingOnThePole_ComesLooseAgain()
+    {
+        // The cloth first catches on the pole about 26 seconds in. Evaluated in float precision it wound up round the
+        // pole for good there; with the original's double-precision arithmetic it is free again within two minutes.
+        const int CaughtFrame = 60 * 150;
+        const int DeadlineFrame = 120 * 150;
+        var flag = new ClothFlag();
+
+        var loose = false;
+        for (var frame = 1; frame <= DeadlineFrame && !loose; frame++)
+        {
+            flag.Step(frame);
+            loose = frame > CaughtFrame && flag.Positions.All(p => (p.X * p.X) + (p.Z * p.Z) > OnPoleRadius * OnPoleRadius);
+        }
+
+        Assert.IsTrue(loose);
     }
 
     [TestMethod]

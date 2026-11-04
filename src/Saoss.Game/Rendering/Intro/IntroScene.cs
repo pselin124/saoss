@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Saoss.Game.Rendering.Legacy;
 using Saoss.Game.Rendering.Scene;
@@ -25,6 +26,8 @@ public sealed class IntroScene : IDisposable
     private const float ShadowHeight = 0.02f;
     private const float ShadowFlatten = 0.01f;
     private const float ShadowLeanDegrees = 35f;
+    private const float GrassMaximumWind = 0.0002f;
+    private const int BaseGrassTufts = 180;
 
     private readonly GraphicsDevice _device;
     private readonly LegacyGl _gl;
@@ -32,7 +35,10 @@ public sealed class IntroScene : IDisposable
     private readonly IntroModels _models;
     private readonly GlText _text;
     private readonly IntroShips _ships;
+    private readonly GrassTuft[] _grass;
     private readonly int _detail;
+
+    private readonly record struct GrassTuft(float X, float Z, float Height, float Angle);
 
     /// <summary>
     /// Loads the textures, records the scene's and the ships' display lists at <paramref name="detail"/> (0-3) and sets
@@ -48,6 +54,7 @@ public sealed class IntroScene : IDisposable
         _text = new GlText(_gl, _textures.Font);
         var shipModels = new ShipModels(_gl, new SharedModels(_gl, detail), detail);
         _ships = new IntroShips(_gl, new ShipModelRenderer(_gl, _textures, shipModels), random);
+        _grass = CreateGrass(detail);
         InitializeState();
     }
 
@@ -85,6 +92,7 @@ public sealed class IntroScene : IDisposable
         gl.CallList(_models.Ground);
         gl.PopMatrix();
         DrawGroundText();
+        DrawGrass(frame);
         gl.PushMatrix();
         gl.CallList(_models.Pole);
         gl.PopMatrix();
@@ -240,6 +248,68 @@ public sealed class IntroScene : IDisposable
         }
 
         gl.Scale(1 / IntroPlantLayout.Scale, 1 / IntroPlantLayout.Scale, 1 / IntroPlantLayout.Scale);
+    }
+
+    private static GrassTuft[] CreateGrass(int detail)
+    {
+        var grass = new GrassTuft[BaseGrassTufts + (detail * 70)];
+        var random = new Random(0x5A055);
+        var count = 0;
+        while (count < grass.Length)
+        {
+            var x = (random.NextSingle() * 32) - 16;
+            var z = (random.NextSingle() * 32) - 16;
+            if ((x * x) + (z * z) < 49 || (x > -11 && x < 2 && z < -8 && z > -16))
+            {
+                continue;
+            }
+
+            grass[count++] = new GrassTuft(x, z, 0.35f + (random.NextSingle() * 0.4f), random.NextSingle() * 360);
+        }
+
+        return grass;
+    }
+
+    private void DrawGrass(int frame)
+    {
+        var gl = _gl;
+        var wind = ClothFlag.WindAt(frame);
+        var windStrength = MathF.Sqrt((wind.X * wind.X) + (wind.Z * wind.Z));
+        var windScale = windStrength == 0 ? 0 : MathF.Min(windStrength / GrassMaximumWind, 1);
+        var windDirection = windStrength == 0 ? Vector2.Zero : new Vector2(wind.X / windStrength, wind.Z / windStrength);
+
+        gl.PushMatrix();
+        gl.Scale(IntroPlantLayout.Scale, IntroPlantLayout.Scale, IntroPlantLayout.Scale);
+        gl.Disable(GlCapability.Texture2D);
+        gl.Disable(GlCapability.CullFace);
+        gl.Disable(GlCapability.Lighting);
+        gl.Begin(GlPrimitive.Triangles);
+        foreach (var tuft in _grass)
+        {
+            var basePoint = new Vector3(tuft.X, 0, tuft.Z);
+            var windBend = windDirection * (tuft.Height * (0.2f + (0.35f * windScale)));
+            for (var blade = 0; blade < 3; blade++)
+            {
+                var angle = MathHelper.ToRadians(tuft.Angle + (blade * 120));
+                var side = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+                var width = 0.05f;
+                var left = basePoint + new Vector3(-side.Y * width, 0, side.X * width);
+                var right = basePoint + new Vector3(side.Y * width, 0, -side.X * width);
+                var tip = basePoint + new Vector3((side.X * 0.12f) + windBend.X, tuft.Height, (side.Y * 0.12f) + windBend.Y);
+
+                gl.Color(0.18f + (blade * 0.08f), 0.52f + (blade * 0.06f), 0.1f + (blade * 0.02f), 1);
+                gl.Normal(side.X, 0.35f, side.Y);
+                gl.Vertex(left.X, left.Y, left.Z);
+                gl.Vertex(right.X, right.Y, right.Z);
+                gl.Vertex(tip.X, tip.Y, tip.Z);
+            }
+        }
+
+        gl.End();
+        gl.Enable(GlCapability.Lighting);
+        gl.Disable(GlCapability.CullFace);
+        gl.Enable(GlCapability.Texture2D);
+        gl.PopMatrix();
     }
 
     private GlDisplayList ModelOf(IntroPlant plant) => plant switch

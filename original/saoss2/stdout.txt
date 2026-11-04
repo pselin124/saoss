@@ -1,33 +1,29 @@
 juttu:0
 musics:1, effects:1Available Modes
-  2048 x 1536
-  1920 x 1440
-  1920 x 1200
   1920 x 1080
-  1856 x 1392
-  1800 x 1440
-  1792 x 1344
+  1680 x 1050
   1600 x 1200
-  1520 x 1140
+  1600 x 900
+  1440 x 900
   1400 x 1050
-  1360 x 1020
+  1366 x 768
+  1360 x 768
   1280 x 1024
-  1200 x 900
+  1280 x 960
+  1280 x 800
+  1280 x 768
+  1280 x 720
+  1280 x 600
   1152 x 864
   1024 x 768
-  960 x 720
   800 x 600
   640 x 480
-  640 x 400
-  512 x 384
-  400 x 300
-  320 x 240
-  320 x 200
-Video memory available 56632 kb
+  1920 x 1200
+Video memory available 4194240 kb
 Initialized in 1600x1200 resolution
 Loading musics...
- musics\love_me.mp3
  musics\eramaa.mp3
+ musics\love_me.mp3
 loading 1024*1024 font
 1
 2
@@ -41,9 +37,21 @@ loading 1024*1024 font
 6
 7
 8
-Demofps:=67.449664
+1
+2
+3
+6
+7
+8
+1
+2
+3
+6
+7
+8
+Demofps:=94.565217
 loading 1024*1024 font
-moi!Starting musics, Song:musics\love_me.mp3
+moi!Starting musics, Song:musics\eramaa.mp3
 1
 2
 3
@@ -58,6 +66,6 @@ moi!Starting musics, Song:musics\love_me.mp3
 8
 frames drawn: 0
 frames drawn: 0, calculated frames:0
-time: 1 secs
+time: 105 secs
 drawn fps: -1.#IND00
 calculated fps: 95

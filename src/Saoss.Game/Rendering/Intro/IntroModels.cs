@@ -5,7 +5,7 @@ namespace Saoss.Game.Rendering.Intro;
 
 /// <summary>
 /// The intro scene's display lists (<c>luoDisplayListat</c> and <c>drawGround</c>/<c>drawPole</c> in lippu.cpp):
-/// the ground disk, the flag pole, a mushroom, four flowers, flat stand-ins of the plants for their shadows,
+/// the ground disk, the metallic flag pole, a mushroom, four flowers, flat stand-ins of the plants for their shadows,
 /// and the unused wind arrow. Slice counts grow with the detail level like the original's.
 /// </summary>
 public sealed class IntroModels
@@ -24,7 +24,7 @@ public sealed class IntroModels
         gl.EndList();
 
         Pole = gl.NewList();
-        RecordPole(gl, groundTexture, detail);
+        RecordPole(gl, detail);
         gl.EndList();
 
         Mushroom = gl.NewList();
@@ -66,7 +66,7 @@ public sealed class IntroModels
     /// <summary>Green textured ground disk of radius 30, drawn with GL_BLEND texturing [MAA].</summary>
     public GlDisplayList Ground { get; }
 
-    /// <summary>Textured flag pole of height <see cref="ClothFlag.PoleHeight"/> with a golden knob [TANKO].</summary>
+    /// <summary>Silver flag pole of height <see cref="ClothFlag.PoleHeight"/> with a golden knob [TANKO].</summary>
     public GlDisplayList Pole { get; }
 
     /// <summary>Red mushroom with white dots [SIENI2].</summary>
@@ -110,19 +110,24 @@ public sealed class IntroModels
         gl.PopMatrix();
     }
 
-    private static void RecordPole(LegacyGl gl, Texture2D texture, int detail)
+    private static void RecordPole(LegacyGl gl, int detail)
     {
-        gl.BindTexture(texture);
-        gl.Color(0.8f, 0.7f, 0.8f, 0.5f);
+        gl.Disable(GlCapability.Texture2D);
+        gl.MaterialSpecular(0.75f, 0.75f, 0.75f, 1);
+        gl.MaterialShininess(72);
+        gl.Color(0.88f, 0.91f, 0.94f, 1);
         gl.PushMatrix();
         gl.Rotate(-90, 1, 0, 0);
         gl.Cylinder(PoleRadius, PoleRadius, ClothFlag.PoleHeight, 15 + (3 * detail), 1, textured: true);
         gl.PopMatrix();
-        gl.Color(1, 0.8f, 0.1f, 0.5f);
+        gl.Color(1, 0.8f, 0.1f, 1);
         gl.PushMatrix();
         gl.Translate(0, ClothFlag.PoleHeight, 0);
         gl.Sphere(PoleKnobRadius, 13 + (6 * detail), 10 + (6 * detail), textured: true);
         gl.PopMatrix();
+        gl.MaterialSpecular(0, 0, 0, 1);
+        gl.MaterialShininess(0);
+        gl.Enable(GlCapability.Texture2D);
     }
 
     private static void RecordMushroom(LegacyGl gl, int detail)
