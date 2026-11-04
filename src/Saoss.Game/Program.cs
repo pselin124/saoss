@@ -23,6 +23,7 @@ using Saoss.Game.Settings;
 //   --detail <0-3>               detail level for this run
 //   --capture <png>              run uncapped with one update per frame and fixed seeds, save frame
 //                                --capture-frame <n> (default 300) as a PNG and exit; for pixel comparisons
+//   --mute                       no sound or music (implied by --bench and --capture)
 // Unhandled exceptions are appended to crash.log in the settings folder.
 const string settingsDirOption = "--settings-dir";
 const string joinOption = "--join";
@@ -34,6 +35,7 @@ const string detailOption = "--detail";
 const string perfOption = "--perf";
 const string captureOption = "--capture";
 const string captureFrameOption = "--capture-frame";
+const string muteOption = "--mute";
 const string benchFileName = "bench.txt";
 
 string? ValueOf(string option)
@@ -81,6 +83,7 @@ var startup = new StartupOptions(screen)
     Capture = ValueOf(captureOption) is { } capturePath
         ? new FrameCapture(Path.GetFullPath(capturePath), IntValueOf(captureFrameOption) ?? FrameCapture.DefaultFrame)
         : null,
+    Mute = args.Contains(muteOption),
 };
 
 using var game = new SaossGame(new SettingsStore(settingsDirectory), startup);

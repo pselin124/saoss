@@ -11,7 +11,6 @@ namespace Saoss.Game.Rendering.Scene;
 /// </summary>
 public sealed class SceneRenderer
 {
-    private const float FieldOfView = 45f;
     private const float NearPlane = 1f;
     private const float FarPlane = 1024f;
     private const float BackgroundDepth = 200f;
@@ -55,7 +54,7 @@ public sealed class SceneRenderer
         var camera = state.Camera;
         gl.MatrixMode(GlMatrixMode.Projection);
         gl.LoadIdentity();
-        gl.Perspective(FieldOfView, (float)gl.ViewportWidth / gl.ViewportHeight, NearPlane, FarPlane);
+        gl.Perspective(GameCamera.FieldOfView, (float)gl.ViewportWidth / gl.ViewportHeight, NearPlane, FarPlane);
         gl.MatrixMode(GlMatrixMode.ModelView);
         gl.LoadIdentity();
         gl.Clear();

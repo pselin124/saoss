@@ -12,13 +12,14 @@ namespace Saoss.Tests.Rendering;
 public sealed class GameCameraTests
 {
     private const float Tolerance = 1e-4f;
+    private const float Aspect = 4f / 3f;
 
     [TestMethod]
     public void TopDown_LooksStraightDownWithoutBillboardTurn()
     {
         var camera = new GameCamera(CameraMode.TopDown);
 
-        camera.Update(CreateWorld());
+        camera.Update(CreateWorld(), Aspect);
         var (eye, target, up) = camera.View();
 
         Assert.AreEqual(0f, camera.Alpha);
@@ -36,8 +37,8 @@ public sealed class GameCameraTests
         var topDown = new GameCamera(CameraMode.TopDown);
         var tilted = new GameCamera(CameraMode.Tilted);
 
-        topDown.Update(CreateWorld());
-        tilted.Update(CreateWorld());
+        topDown.Update(CreateWorld(), Aspect);
+        tilted.Update(CreateWorld(), Aspect);
 
         Assert.AreEqual(((20f * 19f) + (10f * 4f / 3f)) / 20f, topDown.Z, Tolerance);
         Assert.AreEqual(((20f * 19f) + (12f * 4f / 3f)) / 20f, tilted.Z, Tolerance);
@@ -49,12 +50,28 @@ public sealed class GameCameraTests
     {
         var camera = new GameCamera(CameraMode.Tilted);
 
-        camera.Update(CreateWorld());
+        camera.Update(CreateWorld(), Aspect);
         var (eye, target, _) = camera.View();
 
         Assert.AreNotEqual(0f, camera.Beta);
         Assert.AreEqual(camera.X / 4f, eye.X, Tolerance);
         Assert.AreEqual(Saoss.Core.GameConstants.ShipPlaneZ, target.Z);
+    }
+
+    [TestMethod]
+    [DataRow(CameraMode.TopDown)]
+    [DataRow(CameraMode.Tilted)]
+    public void ZoomsOutBeyondTheOriginalPaceWhenAShipIsOffScreen(CameraMode mode)
+    {
+        // From the starting height both ships are far outside the view; the original pace alone would reach 32.3.
+        var camera = new GameCamera(mode);
+        var world = TestWorld.Create(players: 2);
+        TestWorld.Place(world, 0, ShipType.Magneto, -100f, -80f);
+        TestWorld.Place(world, 1, ShipType.Magneto, 100f, 70f);
+
+        camera.Update(world, Aspect);
+
+        Assert.IsGreaterThan(((20f * 19f) + (200f * 4f / 3f)) / 20f + 10f, camera.Z);
     }
 
     private static Saoss.Core.Simulation.World CreateWorld()

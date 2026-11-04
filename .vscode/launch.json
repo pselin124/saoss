@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Saoss",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64/Saoss.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Saoss (skip intro)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64/Saoss.exe",
+            "args": ["--skip-intro"],
+            "cwd": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Saoss (ship gallery)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64/Saoss.exe",
+            "args": ["--ship-gallery"],
+            "cwd": "${workspaceFolder}/src/Saoss.Game/bin/Debug/net10.0-windows/win-x64",
+            "console": "internalConsole",
+            "stopAtEntry": false
+        }
+    ]
+}

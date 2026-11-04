@@ -9,16 +9,28 @@ namespace Saoss.Game.Rendering.Scene;
 /// ships and zooms out to fit them. In <see cref="CameraMode.Tilted"/> it also leans toward the arena center and
 /// billboards turn toward it; in <see cref="CameraMode.TopDown"/> it looks straight down and the billboard angles
 /// stay zero.
+/// Deviation from the original: its zoom fits the ships' spread along the world axes only, so the tilted camera's
+/// rotated view and the top-down width rule could leave a ship off screen for seconds. When a flying ship comes
+/// within <see cref="SafeMargin"/> of the screen edge, the camera zooms out further, faster than its normal pace.
 /// </summary>
 /// <param name="mode">Which of the original's two cameras to use.</param>
 public sealed class GameCamera(CameraMode mode = CameraMode.Tilted)
 {
+    /// <summary>Vertical field of view of the match projection in degrees [gluPerspective in drawFrame].</summary>
+    public const float FieldOfView = 45f;
+
+    private const float SafeMargin = 0.07f;
+    private const float CorrectionSmoothing = 4f;
+    private const int CorrectionIterations = 4;
     private const float FollowSmoothing = 19f;
     private const float FollowScale = 1.2f;
     private const float ZoomFactor = 4f / 3f;
     private const float InitialHeight = 20f;
     private const float OriginalPi = 3.14f;
     private const float TopDownWidthWeight = 48f / 64f;
+
+    // Half the screen height at unit depth, shrunk by the margin on both edges.
+    private static readonly float SafeHalfHeight = MathF.Tan(MathHelper.ToRadians(FieldOfView) / 2f) * (1f - (2f * SafeMargin));
 
     /// <summary>Which camera this is.</summary>
     public CameraMode Mode { get; } = mode;
@@ -41,8 +53,11 @@ public sealed class GameCamera(CameraMode mode = CameraMode.Tilted)
     /// <summary>Billboard tilt in degrees [beta]; zero for the top-down camera.</summary>
     public float Beta { get; private set; }
 
-    /// <summary>Advances the camera one tick toward the ships that are in the game.</summary>
-    public void Update(World world)
+    /// <summary>
+    /// Advances the camera one tick toward the ships that are in the game, for a viewport of
+    /// <paramref name="aspectRatio"/> (width / height).
+    /// </summary>
+    public void Update(World world, float aspectRatio)
     {
         var ships = world.Ships.Where(s => s.IsInGame).ToList();
         float maxX = GameConstants.ArenaMinX, maxY = GameConstants.ArenaMinY;
@@ -73,22 +88,75 @@ public sealed class GameCamera(CameraMode mode = CameraMode.Tilted)
         {
             UpdateLean();
         }
+
+        var needed = HeightShowingShips(world, aspectRatio);
+        if (needed > Z)
+        {
+            Z = ((Z * CorrectionSmoothing) + needed) / (CorrectionSmoothing + 1f);
+        }
     }
 
     /// <summary>Eye, look-at point and up vector of the camera [gluLookAt in drawFrame].</summary>
-    public (Vector3 Eye, Vector3 Target, Vector3 Up) View()
+    public (Vector3 Eye, Vector3 Target, Vector3 Up) View() => View(Z);
+
+    // Flying ships and those materializing in spawn sparks; exploded ones are not shown.
+    private static bool IsShown(Ship ship) => ship.IsInGame && ship.DeathTimer < GameConstants.SpawnTicks;
+
+    private (Vector3 Eye, Vector3 Target, Vector3 Up) View(float height)
     {
         if (Mode == CameraMode.TopDown)
         {
-            return (new Vector3(X, Y, Z), new Vector3(X, Y, 0f), Vector3.UnitY);
+            return (new Vector3(X, Y, height), new Vector3(X, Y, 0f), Vector3.UnitY);
         }
 
         var alpha2 = SmoothedAlpha / 180f * OriginalPi;
         var beta = Beta / 180f * OriginalPi;
         return (
-            new Vector3(X / 4f, Y / 4f, Z),
+            new Vector3(X / 4f, Y / 4f, height),
             new Vector3(X, Y, GameConstants.ShipPlaneZ),
             new Vector3(MathF.Cos(alpha2) * MathF.Cos(beta), MathF.Sin(alpha2) * MathF.Cos(beta), -MathF.Sin(beta)));
+    }
+
+    // Raising the eye moves it nearly along the view axis, so a few steps of the depth shortfall converge.
+    private float HeightShowingShips(World world, float aspectRatio)
+    {
+        var height = Z;
+        for (var i = 0; i < CorrectionIterations; i++)
+        {
+            var shortfall = DepthShortfall(world, aspectRatio, height);
+            if (shortfall <= 0f)
+            {
+                break;
+            }
+
+            height += shortfall;
+        }
+
+        return height;
+    }
+
+    // How much closer than needed the nearest-to-the-edge shown ship is for it to stay inside the safe area.
+    private float DepthShortfall(World world, float aspectRatio, float height)
+    {
+        var (eye, target, up) = View(height);
+        var view = Matrix.CreateLookAt(eye, target, up);
+        var shortfall = 0f;
+        foreach (var ship in world.Ships)
+        {
+            if (!IsShown(ship))
+            {
+                continue;
+            }
+
+            var p = Vector3.Transform(new Vector3(ship.X, ship.Y, GameConstants.ShipPlaneZ), view);
+            var radius = ship.Definition.Radius;
+            var depth = MathF.Max(
+                (MathF.Abs(p.X) + radius) / (SafeHalfHeight * aspectRatio),
+                (MathF.Abs(p.Y) + radius) / SafeHalfHeight);
+            shortfall = MathF.Max(shortfall, depth + p.Z);
+        }
+
+        return shortfall;
     }
 
     // The original's top-down rule picks the width as soon as it beats three quarters of the height.

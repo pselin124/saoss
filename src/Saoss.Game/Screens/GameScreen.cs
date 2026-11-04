@@ -222,7 +222,7 @@ public sealed class GameScreen : IScreen, IDisposable
 
             // Like the original, particles spawned this tick already move once at the end of it.
             _ships.Update(World, _state, tick.Events);
-            _state.Update(World);
+            _state.Update(World, (float)_gl.ViewportWidth / _gl.ViewportHeight);
         }
     }
 }

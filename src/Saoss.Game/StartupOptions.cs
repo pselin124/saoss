@@ -30,4 +30,10 @@ public sealed record StartupOptions(StartupScreen Screen = StartupScreen.Intro)
 
     /// <summary>Save one frame and exit (<c>--capture</c>), or null.</summary>
     public FrameCapture? Capture { get; init; }
+
+    /// <summary>No sound or music (<c>--mute</c>).</summary>
+    public bool Mute { get; init; }
+
+    /// <summary>Whether audio stays off: <see cref="Mute"/>, benchmarks and frame captures.</summary>
+    public bool IsSilent => Mute || Benchmark != null || Capture != null;
 }

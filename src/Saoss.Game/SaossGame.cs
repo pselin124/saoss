@@ -103,7 +103,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
-        _audio = GameAudio.TryCreate(_settings);
+        _audio = _startup.IsSilent ? null : GameAudio.TryCreate(_settings);
         switch (_startup.Screen)
         {
             case StartupScreen.ShipGallery:

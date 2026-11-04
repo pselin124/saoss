@@ -51,10 +51,13 @@ public sealed class SceneState
     /// <inheritdoc cref="RotationX"/>
     public float RotationZ { get; private set; }
 
-    /// <summary>Advances the visual state by one simulation tick.</summary>
-    public void Update(World world)
+    /// <summary>
+    /// Advances the visual state by one simulation tick; the camera frames the match for a viewport of
+    /// <paramref name="aspectRatio"/> (width / height).
+    /// </summary>
+    public void Update(World world, float aspectRatio)
     {
-        Camera.Update(world);
+        Camera.Update(world, aspectRatio);
         Stars.Update(world.Tick);
         Particles.Update();
         RotationX += SpinX;
