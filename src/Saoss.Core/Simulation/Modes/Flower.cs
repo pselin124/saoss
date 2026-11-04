@@ -30,6 +30,16 @@ public sealed class Flower(int team, float homeX, float homeY)
     /// <inheritdoc cref="X"/>
     public float Y { get; private set; } = homeY;
 
+    /// <summary>Overwrites the flower's state with values read from a snapshot.</summary>
+    internal void Restore(bool isEnabled, FlowerState state, int carrierIndex, float x, float y)
+    {
+        IsEnabled = isEnabled;
+        State = state;
+        CarrierIndex = carrierIndex;
+        X = x;
+        Y = y;
+    }
+
     /// <summary>Puts the flower back on its base.</summary>
     public void ReturnHome()
     {

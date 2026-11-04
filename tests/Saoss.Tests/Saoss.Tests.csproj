@@ -7,5 +7,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Saoss.Core\Saoss.Core.csproj" />
     <ProjectReference Include="..\..\src\Saoss.Game\Saoss.Game.csproj" />
+    <ProjectReference Include="..\..\src\Saoss.Network\Saoss.Network.csproj" />
   </ItemGroup>
 </Project>

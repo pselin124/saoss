@@ -1,6 +1,7 @@
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation.Ai;
 using Saoss.Core.Simulation.Modes;
+using Saoss.Core.Simulation.Snapshots;
 using Saoss.Core.Simulation.Weapons;
 
 namespace Saoss.Core.Simulation;
@@ -81,6 +82,12 @@ public sealed class World
 
     /// <summary>How the match ended, or null while it is still running.</summary>
     public MatchOutcome? Outcome { get; private set; }
+
+    /// <summary>Players waiting to buy a ship, in buying order; the head is <see cref="PendingChoice"/> once humans are reached.</summary>
+    internal IReadOnlyCollection<int> ChoiceQueue => _choiceQueue;
+
+    /// <summary>How many of <see cref="Events"/> came from the last step; the next step drops these.</summary>
+    internal int StepEventCount => _stepEventCount;
 
     /// <summary>
     /// Advances the match by one tick; does nothing while a ship choice is pending or after the match has ended.
@@ -186,6 +193,31 @@ public sealed class World
 
     /// <summary>Queues an event for the presentation layer.</summary>
     public void Emit(GameEvent gameEvent) => _events.Add(gameEvent);
+
+    /// <summary>Overwrites the match-level state with values read from a snapshot; ships and modes are restored separately.</summary>
+    internal void RestoreState(WorldState state)
+    {
+        Tick = state.Tick;
+        _events.Clear();
+        _events.AddRange(state.Events);
+        _stepEventCount = state.StepEventCount;
+        _choiceQueue.Clear();
+        foreach (var index in state.ChoiceQueue)
+        {
+            _choiceQueue.Enqueue(index);
+        }
+
+        // Kept when unchanged so the presentation layer can tell a new choice from the same one by reference.
+        if (PendingChoice?.ShipIndex != state.PendingChoiceIndex)
+        {
+            PendingChoice = state.PendingChoiceIndex is { } index ? new ShipChoice(index) : null;
+        }
+
+        if (Outcome == null || state.Outcome == null)
+        {
+            Outcome = state.Outcome;
+        }
+    }
 
     /// <summary>Picks a uniformly random ship type.</summary>
     public ShipDefinition RandomShip() => ShipCatalog.All[Random.NextInt(ShipCatalog.All.Count)];

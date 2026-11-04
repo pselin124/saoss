@@ -245,6 +245,9 @@ public sealed class Ship
         }
     }
 
+    /// <summary>Sets the ship type without any of the respawn side effects; used when restoring a snapshot.</summary>
+    internal void RestoreDefinition(ShipDefinition definition) => Definition = definition;
+
     private static Projectile[] CreatePool(int size) => [.. Enumerable.Range(0, size).Select(_ => new Projectile())];
 
     private static void ClearPool(Projectile[] pool)

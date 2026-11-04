@@ -28,6 +28,13 @@ public sealed class MushroomMode : GameModeRules
     /// <inheritdoc cref="X"/>
     public int Y { get; private set; } = StartY;
 
+    /// <summary>Moves the mushroom to a position read from a snapshot.</summary>
+    internal void Restore(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
     /// <inheritdoc/>
     public override void OnRespawnPoint(World world, Ship ship) => AddTeamScore(world, ship.Team, -DeathPenalty);
 
