@@ -1,5 +1,6 @@
 using Saoss.Core;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Game;
 using Saoss.Game.Settings;
 
@@ -68,5 +69,25 @@ public sealed class LocalPlayerSetupTests
         Assert.IsFalse(match.AiTargetsOnlyEnemies);
         Assert.AreEqual(GameMode.RandomShipsDeathmatch, match.Mode);
         Assert.AreEqual(400, match.Credits);
+        Assert.AreEqual(AiDifficulty.GalacticTerror, match.AiDifficulty);
+    }
+
+    [TestMethod]
+    public void CreateMatch_UsesTheAiLevel()
+    {
+        var match = LocalPlayerSetup.CreateMatch(LocalGameKind.CaptureTheFlower, new GameSettings { AiDifficulty = AiDifficulty.SpaceCadet });
+
+        Assert.AreEqual(AiDifficulty.SpaceCadet, match.AiDifficulty);
+    }
+
+    [TestMethod]
+    public void AiLevel_StepsThroughEveryLevelAndWraps()
+    {
+        Assert.AreEqual(AiDifficulty.RocketAce, SettingsSteps.AiLevel(AiDifficulty.SpaceCadet, increase: true));
+        Assert.AreEqual(AiDifficulty.SpaceCadet, SettingsSteps.AiLevel(AiDifficulty.GalacticTerror, increase: true));
+        Assert.AreEqual(AiDifficulty.GalacticTerror, SettingsSteps.AiLevel(AiDifficulty.SpaceCadet, increase: false));
+        CollectionAssert.AreEqual(
+            new[] { "Space Cadet", "Rocket Ace", "Galactic Terror" },
+            Enum.GetValues<AiDifficulty>().Select(AiLevelNames.Of).ToArray());
     }
 }

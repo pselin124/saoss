@@ -1,10 +1,11 @@
 using Saoss.Core.Ships;
+using Saoss.Core.Simulation.Ai;
 
 namespace Saoss.Core.Simulation.Snapshots;
 
 /// <summary>
-/// Writes and reads everything a <see cref="Ship"/> holds: type, controls, physics, weapon state, tail history and
-/// its pools.
+/// Writes and reads everything a <see cref="Ship"/> holds: type, controls, physics, weapon state, tail history, its
+/// pools and the computer pilot's memory.
 /// </summary>
 internal static class ShipSnapshot
 {
@@ -40,6 +41,7 @@ internal static class ShipSnapshot
         PoolSnapshot.WriteProjectiles(writer, ship.SpecialProjectiles);
         PoolSnapshot.WriteProjectiles(writer, ship.Slimes);
         PoolSnapshot.WriteBeams(writer, ship.Beams);
+        WriteAi(writer, ship.Ai);
     }
 
     /// <summary>Reads one ship written by <see cref="Write"/>.</summary>
@@ -63,6 +65,28 @@ internal static class ShipSnapshot
         PoolSnapshot.ReadProjectiles(reader, ship.SpecialProjectiles, "special projectile");
         PoolSnapshot.ReadProjectiles(reader, ship.Slimes, "slime");
         PoolSnapshot.ReadBeams(reader, ship.Beams);
+        ReadAi(reader, ship.Ai);
+    }
+
+    private static void WriteAi(BinaryWriter writer, AiState ai)
+    {
+        PoolSnapshot.WriteFloats(writer, ai.DistanceScale, ai.AimErrorDegrees, ai.TargetVelocityX, ai.TargetVelocityY);
+        writer.Write(ai.DistanceTicksLeft);
+        writer.Write(ai.AimTicksLeft);
+        writer.Write(ai.MoodTicksLeft);
+        writer.Write(ai.IsHoldingBack);
+    }
+
+    private static void ReadAi(SnapshotReader reader, AiState ai)
+    {
+        ai.DistanceScale = reader.ReadFloat();
+        ai.AimErrorDegrees = reader.ReadFloat();
+        ai.TargetVelocityX = reader.ReadFloat();
+        ai.TargetVelocityY = reader.ReadFloat();
+        ai.DistanceTicksLeft = reader.ReadInt();
+        ai.AimTicksLeft = reader.ReadInt();
+        ai.MoodTicksLeft = reader.ReadInt();
+        ai.IsHoldingBack = reader.ReadBool("AI mood");
     }
 
     private static int Flags(Ship ship) =>

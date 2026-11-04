@@ -2,14 +2,16 @@ using System.Globalization;
 using Microsoft.Xna.Framework;
 using Saoss.Core;
 using Saoss.Game.Multiplayer;
+using Saoss.Game.Settings;
 using Saoss.Network.Lobby;
 
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
 /// The host's settings (net.cpp hostSettingsMenu and drawHostSettingsMenu): "maximum players:", "credits / score limit:",
-/// "audio &amp; visual settings", "game mode:" and "exit menu". Left lowers and Right raises a value; Enter raises the
-/// player count and the mode but leaves the credits alone, as in the original. Values wrap around.
+/// "audio &amp; visual settings", "game mode:", "AI level:" (new; also saved as the player's setting) and "exit menu".
+/// Left lowers and Right raises a value; Enter raises the player count, the mode and the AI level but leaves the
+/// credits alone, as in the original. Values wrap around.
 /// </summary>
 public static class HostSettingsMenu
 {
@@ -18,11 +20,12 @@ public static class HostSettingsMenu
     private const float MaxPlayersX = -13f;
     private const float CreditsX = -9f;
     private const float ModeX = -20f;
+    private const float AiLevelX = -21f;
     private const float ArrowX = -7.5f;
 
-    private static readonly float[] LabelY = [8f, 4.5f, 1f, -2.5f, -6f];
-    private static readonly float[] ArrowYs = [1.6f, 0.9f, 0.2f, -0.5f, -1.2f];
-    private static readonly MenuPanel Panel = new(-2.25f, -0.55f, 1f, 0.625f);
+    private static readonly float[] LabelY = [8f, 4.5f, 1f, -2.5f, -6f, -9.5f];
+    private static readonly float[] ArrowYs = [1.6f, 0.9f, 0.2f, -0.5f, -1.2f, -1.9f];
+    private static readonly MenuPanel Panel = new(-2.25f, -0.8f, 1f, 0.625f);
     private static readonly Color ValueColor = new(0.2f, 0.2f, 1f);
     private static readonly GameMode[] Modes = Enum.GetValues<GameMode>();
 
@@ -55,6 +58,12 @@ public static class HostSettingsMenu
             {
                 Value = () => LobbyTexts.Mode(lobby.Mode),
                 ValueX = ModeX,
+                ValueColor = ValueColor,
+            },
+            new("AI level:", d => StepAiLevel(shell, lobby, up: d != MenuDirection.Left))
+            {
+                Value = () => AiLevelNames.Of(lobby.AiDifficulty),
+                ValueX = AiLevelX,
                 ValueColor = ValueColor,
             },
             new("exit menu", _ => close()),
@@ -92,5 +101,13 @@ public static class HostSettingsMenu
     {
         var index = Array.IndexOf(Modes, mode);
         return Modes[(index + (up ? 1 : Modes.Length - 1)) % Modes.Length];
+    }
+
+    // The host's choice is also the level of its next local and hosted matches.
+    private static void StepAiLevel(IGameShell shell, LobbyState lobby, bool up)
+    {
+        var level = SettingsSteps.AiLevel(lobby.AiDifficulty, up);
+        lobby.SetAiDifficulty(level);
+        shell.ApplySettings(shell.Settings with { AiDifficulty = level });
     }
 }

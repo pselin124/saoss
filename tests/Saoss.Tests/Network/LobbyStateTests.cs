@@ -1,4 +1,5 @@
 using Saoss.Core;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Network.Lobby;
 using Saoss.Network.Protocol;
 
@@ -191,6 +192,20 @@ public sealed class LobbyStateTests
         Assert.AreEqual((mode, usesCredits, choose, 700), (settings.Mode, settings.UsesCredits, settings.PlayersChooseShips, settings.Credits));
         CollectionAssert.AreEqual(new[] { 0, 1, 3 }, lobby.PlayerSlots().ToArray());
         CollectionAssert.AreEqual(new[] { (0, true), (1, true), (4, false) }, settings.Players.Select(p => (p.Team, p.IsHuman)).ToArray());
+    }
+
+    [TestMethod]
+    public void AiDifficulty_DefaultsToTheOriginalAndReachesTheMatch()
+    {
+        var lobby = new LobbyState(["host"]);
+        Assert.AreEqual(AiDifficulty.GalacticTerror, lobby.AiDifficulty);
+        var version = lobby.Version;
+
+        lobby.SetAiDifficulty(AiDifficulty.SpaceCadet);
+
+        Assert.AreEqual(version + 1, lobby.Version);
+        Assert.AreEqual(AiDifficulty.SpaceCadet, lobby.ToMatchSettings().AiDifficulty);
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(() => lobby.SetAiDifficulty((AiDifficulty)7));
     }
 
     [TestMethod]

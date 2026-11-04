@@ -1,4 +1,5 @@
 using Saoss.Core.Ships;
+using Saoss.Core.Simulation.Ai;
 
 namespace Saoss.Core.Simulation;
 
@@ -132,6 +133,9 @@ public sealed class Ship
 
     /// <summary>Number of slime blobs stuck on the ship; each slows it down [limacount].</summary>
     public int SlimeCount { get; set; }
+
+    /// <summary>Memory of a handicapped computer pilot; unused by humans and the original pilot.</summary>
+    public AiState Ai { get; } = new();
 
     /// <summary>Primary weapon projectile pool; only the first <c>Primary.MaxProjectiles</c> slots are used [pati].</summary>
     public Projectile[] PrimaryProjectiles { get; }

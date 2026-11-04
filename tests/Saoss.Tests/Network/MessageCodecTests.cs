@@ -1,6 +1,7 @@
 using Saoss.Core;
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Core.Simulation.Snapshots;
 using Saoss.Network.Lobby;
 using Saoss.Network.Protocol;
@@ -23,7 +24,9 @@ public sealed class MessageCodecTests
             {
                 // Client copies carry the settings and slots, not the host's member list or version counter.
                 var received = ((LobbyUpdateMessage)decoded).Lobby;
-                Assert.AreEqual((sent.MaxPlayers, sent.Mode, sent.Credits, sent.AiTargetsOnlyEnemies), (received.MaxPlayers, received.Mode, received.Credits, received.AiTargetsOnlyEnemies));
+                Assert.AreEqual(
+                    (sent.MaxPlayers, sent.Mode, sent.Credits, sent.AiTargetsOnlyEnemies, sent.AiDifficulty),
+                    (received.MaxPlayers, received.Mode, received.Credits, received.AiTargetsOnlyEnemies, received.AiDifficulty));
                 DeepComparer.AssertEqual(sent.Slots, received.Slots, "lobby slots");
                 continue;
             }
@@ -127,6 +130,7 @@ public sealed class MessageCodecTests
         lobby.SetMode(GameMode.CaptureTheFlower);
         lobby.SetCredits(1300);
         lobby.SetAiTargetsOnlyEnemies(true);
+        lobby.SetAiDifficulty(AiDifficulty.RocketAce);
         var settings = lobby.ToMatchSettings();
         var world = new World(settings, 4);
         ScriptedMatch.Run(world, 200, 4);

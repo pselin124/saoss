@@ -1,3 +1,4 @@
+using Saoss.Core.Simulation.Ai;
 using Saoss.Game.Rendering.Scene;
 using Saoss.Game.Settings;
 
@@ -42,6 +43,7 @@ public sealed class SettingsStoreTests
             SoundVolume = 0,
             Players = players,
             AiTargetsOnlyEnemies = true,
+            AiDifficulty = AiDifficulty.RocketAce,
             CameraMode = CameraMode.TopDown,
             Detail = 3,
             Nicknames = ["tgo", "cinere", "joku", "neljas"],
@@ -93,6 +95,7 @@ public sealed class SettingsStoreTests
 
         Assert.AreEqual(300, loaded.Credits);
         Assert.AreEqual(100, loaded.TicksPerSecond);
+        Assert.AreEqual(AiDifficulty.GalacticTerror, loaded.AiDifficulty);
         CollectionAssert.AreEqual(new GameSettings().Players.ToArray(), loaded.Players.ToArray());
     }
 
@@ -103,7 +106,7 @@ public sealed class SettingsStoreTests
         File.WriteAllText(Path.Combine(_directory, SettingsStore.FileName), """
             {
               "Width": 10, "Height": 99999, "PlayerCount": 40, "Credits": 5, "TicksPerSecond": 1000,
-              "MusicVolume": -3, "SoundVolume": 250, "CameraMode": 7, "Detail": 9,
+              "MusicVolume": -3, "SoundVolume": 250, "CameraMode": 7, "Detail": 9, "AiDifficulty": 9,
               "Players": [ { "IsHuman": true, "Team": 99 }, null, { "IsHuman": true, "Team": -2 },
                            { "IsHuman": true, "Team": 3 }, { "IsHuman": true, "Team": 4 } ],
               "Nicknames": [ "averyveryverylongname", "" ]
@@ -121,6 +124,7 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(GameSettings.MaxVolume, loaded.SoundVolume);
         Assert.AreEqual(CameraMode.Tilted, loaded.CameraMode);
         Assert.AreEqual(GameSettings.MaxDetail, loaded.Detail);
+        Assert.AreEqual(AiDifficulty.GalacticTerror, loaded.AiDifficulty);
         Assert.HasCount(GameSettings.MaxPlayers, loaded.Players);
         Assert.AreEqual(new PlayerSlotSettings(true, GameSettings.MaxTeam), loaded.Players[0]);
         Assert.AreEqual(new GameSettings().Players[1], loaded.Players[1]);
@@ -142,6 +146,17 @@ public sealed class SettingsStoreTests
         CollectionAssert.AreEqual(new[] { "bboldb", "Player 2", "ok name", "Player 4" }, loaded.Nicknames.ToArray());
         Assert.AreEqual("localhost", loaded.LastHost);
         Assert.AreEqual(GameSettings.MaxNetworkPlayers, loaded.NetworkPlayerCount);
+    }
+
+    [TestMethod]
+    public void Save_WritesTheAiLevelByName()
+    {
+        var store = new SettingsStore(_directory);
+
+        store.Save(new GameSettings { AiDifficulty = AiDifficulty.SpaceCadet });
+
+        StringAssert.Contains(File.ReadAllText(store.FilePath), "\"AiDifficulty\": \"SpaceCadet\"");
+        Assert.AreEqual(AiDifficulty.SpaceCadet, store.Load().AiDifficulty);
     }
 
     [TestMethod]

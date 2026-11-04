@@ -43,6 +43,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         "Music Volume:",
         "Sound Volume:",
         "Player Setup",
+        "AI Level:",
         "Camera Mode:",
         "Detail:",
         "Apply and Save Settings",
@@ -195,6 +196,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
             SettingsMenuItem.SoundVolume => s with { SoundVolume = SettingsSteps.Volume(s.SoundVolume, increase, fine) },
             SettingsMenuItem.CameraMode => s with { CameraMode = s.CameraMode == CameraMode.Tilted ? CameraMode.TopDown : CameraMode.Tilted },
             SettingsMenuItem.Detail => s with { Detail = SettingsSteps.Detail(s.Detail, increase) },
+            SettingsMenuItem.AiLevel => s with { AiDifficulty = SettingsSteps.AiLevel(s.AiDifficulty, increase) },
             _ => s,
         };
     }
@@ -217,6 +219,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         DrawValue(SettingsMenuItem.Fps, Number(s.TicksPerSecond));
         DrawValue(SettingsMenuItem.MusicVolume, Number(s.MusicVolume));
         DrawValue(SettingsMenuItem.SoundVolume, Number(s.SoundVolume));
+        DrawValue(SettingsMenuItem.AiLevel, AiLevelNames.Of(s.AiDifficulty));
         DrawValue(SettingsMenuItem.CameraMode, s.CameraMode == CameraMode.Tilted ? "3D" : "2D");
         DrawValue(SettingsMenuItem.Detail, Number(s.Detail));
     }

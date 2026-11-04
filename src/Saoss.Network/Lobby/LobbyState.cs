@@ -1,5 +1,6 @@
 using Saoss.Core;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Network.Protocol;
 
 namespace Saoss.Network.Lobby;
@@ -60,12 +61,13 @@ public sealed class LobbyState
     }
 
     /// <summary>Creates a copy received from the host; it has no member list.</summary>
-    internal LobbyState(int maxPlayers, GameMode mode, int credits, bool aiTargetsOnlyEnemies, LobbySlot[] slots)
+    internal LobbyState(int maxPlayers, GameMode mode, int credits, bool aiTargetsOnlyEnemies, AiDifficulty aiDifficulty, LobbySlot[] slots)
     {
         MaxPlayers = maxPlayers;
         Mode = mode;
         Credits = credits;
         AiTargetsOnlyEnemies = aiTargetsOnlyEnemies;
+        AiDifficulty = aiDifficulty;
         _slots = slots;
     }
 
@@ -80,6 +82,9 @@ public sealed class LobbyState
 
     /// <summary>See <see cref="MatchSettings.AiTargetsOnlyEnemies"/>; the host's own setting [aikohteet].</summary>
     public bool AiTargetsOnlyEnemies { get; private set; }
+
+    /// <summary>See <see cref="MatchSettings.AiDifficulty"/>; chosen by the host.</summary>
+    public AiDifficulty AiDifficulty { get; private set; } = AiDifficulty.GalacticTerror;
 
     /// <summary>All 16 slots; only the first <see cref="MaxPlayers"/> are used.</summary>
     public IReadOnlyList<LobbySlot> Slots => _slots;
@@ -251,6 +256,18 @@ public sealed class LobbyState
         Changed();
     }
 
+    /// <summary>Host: sets <see cref="AiDifficulty"/>.</summary>
+    public void SetAiDifficulty(AiDifficulty difficulty)
+    {
+        if (!Enum.IsDefined(difficulty))
+        {
+            throw new ArgumentOutOfRangeException(nameof(difficulty), difficulty, "Unknown AI level.");
+        }
+
+        AiDifficulty = difficulty;
+        Changed();
+    }
+
     /// <summary>Slot of every ship: the used slots with a human or AI, in slot order (hostStart).</summary>
     public IReadOnlyList<int> PlayerSlots() => [.. Enumerable.Range(0, MaxPlayers).Where(i => _slots[i].IsPlayer)];
 
@@ -277,6 +294,7 @@ public sealed class LobbyState
             PlayersChooseShips = Mode == GameMode.Deathmatch,
             ChoicesPauseMatch = false,
             AiTargetsOnlyEnemies = AiTargetsOnlyEnemies,
+            AiDifficulty = AiDifficulty,
         };
     }
 

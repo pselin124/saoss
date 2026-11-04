@@ -1,3 +1,5 @@
+using Saoss.Core.Simulation.Ai;
+
 namespace Saoss.Game.Settings;
 
 /// <summary>
@@ -65,4 +67,12 @@ public static class SettingsSteps
 
     /// <summary>Next team; the player setup only counts up.</summary>
     public static int Team(int team) => team >= GameSettings.MaxTeam ? 0 : team + 1;
+
+    /// <summary>Next AI level from easiest to hardest, wrapping.</summary>
+    public static AiDifficulty AiLevel(AiDifficulty difficulty, bool increase)
+    {
+        var levels = Enum.GetValues<AiDifficulty>();
+        var index = Array.IndexOf(levels, difficulty);
+        return levels[(index + (increase ? 1 : levels.Length - 1)) % levels.Length];
+    }
 }

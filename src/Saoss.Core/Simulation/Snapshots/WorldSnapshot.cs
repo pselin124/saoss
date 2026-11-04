@@ -11,7 +11,7 @@ namespace Saoss.Core.Simulation.Snapshots;
 public static class WorldSnapshot
 {
     /// <summary>Format version written first; bumped whenever the layout changes.</summary>
-    public const byte FormatVersion = 1;
+    public const byte FormatVersion = 2;
 
     /// <summary>Most events a snapshot may carry.</summary>
     public const int MaxEvents = 8192;

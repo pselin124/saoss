@@ -1,6 +1,7 @@
 using System.Text;
 using Saoss.Core;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Network.Lobby;
 
 namespace Saoss.Network.Protocol;
@@ -51,6 +52,7 @@ internal static class SettingsCodec
             | (settings.PlayersChooseShips ? ChooseShipsFlag : 0)
             | (settings.ChoicesPauseMatch ? ChoicesPauseFlag : 0)));
         writer.Write(settings.Credits);
+        writer.Write((byte)settings.AiDifficulty);
     }
 
     /// <summary>Reads match settings.</summary>
@@ -78,6 +80,7 @@ internal static class SettingsCodec
             PlayersChooseShips = (flags & ChooseShipsFlag) != 0,
             ChoicesPauseMatch = (flags & ChoicesPauseFlag) != 0,
             Credits = reader.ReadInt(0, MaxMatchCredits, "credits"),
+            AiDifficulty = reader.ReadEnum<AiDifficulty>("AI level"),
         };
     }
 
@@ -88,6 +91,7 @@ internal static class SettingsCodec
         writer.Write((byte)lobby.Mode);
         writer.Write(lobby.Credits);
         writer.Write(lobby.AiTargetsOnlyEnemies);
+        writer.Write((byte)lobby.AiDifficulty);
         foreach (var slot in lobby.Slots)
         {
             writer.Write((byte)slot.Status);
@@ -109,13 +113,14 @@ internal static class SettingsCodec
         var mode = reader.ReadEnum<GameMode>("game mode");
         var credits = reader.ReadInt(LobbyState.MinCredits, LobbyState.MaxCredits, "credits");
         var aiTargets = reader.ReadBool("AI target flag");
+        var aiDifficulty = reader.ReadEnum<AiDifficulty>("AI level");
         var slots = new LobbySlot[LobbyState.SlotCount];
         for (var i = 0; i < slots.Length; i++)
         {
             slots[i] = ReadSlot(reader);
         }
 
-        return new LobbyState(maxPlayers, mode, credits, aiTargets, slots);
+        return new LobbyState(maxPlayers, mode, credits, aiTargets, aiDifficulty, slots);
     }
 
     private static LobbySlot ReadSlot(WireReader reader)

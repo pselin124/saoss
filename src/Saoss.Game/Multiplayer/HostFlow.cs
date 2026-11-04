@@ -32,6 +32,7 @@ public sealed class HostFlow : IMultiplayerFlow
         _end = end;
         _autoStartPlayers = autoStartPlayers;
         session.Lobby.SetAiTargetsOnlyEnemies(shell.Settings.AiTargetsOnlyEnemies);
+        session.Lobby.SetAiDifficulty(shell.Settings.AiDifficulty);
     }
 
     /// <summary>Shows the lobby.</summary>

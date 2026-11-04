@@ -1,3 +1,4 @@
+using Saoss.Core.Simulation.Ai;
 using Saoss.Game.Rendering.Scene;
 using Saoss.Network.Protocol;
 
@@ -88,6 +89,9 @@ public sealed record GameSettings
     /// </summary>
     public bool AiTargetsOnlyEnemies { get; init; }
 
+    /// <summary>Skill of every computer pilot in local and hosted matches; not in the original.</summary>
+    public AiDifficulty AiDifficulty { get; init; } = AiDifficulty.GalacticTerror;
+
     /// <summary>Match camera [cammode].</summary>
     public CameraMode CameraMode { get; init; } = CameraMode.Tilted;
 
@@ -124,6 +128,7 @@ public sealed record GameSettings
         MusicVolume = Math.Clamp(MusicVolume, 0, MaxVolume),
         SoundVolume = Math.Clamp(SoundVolume, 0, MaxVolume),
         Players = ValidatedPlayers(Players),
+        AiDifficulty = Enum.IsDefined(AiDifficulty) ? AiDifficulty : AiDifficulty.GalacticTerror,
         CameraMode = Enum.IsDefined(CameraMode) ? CameraMode : CameraMode.Tilted,
         Detail = Math.Clamp(Detail, 0, MaxDetail),
         Nicknames = ValidatedNicknames(Nicknames),

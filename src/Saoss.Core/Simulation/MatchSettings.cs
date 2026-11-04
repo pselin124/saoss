@@ -1,3 +1,5 @@
+using Saoss.Core.Simulation.Ai;
+
 namespace Saoss.Core.Simulation;
 
 /// <summary>
@@ -25,6 +27,9 @@ public sealed record MatchSettings
     /// When false, an AI pilot with no enemy left attacks the nearest other ship of any team [aikohteet].
     /// </summary>
     public bool AiTargetsOnlyEnemies { get; init; }
+
+    /// <summary>Skill of every computer pilot; the default is the original pilot.</summary>
+    public AiDifficulty AiDifficulty { get; init; } = AiDifficulty.GalacticTerror;
 
     /// <summary>
     /// Credits game: every player starts with <see cref="Credits"/>, pays for each ship and is out when it can no

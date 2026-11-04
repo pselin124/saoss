@@ -5,7 +5,8 @@ namespace Saoss.Core.Simulation.Ai;
 /// <summary>
 /// The computer pilot [ailiiku]. Once per tick, before anything moves, it picks the nearest enemy and sets
 /// the ship's <see cref="Ship.Controls"/> to chase, aim at and shoot it while keeping clear of the planet.
-/// It has no memory of its own; a few decisions read the controls it chose on the previous tick.
+/// The original pilot has no memory of its own; a few decisions read the controls it chose on the previous tick.
+/// Easier <see cref="AiDifficulty"/> levels add the handicaps of <see cref="AiSkill"/>, kept in <see cref="Ship.Ai"/>.
 /// </summary>
 public static class AiPilot
 {
@@ -95,6 +96,7 @@ public static class AiPilot
         private readonly Ship _ship;
         private readonly World _world;
         private readonly ShipDefinition _definition;
+        private readonly AiSkill _skill;
         private ShipControls _controls;
         private Ship? _target;
         private double _dx;
@@ -111,6 +113,7 @@ public static class AiPilot
             _ship = ship;
             _world = world;
             _definition = ship.Definition;
+            _skill = AiSkill.For(world.Settings.AiDifficulty);
             _controls = ship.Controls;
             _heading = ship.Angle / 180f * MathF.PI;
         }
@@ -122,11 +125,26 @@ public static class AiPilot
         public void Run()
         {
             SelectTarget();
+            if (!_skill.IsFlawless)
+            {
+                AiHandicap.Update(_ship.Ai, _skill, _target, _world.Random);
+            }
+
             if (_target is not null)
             {
                 MeasureTarget(_target);
                 ComputeLeadAngle(_target);
+                if (!_skill.IsFlawless)
+                {
+                    Misjudge();
+                }
+
                 DecideThrust(_target);
+                if (!_skill.IsFlawless && _ship.Ai.IsHoldingBack)
+                {
+                    _controls.Thrust = false;
+                }
+
                 if (!_steeringChosen)
                 {
                     DecideTurning();
@@ -139,6 +157,10 @@ public static class AiPilot
             {
                 DecideFire(_target);
                 DecideSpecial(_target);
+                if (!_skill.IsFlawless)
+                {
+                    Hesitate();
+                }
             }
             else
             {
@@ -201,8 +223,9 @@ public static class AiPilot
         private void ComputeLeadAngle(Ship target)
         {
             var speed = Exact(_definition.Primary.Speed);
-            var targetVelocityX = (double)target.VelocityX;
-            var targetVelocityY = (double)target.VelocityY;
+            var (targetVelocityX, targetVelocityY) = _skill.IsFlawless
+                ? ((double)target.VelocityX, (double)target.VelocityY)
+                : (_ship.Ai.TargetVelocityX * _skill.LeadFactor, _ship.Ai.TargetVelocityY * _skill.LeadFactor);
             var isConstantSpeedShot = speed > MinLeadSpeed && speed < MaxLeadSpeed;
             var isAcceleratingShot = speed < MinLeadSpeed;
             var leadDistance = 0.0;
@@ -240,6 +263,24 @@ public static class AiPilot
             {
                 _leadAngle = _targetAngle;
             }
+        }
+
+        // Handicap: aim off by the current error and judge every distance threshold scaled by the current factor.
+        private void Misjudge()
+        {
+            var state = _ship.Ai;
+            var aimError = state.AimErrorDegrees / 180.0 * Pi;
+            _leadAngle += aimError;
+            _targetAngle += aimError;
+            _distance /= state.DistanceScale;
+        }
+
+        // Handicap: a passive mood drops planned shots and specials (not a planet boost); now and then it fires anyway.
+        private void Hesitate()
+        {
+            var holdingBack = _ship.Ai.IsHoldingBack;
+            _controls.Fire = (_controls.Fire && !holdingBack) || AiHandicap.FiresWildly(_skill, _world.Random);
+            _controls.Special = _planetSpecialChosen || (_controls.Special && !holdingBack);
         }
 
         private void DecideThrust(Ship target)

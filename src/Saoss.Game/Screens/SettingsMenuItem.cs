@@ -35,6 +35,9 @@ public enum SettingsMenuItem
     /// <summary>Opens the player setup (human or CPU, and team, of each player).</summary>
     PlayerSetup,
 
+    /// <summary>Skill of the computer pilots; not in the original.</summary>
+    AiLevel,
+
     /// <summary>Tilted ("3d") or top-down ("2d") match camera.</summary>
     CameraMode,
 

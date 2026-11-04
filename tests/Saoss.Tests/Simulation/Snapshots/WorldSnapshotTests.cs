@@ -22,6 +22,7 @@ public sealed class WorldSnapshotTests
     [DataRow("CaptureTheFlower")]
     [DataRow("Mushroom")]
     [DataRow("DominationQuickEnd")]
+    [DataRow("SpaceCadet")]
     public void Snapshot_RestoresEveryField_AndBothWorldsStayIdentical(string scenario)
     {
         var settings = ScriptedMatch.Settings(scenario);

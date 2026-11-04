@@ -31,5 +31,6 @@ public static class LocalPlayerSetup
         MatchSettings.ForLocalMenu(kind, Players(settings), settings.Credits) with
         {
             AiTargetsOnlyEnemies = settings.AiTargetsOnlyEnemies,
+            AiDifficulty = settings.AiDifficulty,
         };
 }

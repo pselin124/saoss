@@ -1,6 +1,7 @@
 using Saoss.Core;
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Ai;
 
 namespace Saoss.Tests.Simulation.Snapshots;
 
@@ -17,6 +18,7 @@ internal static class ScriptedMatch
     public static readonly string[] Scenarios =
     [
         "Deathmatch", "RandomShips", "CreditsRandom", "CreditsChoose", "Domination", "CaptureTheFlower", "Mushroom", "DominationQuickEnd",
+        "SpaceCadet",
     ];
 
     /// <summary>
@@ -36,6 +38,7 @@ internal static class ScriptedMatch
             "CaptureTheFlower" => settings with { Mode = GameMode.CaptureTheFlower },
             "Mushroom" => settings with { Mode = GameMode.EatTheMushroom },
             "DominationQuickEnd" => settings with { Mode = GameMode.FlowerDomination, Credits = 2 },
+            "SpaceCadet" => settings with { Mode = GameMode.RandomShipsDeathmatch, UsesCredits = true, Credits = 400, AiDifficulty = AiDifficulty.SpaceCadet },
             _ => throw new ArgumentOutOfRangeException(nameof(scenario), scenario, "Unknown scenario."),
         };
     }
