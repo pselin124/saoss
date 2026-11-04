@@ -11,7 +11,7 @@ public sealed partial class LegacyGl
     /// <summary>glLineWidth, in pixels of a <see cref="GlWideLine.ReferenceHeight"/>-pixel-high window.</summary>
     public void LineWidth(float width)
     {
-        if (TryRecord(g => g.LineWidth(width)))
+        if (TryRecord(width, static (g, w) => g.LineWidth(w)))
         {
             return;
         }
@@ -56,13 +56,25 @@ public sealed partial class LegacyGl
         var v1 = ToEye(start, corners.StartLeft, inverseProjection);
         var v2 = ToEye(end, corners.EndLeft, inverseProjection);
         var v3 = ToEye(end, corners.EndRight, inverseProjection);
-        EnsureBatchSpace(6);
-        _batch[_batchCount++] = v0;
-        _batch[_batchCount++] = v1;
-        _batch[_batchCount++] = v2;
-        _batch[_batchCount++] = v0;
-        _batch[_batchCount++] = v2;
-        _batch[_batchCount++] = v3;
+        var startJob = _primitiveJobs[a];
+        var endJob = _primitiveJobs[b];
+        EnsureBatchSpace(4, 6);
+        var first = _batchCount;
+        AddBatchVertex(v0, startJob);
+        AddBatchVertex(v1, startJob);
+        AddBatchVertex(v2, endJob);
+        AddBatchVertex(v3, endJob);
+        ReadOnlySpan<int> quadIndices = [0, 1, 2, 0, 2, 3];
+        foreach (var index in quadIndices)
+        {
+            _indices[_indexCount++] = first + index;
+        }
+    }
+
+    private void AddBatchVertex(VertexPositionColorTexture vertex, int job)
+    {
+        _batch[_batchCount] = vertex;
+        _batchJobs[_batchCount++] = job;
     }
 
     private static VertexPositionColorTexture ToEye(VertexPositionColorTexture vertex, Vector4 clip, Matrix inverseProjection)

@@ -22,7 +22,7 @@ public sealed partial class LegacyGl
     /// <summary>glStencilFunc.</summary>
     public void StencilFunc(GlCompare function, int reference, int mask)
     {
-        if (TryRecord(g => g.StencilFunc(function, reference, mask)))
+        if (TryRecord((function, reference, mask), static (g, a) => g.StencilFunc(a.function, a.reference, a.mask)))
         {
             return;
         }
@@ -33,7 +33,7 @@ public sealed partial class LegacyGl
     /// <summary>glStencilOp.</summary>
     public void StencilOp(GlStencilOp fail, GlStencilOp depthFail, GlStencilOp pass)
     {
-        if (TryRecord(g => g.StencilOp(fail, depthFail, pass)))
+        if (TryRecord((fail, depthFail, pass), static (g, a) => g.StencilOp(a.fail, a.depthFail, a.pass)))
         {
             return;
         }
@@ -44,7 +44,7 @@ public sealed partial class LegacyGl
     /// <summary>glPolygonOffset; applies to filled polygons while <see cref="GlCapability.PolygonOffsetFill"/> is enabled.</summary>
     public void PolygonOffset(float factor, float units)
     {
-        if (TryRecord(g => g.PolygonOffset(factor, units)))
+        if (TryRecord((factor, units), static (g, a) => g.PolygonOffset(a.factor, a.units)))
         {
             return;
         }
@@ -55,7 +55,7 @@ public sealed partial class LegacyGl
     /// <summary>glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, mode).</summary>
     public void TexEnv(GlTexEnv mode)
     {
-        if (TryRecord(g => g.TexEnv(mode)))
+        if (TryRecord(mode, static (g, m) => g.TexEnv(m)))
         {
             return;
         }

@@ -3,18 +3,74 @@ namespace Saoss.Game.Rendering.Legacy;
 /// <summary>
 /// GLU quadrics (gluSphere, gluCylinder, gluDisk, gluPartialDisk) with the same tessellation, vertex order
 /// and normals as Mesa's GLU, so lighting and face culling match the original. Smooth normals,
-/// filled style and outside orientation, the original's settings.
+/// filled style and outside orientation, the original's settings. Each tessellation is recorded once into a
+/// display list and replayed after that.
 /// </summary>
 public sealed partial class LegacyGl
 {
+    // Bounds the cache when a caller animates a quadric's size; further shapes are tessellated every time.
+    private const int MaxCachedQuadrics = 512;
+
+    private readonly Dictionary<GlQuadric, GlDisplayList> _quadrics = [];
+
     /// <summary>gluSphere around the Z axis; <paramref name="textured"/> matches gluQuadricTexture(GL_TRUE).</summary>
-    public void Sphere(float radius, int slices, int stacks, bool textured = false)
+    public void Sphere(float radius, int slices, int stacks, bool textured = false) =>
+        DrawQuadric(new GlQuadric(GlQuadricKind.Sphere, radius, 0, 0, slices, stacks, 0, 0, textured));
+
+    /// <summary>gluCylinder along +Z from the base radius to the top radius.</summary>
+    public void Cylinder(float baseRadius, float topRadius, float height, int slices, int stacks, bool textured = false) =>
+        DrawQuadric(new GlQuadric(GlQuadricKind.Cylinder, baseRadius, topRadius, height, slices, stacks, 0, 0, textured));
+
+    /// <summary>gluDisk in the XY plane facing +Z.</summary>
+    public void Disk(float innerRadius, float outerRadius, int slices, int loops, bool textured = false) =>
+        PartialDisk(innerRadius, outerRadius, slices, loops, 0f, 360f, textured);
+
+    /// <summary>gluPartialDisk; angles in degrees, measured clockwise from +Y like GLU.</summary>
+    public void PartialDisk(float innerRadius, float outerRadius, int slices, int loops, float startDegrees, float sweepDegrees, bool textured = false) =>
+        DrawQuadric(new GlQuadric(GlQuadricKind.PartialDisk, innerRadius, outerRadius, 0, slices, loops, startDegrees, sweepDegrees, textured));
+
+    private void DrawQuadric(GlQuadric quadric)
     {
-        if (TryRecord(g => g.Sphere(radius, slices, stacks, textured)))
+        if (_quadrics.TryGetValue(quadric, out var list))
         {
+            CallList(list);
             return;
         }
 
+        if (_quadrics.Count >= MaxCachedQuadrics)
+        {
+            Tessellate(quadric);
+            return;
+        }
+
+        var outer = _recording;
+        _recording = new GlDisplayList();
+        Tessellate(quadric);
+        list = _recording;
+        _recording = outer;
+        _quadrics[quadric] = list;
+        CallList(list);
+    }
+
+    private void Tessellate(GlQuadric q)
+    {
+        switch (q.Kind)
+        {
+            case GlQuadricKind.Sphere:
+                TessellateSphere(q.Radius1, q.Slices, q.Stacks, q.Textured);
+                break;
+            case GlQuadricKind.Cylinder:
+                TessellateCylinder(q.Radius1, q.Radius2, q.Height, q.Slices, q.Stacks, q.Textured);
+                break;
+            case GlQuadricKind.PartialDisk:
+            default:
+                TessellatePartialDisk(q.Radius1, q.Radius2, q.Slices, q.Stacks, q.StartDegrees, q.SweepDegrees, q.Textured);
+                break;
+        }
+    }
+
+    private void TessellateSphere(float radius, int slices, int stacks, bool textured)
+    {
         var dRho = MathF.PI / stacks;
         var dTheta = 2f * MathF.PI / slices;
         if (!textured)
@@ -45,14 +101,8 @@ public sealed partial class LegacyGl
         }
     }
 
-    /// <summary>gluCylinder along +Z from the base radius to the top radius.</summary>
-    public void Cylinder(float baseRadius, float topRadius, float height, int slices, int stacks, bool textured = false)
+    private void TessellateCylinder(float baseRadius, float topRadius, float height, int slices, int stacks, bool textured)
     {
-        if (TryRecord(g => g.Cylinder(baseRadius, topRadius, height, slices, stacks, textured)))
-        {
-            return;
-        }
-
         var dAngle = 2f * MathF.PI / slices;
         var dRadius = (topRadius - baseRadius) / stacks;
         var dZ = height / stacks;
@@ -90,18 +140,8 @@ public sealed partial class LegacyGl
         }
     }
 
-    /// <summary>gluDisk in the XY plane facing +Z.</summary>
-    public void Disk(float innerRadius, float outerRadius, int slices, int loops, bool textured = false) =>
-        PartialDisk(innerRadius, outerRadius, slices, loops, 0f, 360f, textured);
-
-    /// <summary>gluPartialDisk; angles in degrees, measured clockwise from +Y like GLU.</summary>
-    public void PartialDisk(float innerRadius, float outerRadius, int slices, int loops, float startDegrees, float sweepDegrees, bool textured = false)
+    private void TessellatePartialDisk(float innerRadius, float outerRadius, int slices, int loops, float startDegrees, float sweepDegrees, bool textured)
     {
-        if (TryRecord(g => g.PartialDisk(innerRadius, outerRadius, slices, loops, startDegrees, sweepDegrees, textured)))
-        {
-            return;
-        }
-
         var angleOffset = MathHelperRadians(startDegrees);
         var dAngle = MathHelperRadians(sweepDegrees) / slices;
         var dRadius = (outerRadius - innerRadius) / loops;

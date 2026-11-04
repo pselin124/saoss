@@ -25,4 +25,7 @@ public enum StartupScreen
 
     /// <summary>Connecting to <see cref="StartupOptions.JoinHost"/> (<c>--join &lt;host&gt;</c>).</summary>
     Join,
+
+    /// <summary>An all-AI random-ships match for benchmarks (<c>--bench-match &lt;players&gt;</c>).</summary>
+    BenchmarkMatch,
 }

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using XnaColor = Microsoft.Xna.Framework.Color;
@@ -6,21 +7,30 @@ namespace Saoss.Game.Rendering.Legacy;
 
 /// <summary>
 /// A small OpenGL 1.x fixed-function emulation on top of MonoGame, so the original drawing code can be
-/// translated call by call. Vertices are transformed to eye space and lit on the CPU (including point
-/// lights), then batched by render state and drawn with a <see cref="BasicEffect"/>.
+/// translated call by call. Vertices are transformed to eye space on the CPU and batched by render state; lit
+/// vertices are lit on the CPU (including point lights) when the batches are drawn, by <see cref="Flush"/>, with a
+/// <see cref="BasicEffect"/>.
 /// Method names follow GL without the <c>gl</c> prefix; angles are degrees. Unlike OpenGL, GL_NORMALIZE starts
 /// enabled, the state the game's own setup left for everything but the intro.
 /// </summary>
 public sealed partial class LegacyGl : IDisposable
 {
+    // Job index of a vertex whose color is final.
+    private const int Unlit = -1;
+    private const int ColorChunkSize = 16384;
+    private const int ParallelColorThreshold = 2 * ColorChunkSize;
+
     private readonly GraphicsDevice _device;
     private readonly BasicEffect _effect;
     private readonly Stack<Matrix> _modelViewStack = new();
     private readonly Stack<Matrix> _projectionStack = new();
     private readonly List<VertexPositionColorTexture> _primitive = [];
-    private readonly List<XnaColor> _primitiveBackColors = [];
+    private readonly List<int> _primitiveJobs = [];
     private readonly Dictionary<(GlBlend, GlBlend), BlendState> _blendStates = [];
     private readonly DepthStencilState _depthTestState = new() { DepthBufferEnable = true, DepthBufferWriteEnable = true, DepthBufferFunction = CompareFunction.LessEqual };
+    private readonly GlDeferredShading _shading = new();
+    private readonly List<GlDrawRange> _ranges = [];
+    private readonly Action<int> _resolveColorChunk;
 
     private Matrix _modelView = Matrix.Identity;
     private Matrix _projection = Matrix.Identity;
@@ -43,10 +53,19 @@ public sealed partial class LegacyGl : IDisposable
     private Vector2 _texCoord;
     private XnaColor _clearColor = XnaColor.Black;
     private GlPrimitive? _currentPrimitive;
+    private int _primitiveBackCount;
 
     private VertexPositionColorTexture[] _batch = new VertexPositionColorTexture[4096];
+    private int[] _batchJobs = new int[4096];
     private int _batchCount;
+    private int[] _indices = new int[8192];
+    private int _indexCount;
+    private int _rangeStart;
+    private int _primitiveBase;
+    private int _primitiveBackBase;
     private GlBatchKey _batchKey;
+    private DynamicVertexBuffer? _vertexBuffer;
+    private DynamicIndexBuffer? _indexBuffer;
 
     private GlDisplayList? _recording;
 
@@ -55,6 +74,7 @@ public sealed partial class LegacyGl : IDisposable
     {
         _device = device;
         _effect = new BasicEffect(device) { LightingEnabled = false, VertexColorEnabled = true, World = Matrix.Identity, View = Matrix.Identity };
+        _resolveColorChunk = ResolveColorChunk;
     }
 
     /// <summary>Fixed-function lighting state (lights, material, light model).</summary>
@@ -74,7 +94,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glMatrixMode.</summary>
     public void MatrixMode(GlMatrixMode mode)
     {
-        if (TryRecord(g => g.MatrixMode(mode)))
+        if (TryRecord(mode, static (g, m) => g.MatrixMode(m)))
         {
             return;
         }
@@ -85,7 +105,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glLoadIdentity.</summary>
     public void LoadIdentity()
     {
-        if (TryRecord(g => g.LoadIdentity()))
+        if (TryRecord(static g => g.LoadIdentity()))
         {
             return;
         }
@@ -96,7 +116,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glPushMatrix.</summary>
     public void PushMatrix()
     {
-        if (TryRecord(g => g.PushMatrix()))
+        if (TryRecord(static g => g.PushMatrix()))
         {
             return;
         }
@@ -107,7 +127,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glPopMatrix.</summary>
     public void PopMatrix()
     {
-        if (TryRecord(g => g.PopMatrix()))
+        if (TryRecord(static g => g.PopMatrix()))
         {
             return;
         }
@@ -122,7 +142,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glTranslatef.</summary>
     public void Translate(float x, float y, float z)
     {
-        if (TryRecord(g => g.Translate(x, y, z)))
+        if (TryRecord((x, y, z), static (g, a) => g.Translate(a.x, a.y, a.z)))
         {
             return;
         }
@@ -133,7 +153,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glRotatef: counter-clockwise degrees around the axis.</summary>
     public void Rotate(float degrees, float x, float y, float z)
     {
-        if (TryRecord(g => g.Rotate(degrees, x, y, z)))
+        if (TryRecord((degrees, x, y, z), static (g, a) => g.Rotate(a.degrees, a.x, a.y, a.z)))
         {
             return;
         }
@@ -150,7 +170,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glScalef.</summary>
     public void Scale(float x, float y, float z)
     {
-        if (TryRecord(g => g.Scale(x, y, z)))
+        if (TryRecord((x, y, z), static (g, a) => g.Scale(a.x, a.y, a.z)))
         {
             return;
         }
@@ -161,7 +181,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>gluPerspective, without argument validation (the original sometimes passes odd planes).</summary>
     public void Perspective(float fovYDegrees, float aspect, float near, float far)
     {
-        if (TryRecord(g => g.Perspective(fovYDegrees, aspect, near, far)))
+        if (TryRecord((fovYDegrees, aspect, near, far), static (g, a) => g.Perspective(a.fovYDegrees, a.aspect, a.near, a.far)))
         {
             return;
         }
@@ -179,7 +199,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glOrtho.</summary>
     public void Ortho(float left, float right, float bottom, float top, float near, float far)
     {
-        if (TryRecord(g => g.Ortho(left, right, bottom, top, near, far)))
+        if (TryRecord((left, right, bottom, top, near, far), static (g, a) => g.Ortho(a.left, a.right, a.bottom, a.top, a.near, a.far)))
         {
             return;
         }
@@ -195,7 +215,9 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>gluLookAt.</summary>
     public void LookAt(float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ)
     {
-        if (TryRecord(g => g.LookAt(eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ)))
+        if (TryRecord(
+            (eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ),
+            static (g, a) => g.LookAt(a.eyeX, a.eyeY, a.eyeZ, a.centerX, a.centerY, a.centerZ, a.upX, a.upY, a.upZ)))
         {
             return;
         }
@@ -223,7 +245,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glBlendFunc.</summary>
     public void BlendFunc(GlBlend source, GlBlend destination)
     {
-        if (TryRecord(g => g.BlendFunc(source, destination)))
+        if (TryRecord((source, destination), static (g, a) => g.BlendFunc(a.source, a.destination)))
         {
             return;
         }
@@ -235,7 +257,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glFrontFace: true for GL_CW.</summary>
     public void FrontFaceClockwise(bool clockwise)
     {
-        if (TryRecord(g => g.FrontFaceClockwise(clockwise)))
+        if (TryRecord(clockwise, static (g, c) => g.FrontFaceClockwise(c)))
         {
             return;
         }
@@ -246,7 +268,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glBindTexture; null unbinds (texturing then has no effect).</summary>
     public void BindTexture(Texture2D? texture)
     {
-        if (TryRecord(g => g.BindTexture(texture)))
+        if (TryRecord(texture, static (g, t) => g.BindTexture(t)))
         {
             return;
         }
@@ -257,7 +279,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glColor4f.</summary>
     public void Color(float r, float g, float b, float a = 1f)
     {
-        if (TryRecord(gl => gl.Color(r, g, b, a)))
+        if (TryRecord(GlListOp.Color, r, g, b, a))
         {
             return;
         }
@@ -268,7 +290,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glNormal3f.</summary>
     public void Normal(float x, float y, float z)
     {
-        if (TryRecord(g => g.Normal(x, y, z)))
+        if (TryRecord(GlListOp.Normal, x, y, z))
         {
             return;
         }
@@ -279,7 +301,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glTexCoord2f.</summary>
     public void TexCoord(float s, float t)
     {
-        if (TryRecord(g => g.TexCoord(s, t)))
+        if (TryRecord(GlListOp.TexCoord, s, t))
         {
             return;
         }
@@ -314,38 +336,48 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glBegin.</summary>
     public void Begin(GlPrimitive primitive)
     {
-        if (TryRecord(g => g.Begin(primitive)))
+        if (TryRecord(GlListOp.Begin, (float)primitive, 0))
         {
             return;
         }
 
         _currentPrimitive = primitive;
         _primitive.Clear();
-        _primitiveBackColors.Clear();
+        _primitiveJobs.Clear();
+        _primitiveBackCount = 0;
     }
 
-    /// <summary>glVertex3f: transforms, lights and stores the vertex with the current attributes.</summary>
+    /// <summary>
+    /// glVertex3f: transforms and stores the vertex with the current attributes. With lighting on, it is lit with
+    /// the current lighting state when the batch is drawn.
+    /// </summary>
     public void Vertex(float x, float y, float z)
     {
-        if (TryRecord(g => g.Vertex(x, y, z)))
+        if (TryRecord(GlListOp.Vertex, x, y, z))
         {
             return;
         }
 
+        GlFrameCounters.CountVertex();
         var eyePosition = Vector3.Transform(new Vector3(x, y, z), _modelView);
-        var color = _color;
-        if (_lighting)
+        var material = Vector4.Clamp(_color, Vector4.Zero, Vector4.One);
+        if (!_lighting)
         {
-            var normal = EyeNormal();
-            var material = Vector4.Clamp(_color, Vector4.Zero, Vector4.One);
-            color = Lighting.Shade(eyePosition, normal, material);
-            if (Lighting.TwoSide)
-            {
-                _primitiveBackColors.Add(new XnaColor(Lighting.Shade(eyePosition, -normal, material)));
-            }
+            _primitive.Add(new VertexPositionColorTexture(eyePosition, new XnaColor(material), _texCoord));
+            _primitiveJobs.Add(Unlit);
+            return;
         }
 
-        _primitive.Add(new VertexPositionColorTexture(eyePosition, new XnaColor(Vector4.Clamp(color, Vector4.Zero, Vector4.One)), _texCoord));
+        // A two-sided vertex's back color is the job after its front color.
+        var normal = EyeNormal();
+        _primitiveJobs.Add(_shading.Add(eyePosition, normal, material, Lighting));
+        if (Lighting.TwoSide)
+        {
+            _shading.Add(eyePosition, -normal, material, Lighting);
+            _primitiveBackCount++;
+        }
+
+        _primitive.Add(new VertexPositionColorTexture(eyePosition, default, _texCoord));
     }
 
     /// <summary>glVertex2f.</summary>
@@ -354,7 +386,7 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glEnd: converts the primitive to triangles or lines and adds it to the batch.</summary>
     public void End()
     {
-        if (TryRecord(g => g.End()))
+        if (TryRecord(GlListOp.End, 0, 0))
         {
             return;
         }
@@ -372,18 +404,35 @@ public sealed partial class LegacyGl : IDisposable
             return;
         }
 
+        if (primitive == GlPrimitive.Points)
+        {
+            return;
+        }
+
         PrepareBatch(isLine, isLine);
+
+        // The primitive's vertices are stored once and referenced by index; at most three indices per vertex (strips
+        // and fans). Back-lit copies are added by the first back-facing triangle.
+        var count = _primitive.Count;
+        EnsureBatchSpace(2 * count, 3 * count);
+        _primitiveBase = _batchCount;
+        _primitiveBackBase = -1;
+        for (var i = 0; i < count; i++)
+        {
+            AddBatchVertex(_primitive[i], _primitiveJobs[i]);
+        }
+
         switch (primitive)
         {
             case GlPrimitive.Triangles:
-                for (var i = 0; i + 2 < _primitive.Count; i += 3)
+                for (var i = 0; i + 2 < count; i += 3)
                 {
                     AddTriangle(i, i + 1, i + 2);
                 }
 
                 break;
             case GlPrimitive.TriangleStrip:
-                for (var i = 0; i + 2 < _primitive.Count; i++)
+                for (var i = 0; i + 2 < count; i++)
                 {
                     if (i % 2 == 0)
                     {
@@ -398,14 +447,14 @@ public sealed partial class LegacyGl : IDisposable
                 break;
             case GlPrimitive.TriangleFan:
             case GlPrimitive.Polygon:
-                for (var i = 1; i + 1 < _primitive.Count; i++)
+                for (var i = 1; i + 1 < count; i++)
                 {
                     AddTriangle(0, i, i + 1);
                 }
 
                 break;
             case GlPrimitive.Quads:
-                for (var i = 0; i + 3 < _primitive.Count; i += 4)
+                for (var i = 0; i + 3 < count; i += 4)
                 {
                     AddTriangle(i, i + 1, i + 2);
                     AddTriangle(i, i + 2, i + 3);
@@ -413,7 +462,7 @@ public sealed partial class LegacyGl : IDisposable
 
                 break;
             case GlPrimitive.QuadStrip:
-                for (var i = 0; i + 3 < _primitive.Count; i += 2)
+                for (var i = 0; i + 3 < count; i += 2)
                 {
                     AddTriangle(i, i + 1, i + 3);
                     AddTriangle(i, i + 3, i + 2);
@@ -421,7 +470,7 @@ public sealed partial class LegacyGl : IDisposable
 
                 break;
             case GlPrimitive.Lines:
-                for (var i = 0; i + 1 < _primitive.Count; i += 2)
+                for (var i = 0; i + 1 < count; i += 2)
                 {
                     AddLine(i, i + 1);
                 }
@@ -429,18 +478,17 @@ public sealed partial class LegacyGl : IDisposable
                 break;
             case GlPrimitive.LineStrip:
             case GlPrimitive.LineLoop:
-                for (var i = 0; i + 1 < _primitive.Count; i++)
+                for (var i = 0; i + 1 < count; i++)
                 {
                     AddLine(i, i + 1);
                 }
 
-                if (primitive == GlPrimitive.LineLoop && _primitive.Count > 2)
+                if (primitive == GlPrimitive.LineLoop && count > 2)
                 {
-                    AddLine(_primitive.Count - 1, 0);
+                    AddLine(count - 1, 0);
                 }
 
                 break;
-            case GlPrimitive.Points:
             default:
                 break;
         }
@@ -461,55 +509,76 @@ public sealed partial class LegacyGl : IDisposable
     /// <summary>glCallList: replays the recorded calls.</summary>
     public void CallList(GlDisplayList list)
     {
-        if (TryRecord(g => g.CallList(list)))
+        if (TryRecord(list, static (g, l) => g.CallList(l)))
         {
             return;
         }
 
-        foreach (var command in list.Commands)
+        foreach (ref readonly var command in CollectionsMarshal.AsSpan(list.Commands))
         {
-            command(this);
+            switch (command.Op)
+            {
+                case GlListOp.Vertex:
+                    Vertex(command.X, command.Y, command.Z);
+                    break;
+                case GlListOp.Normal:
+                    _normal = new Vector3(command.X, command.Y, command.Z);
+                    break;
+                case GlListOp.TexCoord:
+                    _texCoord = new Vector2(command.X, command.Y);
+                    break;
+                case GlListOp.Color:
+                    _color = new Vector4(command.X, command.Y, command.Z, command.W);
+                    break;
+                case GlListOp.Begin:
+                    Begin((GlPrimitive)(int)command.X);
+                    break;
+                case GlListOp.End:
+                    End();
+                    break;
+                case GlListOp.Call:
+                default:
+                    command.Call!(this);
+                    break;
+            }
         }
     }
 
     // ---- Frame ----------------------------------------------------------------------------------
 
-    /// <summary>Draws everything batched so far. Call at the end of a frame and before using the device directly.</summary>
+    /// <summary>
+    /// Lights the waiting vertices and draws everything batched so far. Call at the end of a frame and before using
+    /// the device directly.
+    /// </summary>
     public void Flush()
     {
-        if (_batchCount == 0)
+        CloseRange();
+        if (_ranges.Count == 0)
         {
             return;
         }
 
-        var key = _batchKey;
-        _device.BlendState = key.Blend is { } blend ? GetBlendState(blend.Source, blend.Destination) : BlendState.Opaque;
-        _device.DepthStencilState = GetDepthStencilState(key.DepthTest, key.Stencil);
-        _device.RasterizerState = GetRasterizerState(key.Cull, key.PolygonOffset);
-        _device.SamplerStates[0] = SamplerState.LinearWrap;
-        _effect.Projection = key.Projection;
-        _effect.TextureEnabled = key.Texture != null;
-        _effect.Texture = key.Texture;
-        foreach (var pass in _effect.CurrentTechnique.Passes)
+        ApplyShading();
+        UploadBatch();
+        foreach (var range in _ranges)
         {
-            pass.Apply();
-            if (key.IsLine)
-            {
-                _device.DrawUserPrimitives(PrimitiveType.LineList, _batch, 0, _batchCount / 2);
-            }
-            else
-            {
-                _device.DrawUserPrimitives(PrimitiveType.TriangleList, _batch, 0, _batchCount / 3);
-            }
+            Draw(range);
         }
 
+        _device.SetVertexBuffer(null);
+        _device.Indices = null;
+        _ranges.Clear();
         _batchCount = 0;
+        _indexCount = 0;
+        _rangeStart = 0;
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
         _effect.Dispose();
+        _vertexBuffer?.Dispose();
+        _indexBuffer?.Dispose();
         _depthTestState.Dispose();
         foreach (var state in _blendStates.Values)
         {
@@ -521,6 +590,96 @@ public sealed partial class LegacyGl : IDisposable
 
     private Matrix CurrentMatrix => _matrixMode == GlMatrixMode.ModelView ? _modelView : _projection;
 
+    // Ends the current run of same-state vertices; it is drawn by the next Flush.
+    private void CloseRange()
+    {
+        if (_indexCount > _rangeStart)
+        {
+            _ranges.Add(new GlDrawRange(_batchKey, _rangeStart, _indexCount - _rangeStart));
+            _rangeStart = _indexCount;
+        }
+    }
+
+    private void ApplyShading()
+    {
+        if (_shading.Count == 0)
+        {
+            return;
+        }
+
+        _shading.ShadeAll();
+        if (_batchCount < ParallelColorThreshold)
+        {
+            ResolveColors(0, _batchCount);
+        }
+        else
+        {
+            Parallel.For(0, (_batchCount + ColorChunkSize - 1) / ColorChunkSize, _resolveColorChunk);
+        }
+
+        _shading.Clear();
+    }
+
+    private void ResolveColorChunk(int chunk) => ResolveColors(chunk * ColorChunkSize, Math.Min(_batchCount, (chunk + 1) * ColorChunkSize));
+
+    private void ResolveColors(int start, int end)
+    {
+        for (var i = start; i < end; i++)
+        {
+            var job = _batchJobs[i];
+            if (job != Unlit)
+            {
+                _batch[i].Color = _shading.ColorOf(job);
+            }
+        }
+    }
+
+    // One upload per flush; the ranges are then drawn from the vertex buffer.
+    private void UploadBatch()
+    {
+        if (_vertexBuffer == null || _vertexBuffer.VertexCount < _batchCount)
+        {
+            _vertexBuffer?.Dispose();
+            _vertexBuffer = new DynamicVertexBuffer(_device, VertexPositionColorTexture.VertexDeclaration, _batch.Length, BufferUsage.WriteOnly);
+        }
+
+        if (_indexBuffer == null || _indexBuffer.IndexCount < _indexCount)
+        {
+            _indexBuffer?.Dispose();
+            _indexBuffer = new DynamicIndexBuffer(_device, IndexElementSize.ThirtyTwoBits, _indices.Length, BufferUsage.WriteOnly);
+        }
+
+        _vertexBuffer.SetData(_batch, 0, _batchCount, SetDataOptions.Discard);
+        _indexBuffer.SetData(_indices, 0, _indexCount, SetDataOptions.Discard);
+        _device.SetVertexBuffer(_vertexBuffer);
+        _device.Indices = _indexBuffer;
+    }
+
+    private void Draw(GlDrawRange range)
+    {
+        var key = range.Key;
+        _device.BlendState = key.Blend is { } blend ? GetBlendState(blend.Source, blend.Destination) : BlendState.Opaque;
+        _device.DepthStencilState = GetDepthStencilState(key.DepthTest, key.Stencil);
+        _device.RasterizerState = GetRasterizerState(key.Cull, key.PolygonOffset);
+        _device.SamplerStates[0] = SamplerState.LinearWrap;
+        _effect.Projection = key.Projection;
+        _effect.TextureEnabled = key.Texture != null;
+        _effect.Texture = key.Texture;
+        GlFrameCounters.CountDraw();
+        foreach (var pass in _effect.CurrentTechnique.Passes)
+        {
+            pass.Apply();
+            if (key.IsLine)
+            {
+                _device.DrawIndexedPrimitives(PrimitiveType.LineList, 0, range.Start, range.Count / 2);
+            }
+            else
+            {
+                _device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, range.Start, range.Count / 3);
+            }
+        }
+    }
+
     private bool TryRecord(Action<LegacyGl> command)
     {
         if (_recording == null)
@@ -528,7 +687,30 @@ public sealed partial class LegacyGl : IDisposable
             return false;
         }
 
-        _recording.Commands.Add(command);
+        _recording.Add(command);
+        return true;
+    }
+
+    // Arguments travel as state for a static lambda: a capturing lambda would allocate on every call, recording or not.
+    private bool TryRecord<TState>(TState state, Action<LegacyGl, TState> command)
+    {
+        if (_recording == null)
+        {
+            return false;
+        }
+
+        _recording.Add(state, command);
+        return true;
+    }
+
+    private bool TryRecord(GlListOp op, float x, float y, float z = 0, float w = 0)
+    {
+        if (_recording == null)
+        {
+            return false;
+        }
+
+        _recording.Add(op, x, y, z, w);
         return true;
     }
 
@@ -568,7 +750,7 @@ public sealed partial class LegacyGl : IDisposable
 
     private void SetCapability(GlCapability capability, bool enabled)
     {
-        if (TryRecord(g => g.SetCapability(capability, enabled)))
+        if (TryRecord((capability, enabled), static (g, a) => g.SetCapability(a.capability, a.enabled)))
         {
             return;
         }
@@ -626,33 +808,38 @@ public sealed partial class LegacyGl : IDisposable
             _polygonOffsetFill && !isLinePrimitive ? _polygonOffset : null,
             _projection,
             drawAsLines);
-        if (_batchCount > 0 && !key.Equals(_batchKey))
+        if (_indexCount > _rangeStart && !key.Equals(_batchKey))
         {
-            Flush();
+            CloseRange();
         }
 
         _batchKey = key;
     }
 
-    // With two-sided lighting, back-facing triangles take the colors lit with the reversed normal.
+    // With two-sided lighting, back-facing triangles take the colors lit with the reversed normal. Space was ensured
+    // by End.
     private void AddTriangle(int a, int b, int c)
     {
-        EnsureBatchSpace(3);
-        if (_primitiveBackColors.Count == _primitive.Count && !IsFrontFacing(a, b, c))
-        {
-            _batch[_batchCount++] = WithColor(_primitive[a], _primitiveBackColors[a]);
-            _batch[_batchCount++] = WithColor(_primitive[b], _primitiveBackColors[b]);
-            _batch[_batchCount++] = WithColor(_primitive[c], _primitiveBackColors[c]);
-            return;
-        }
-
-        _batch[_batchCount++] = _primitive[a];
-        _batch[_batchCount++] = _primitive[b];
-        _batch[_batchCount++] = _primitive[c];
+        var first = _primitiveBackCount == _primitive.Count && !IsFrontFacing(a, b, c) ? BackVertices() : _primitiveBase;
+        _indices[_indexCount++] = first + a;
+        _indices[_indexCount++] = first + b;
+        _indices[_indexCount++] = first + c;
     }
 
-    private static VertexPositionColorTexture WithColor(VertexPositionColorTexture vertex, XnaColor color) =>
-        new(vertex.Position, color, vertex.TextureCoordinate);
+    // The primitive's vertices again with the back colors, the jobs after the front ones.
+    private int BackVertices()
+    {
+        if (_primitiveBackBase < 0)
+        {
+            _primitiveBackBase = _batchCount;
+            for (var i = 0; i < _primitive.Count; i++)
+            {
+                AddBatchVertex(_primitive[i], _primitiveJobs[i] + 1);
+            }
+        }
+
+        return _primitiveBackBase;
+    }
 
     private bool IsFrontFacing(int a, int b, int c) => GlFacing.IsFrontFacing(
         Vector4.Transform(new Vector4(_primitive[a].Position, 1f), _projection),
@@ -662,16 +849,22 @@ public sealed partial class LegacyGl : IDisposable
 
     private void AddLine(int a, int b)
     {
-        EnsureBatchSpace(2);
-        _batch[_batchCount++] = _primitive[a];
-        _batch[_batchCount++] = _primitive[b];
+        _indices[_indexCount++] = _primitiveBase + a;
+        _indices[_indexCount++] = _primitiveBase + b;
     }
 
-    private void EnsureBatchSpace(int count)
+    private void EnsureBatchSpace(int vertices, int indices)
     {
-        if (_batchCount + count > _batch.Length)
+        if (_batchCount + vertices > _batch.Length)
         {
-            Array.Resize(ref _batch, _batch.Length * 2);
+            var size = Math.Max(_batch.Length * 2, _batchCount + vertices);
+            Array.Resize(ref _batch, size);
+            Array.Resize(ref _batchJobs, size);
+        }
+
+        if (_indexCount + indices > _indices.Length)
+        {
+            Array.Resize(ref _indices, Math.Max(_indices.Length * 2, _indexCount + indices));
         }
     }
 

@@ -23,11 +23,12 @@ public sealed class IntroScreen : IScreen, IDisposable
 
     /// <summary>
     /// Creates the intro at <paramref name="detail"/> (0-3) for an update rate of <paramref name="ticksPerSecond"/>;
-    /// <paramref name="finished"/> runs when the player leaves it.
+    /// <paramref name="finished"/> runs when the player leaves it. <paramref name="seed"/> fixes the ships' random
+    /// flight for reproducible frames; null varies it.
     /// </summary>
-    public IntroScreen(GraphicsDevice device, int detail, int ticksPerSecond, Action finished)
+    public IntroScreen(GraphicsDevice device, int detail, int ticksPerSecond, Action finished, int? seed = null)
     {
-        _scene = new IntroScene(device, detail, new Random());
+        _scene = new IntroScene(device, detail, seed is { } value ? new Random(value) : new Random());
         _ticksPerSecond = ticksPerSecond;
         _finished = finished;
     }

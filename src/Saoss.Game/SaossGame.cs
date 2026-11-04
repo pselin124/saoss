@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Saoss.Core.Simulation;
 using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Audio;
+using Saoss.Game.Diagnostics;
 using Saoss.Game.Input;
 using Saoss.Game.Match;
 using Saoss.Game.Multiplayer;
@@ -24,6 +25,9 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     private readonly StartupOptions _startup;
     private readonly SettingsStore _settingsStore;
     private readonly MultiplayerLauncher _multiplayer;
+    private readonly PerformanceMonitor? _monitor;
+    private readonly PerformanceReadout? _readout;
+    private readonly Benchmark? _benchmark;
     private GameSettings _settings;
     private GameAssets? _assets;
     private GameAudio? _audio;
@@ -41,19 +45,33 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     {
         _startup = startup ?? new StartupOptions();
         _settingsStore = settingsStore;
-        _settings = settingsStore.Load();
+        _settings = WithStartupOverrides(settingsStore.Load(), _startup);
         _multiplayer = new MultiplayerLauncher(this);
+        var isBenchmark = _startup.Benchmark != null;
+        var isUncapped = isBenchmark || _startup.Capture != null;
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = _settings.Width,
             PreferredBackBufferHeight = _settings.Height,
             IsFullScreen = _settings.Fullscreen,
             PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8,
-            SynchronizeWithVerticalRetrace = true,
+            SynchronizeWithVerticalRetrace = !isUncapped,
             HardwareModeSwitch = false,
         };
-        IsFixedTimeStep = true;
+        IsFixedTimeStep = !isUncapped;
         TargetElapsedTime = TickDuration(_settings.TicksPerSecond);
+        if (isUncapped)
+        {
+            InactiveSleepTime = TimeSpan.Zero;
+        }
+
+        if (_startup.ShowPerformance || isBenchmark)
+        {
+            _monitor = new PerformanceMonitor();
+            _readout = _startup.ShowPerformance ? new PerformanceReadout(title => Window.Title = title) : null;
+            _benchmark = isBenchmark ? new Benchmark(_startup.Benchmark!) : null;
+        }
+
         Window.Title = "Saoss";
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnClientSizeChanged;
@@ -108,6 +126,9 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
             case StartupScreen.Join when _startup.JoinHost is { } host:
                 _multiplayer.Join(host);
                 break;
+            case StartupScreen.BenchmarkMatch:
+                StartMatch(BenchmarkMatch.Create(_settings, _startup.BenchmarkPlayers), BenchmarkMatch.Seed);
+                break;
             default:
                 ShowIntro();
                 break;
@@ -131,11 +152,20 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     /// <inheritdoc/>
     protected override void Update(GameTime gameTime)
     {
+        _monitor?.BeginUpdate();
         _keyboard.Update(IsActive);
         _multiplayer.Update();
         _screen?.Update(_keyboard);
         _audio?.Update();
         base.Update(gameTime);
+        _monitor?.EndUpdate();
+    }
+
+    /// <inheritdoc/>
+    protected override bool BeginDraw()
+    {
+        _monitor?.BeginDraw();
+        return base.BeginDraw();
     }
 
     /// <inheritdoc/>
@@ -143,6 +173,28 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     {
         _screen?.Draw();
         base.Draw(gameTime);
+    }
+
+    /// <inheritdoc/>
+    protected override void EndDraw()
+    {
+        if (_startup.Capture?.OnFrameDrawn(GraphicsDevice) == true)
+        {
+            Exit();
+        }
+
+        base.EndDraw();
+        if (_monitor == null)
+        {
+            return;
+        }
+
+        var sample = _monitor.EndFrame();
+        _readout?.AddFrame(sample);
+        if (_benchmark?.AddFrame(sample, _monitor.Elapsed) == true)
+        {
+            Exit();
+        }
     }
 
     // The local match is kept when another screen replaces it, so it can be resumed; network screens whose owner
@@ -167,7 +219,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
         {
             _audio?.EndIntroMusic();
             ShowMainMenu();
-        }));
+        }, _startup.Capture != null ? FrameCapture.Seed : null));
     }
 
     private void ShowMainMenu(bool returningFromSettings) =>
@@ -232,10 +284,10 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     private void StartMatch(LocalGameKind kind) => StartMatch(LocalPlayerSetup.CreateMatch(kind, _settings));
 
     // A new match replaces the previous one for good. Detail and camera are fixed for the match's lifetime.
-    private void StartMatch(MatchSettings settings)
+    private void StartMatch(MatchSettings settings, int? fixedSeed = null)
     {
         var previous = _match;
-        var seed = Environment.TickCount;
+        var seed = fixedSeed ?? (_startup.Capture != null ? FrameCapture.Seed : Environment.TickCount);
         _match = new GameScreen(GraphicsDevice, new LocalMatchDriver(settings, seed), _settings.Detail, _settings.CameraMode, seed + 1, _audio, OnMatchLeft);
         ShowScreen(_match);
         previous?.Dispose();
@@ -316,4 +368,13 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     }
 
     private static TimeSpan TickDuration(int ticksPerSecond) => TimeSpan.FromSeconds(1.0 / ticksPerSecond);
+
+    // Command-line overrides apply to this run only; a benchmark always uses a 1920x1080 window.
+    private static GameSettings WithStartupOverrides(GameSettings settings, StartupOptions startup)
+    {
+        var result = startup.Detail is { } detail ? settings with { Detail = Math.Clamp(detail, 0, GameSettings.MaxDetail) } : settings;
+        return startup.Benchmark == null
+            ? result
+            : result with { Width = BenchmarkOptions.Width, Height = BenchmarkOptions.Height, Fullscreen = false };
+    }
 }
