@@ -124,7 +124,12 @@ Each phase ends with a build that compiles and runs.
    - 3c: projectiles, slime, beams, exhaust trails, respawn sparks, thrust and damage particles, explosions, all weapon effects, HUD.
    - Result: one human against idle ships is playable from Main menu > Local Game.
    - Left for later phases: game-mode markers and HUD (phase 4), credits line in the HUD, nicknames (phase 6), beam line width (MonoGame has no wide lines).
-4. **AI + game modes + local game**: AI pilot, all 5 modes including flag cloth and mushrooms, 4-player keyboard, results screen.
+4. **AI + game modes + local game** (done):
+   - 4a: AI pilot (`ailiiku`) in Core, deterministic. "ai vs ai" setting → `MatchSettings.AiTargetsOnlyEnemies`.
+   - 4b: Flower Domination, Capture The Flower, Eat The Mushroom, credits games with ship purchase (human purchase menu, AI counter-picks), drop-out and match outcome. Mode markers, scoreboard and the carried flower are drawn.
+   - 4c: local game menu (all 9 items, Resume keeps the match), victory screen. Developer flags: `--ship-gallery`, `--victory-preview`, `--victory-preview-credits`.
+   - Simplifications: the AI picks its ship instantly instead of scrolling the purchase menu on screen. The first ships are bought when the match is created. The victory screen shows team numbers +1 in all modes (the original showed "team 0" in point modes).
+   - The player setup (number of players, human/AI, teams) is a fixed default (`LocalPlayerSetup`) until the settings menus are ported in phase 5.
 5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
 6. **Networking**: protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
 7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.

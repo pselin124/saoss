@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Saoss.Core;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Input;
 using Saoss.Game.Rendering;
 using Saoss.Game.Screens;
@@ -9,7 +10,8 @@ using Saoss.Game.Screens;
 namespace Saoss.Game;
 
 /// <summary>
-/// MonoGame entry point: owns the window, the fixed-rate update loop and the active screen.
+/// MonoGame entry point: owns the window, the fixed-rate update loop, the active screen and the current local
+/// match. The match outlives visits to the local game menu so "Resume Game" can continue it.
 /// </summary>
 public sealed class SaossGame : Microsoft.Xna.Framework.Game
 {
@@ -18,17 +20,19 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
     private readonly GraphicsDeviceManager _graphics;
     private readonly KeyboardTracker _keyboard = new();
-    private readonly bool _showShipGallery;
+    private readonly StartupScreen _startup;
     private GameAssets? _assets;
     private IScreen? _screen;
+    private GameScreen? _match;
+    private LocalGameMenuItem _localMenuSelection;
 
     /// <summary>
     /// Creates the game window with the original 100 Hz update rate.
     /// </summary>
-    /// <param name="showShipGallery">Start in the developer ship gallery instead of the main menu.</param>
-    public SaossGame(bool showShipGallery = false)
+    /// <param name="startup">The first screen: the main menu or a developer view.</param>
+    public SaossGame(StartupScreen startup = StartupScreen.MainMenu)
     {
-        _showShipGallery = showShipGallery;
+        _startup = startup;
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = DefaultWidth,
@@ -48,19 +52,34 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
-        if (_showShipGallery)
+        switch (_startup)
         {
-            ShowScreen(new ShipGalleryScreen(GraphicsDevice, Exit));
-            return;
+            case StartupScreen.ShipGallery:
+                ShowScreen(new ShipGalleryScreen(GraphicsDevice, Exit));
+                break;
+            case StartupScreen.VictoryPreview:
+                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.FlowerDomination, VictoryPreview.Players));
+                VictoryPreview.EndOnNextStep(_match!.World);
+                break;
+            case StartupScreen.CreditsVictoryPreview:
+                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.CreditsRandomShips, VictoryPreview.Players));
+                VictoryPreview.EndOnNextStep(_match!.World);
+                break;
+            default:
+                ShowMainMenu();
+                break;
         }
-
-        ShowMainMenu();
     }
 
     /// <inheritdoc/>
     protected override void UnloadContent()
     {
-        (_screen as IDisposable)?.Dispose();
+        if (_screen != _match)
+        {
+            (_screen as IDisposable)?.Dispose();
+        }
+
+        _match?.Dispose();
         _assets?.Dispose();
     }
 
@@ -79,30 +98,73 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
         base.Draw(gameTime);
     }
 
+    // The match is kept when another screen replaces it, so it can be resumed.
     private void ShowScreen(IScreen screen)
     {
-        (_screen as IDisposable)?.Dispose();
+        if (_screen != _match)
+        {
+            (_screen as IDisposable)?.Dispose();
+        }
+
         _screen = screen;
     }
 
-    private void ShowMainMenu() => ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, StartLocalGame));
+    private void ShowMainMenu() => ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, OpenLocalGameMenu));
 
-    // Until the local game menu is ported: one human against three AI ships. SAOSS_MODE picks the local menu
-    // entry (0, 2-6, see LocalGameKind); the default is the random-ships deathmatch.
-    private void StartLocalGame()
+    private void OpenLocalGameMenu()
     {
-        var kind = int.TryParse(Environment.GetEnvironmentVariable("SAOSS_MODE"), out var value) && Enum.IsDefined((LocalGameKind)value)
-            ? (LocalGameKind)value
-            : LocalGameKind.RandomShips;
-        var settings = MatchSettings.ForLocalMenu(
-            kind,
-            [
-                new PlayerSetup(Team: 0, IsHuman: true),
-                new PlayerSetup(Team: 1, IsHuman: false),
-                new PlayerSetup(Team: 2, IsHuman: false),
-                new PlayerSetup(Team: 3, IsHuman: false),
-            ]);
-        ShowScreen(new GameScreen(GraphicsDevice, settings, Environment.TickCount, _ => ShowMainMenu()));
+        _localMenuSelection = LocalGameMenuItem.StartWithRandomShips;
+        ShowLocalGameMenu();
+    }
+
+    private void ShowLocalGameMenu() =>
+        ShowScreen(new LocalGameMenuScreen(GraphicsDevice, _assets!, MatchSettings.DefaultCredits, _localMenuSelection, OnLocalGameMenuChoice));
+
+    // The menu remembers its selection between matches, like the original's menu loop.
+    private void OnLocalGameMenuChoice(LocalGameMenuItem item)
+    {
+        _localMenuSelection = item;
+        switch (item)
+        {
+            case LocalGameMenuItem.ResumeGame when _match != null:
+                ShowScreen(_match);
+                break;
+            case LocalGameMenuItem.ResumeGame:
+                StartMatch(LocalGameKind.RandomShips);
+                break;
+            case LocalGameMenuItem.Settings:
+                // The settings menu is ported in phase 5; until then this entry leaves the menu as it is.
+                break;
+            case LocalGameMenuItem.ExitMenu:
+                ShowMainMenu();
+                break;
+            default:
+                StartMatch(LocalGameMenuScreen.GameKindOf(item)!.Value);
+                break;
+        }
+    }
+
+    private void StartMatch(LocalGameKind kind) => StartMatch(MatchSettings.ForLocalMenu(kind, LocalPlayerSetup.Default));
+
+    // A new match replaces the previous one for good.
+    private void StartMatch(MatchSettings settings)
+    {
+        var previous = _match;
+        _match = new GameScreen(GraphicsDevice, settings, Environment.TickCount, OnMatchLeft);
+        ShowScreen(_match);
+        previous?.Dispose();
+    }
+
+    // Escape (no outcome) goes straight back to the menu; a finished match shows who won first.
+    private void OnMatchLeft(MatchOutcome? outcome)
+    {
+        if (outcome == null)
+        {
+            ShowLocalGameMenu();
+            return;
+        }
+
+        ShowScreen(new VictoryScreen(_match!, outcome, ShowLocalGameMenu));
     }
 
     private void OnClientSizeChanged(object? sender, EventArgs e)

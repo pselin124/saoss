@@ -24,6 +24,7 @@ public sealed class GameScreen : IScreen, IDisposable
     private readonly SceneRenderer _renderer;
     private readonly ShipRenderer _ships;
     private readonly ShipPurchaseRenderer _purchaseRenderer;
+    private readonly VictoryRenderer _victoryRenderer;
     private readonly ShipPurchaseMenu _purchaseMenu = new();
     private readonly Dictionary<int, (LocalPlayerInput Input, PlayerKeyBindings Keys)> _humans;
     private readonly Action<MatchOutcome?> _exit;
@@ -41,6 +42,7 @@ public sealed class GameScreen : IScreen, IDisposable
         _ships = new ShipRenderer(_gl, _textures, models, Detail);
         _renderer = new SceneRenderer(_gl, _textures, models, _ships, Detail);
         _purchaseRenderer = new ShipPurchaseRenderer(_gl, _textures, _ships);
+        _victoryRenderer = new VictoryRenderer(_gl, _textures, _ships);
         _state = new SceneState(Detail, seed + 1);
         _humans = _world.Ships
             .Where(s => s.IsHuman)
@@ -50,6 +52,9 @@ public sealed class GameScreen : IScreen, IDisposable
 
     /// <summary>How the match ended, or null while it is running.</summary>
     public MatchOutcome? Outcome => _world.Outcome;
+
+    /// <summary>The match being played.</summary>
+    public World World => _world;
 
     /// <inheritdoc/>
     public void Update(KeyboardTracker keyboard)
@@ -84,6 +89,9 @@ public sealed class GameScreen : IScreen, IDisposable
 
         _renderer.Draw(_world, _state);
     }
+
+    /// <summary>Draws the end-of-match screen with this match's graphics resources.</summary>
+    public void DrawVictory(VictoryLayout layout) => _victoryRenderer.Draw(layout, _state);
 
     /// <inheritdoc/>
     public void Dispose()

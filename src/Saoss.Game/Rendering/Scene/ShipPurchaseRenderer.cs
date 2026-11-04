@@ -92,17 +92,7 @@ public sealed class ShipPurchaseRenderer(LegacyGl gl, SceneTextures textures, Sh
             return cached;
         }
 
-        var preview = new Ship(buyer.Index, buyer.Team, buyer.IsHuman);
-        preview.Respawn(definition, _previewRandom);
-        preview.X = 0;
-        preview.Y = 0;
-        preview.Angle = PreviewHeading;
-        preview.WeaponAngle = 0;
-        for (var i = 0; i < GameConstants.TailLength; i++)
-        {
-            preview.ShiftTail(recordCurrent: true);
-        }
-
+        var preview = StandInShips.Create(buyer, definition, 0, 0, PreviewHeading, _previewRandom);
         _preview = preview;
         return preview;
     }
