@@ -45,6 +45,8 @@ public sealed class SettingsStoreTests
             CameraMode = CameraMode.TopDown,
             Detail = 3,
             Nicknames = ["tgo", "cinere", "joku", "neljas"],
+            LastHost = "192.168.0.4",
+            NetworkPlayerCount = 3,
         };
 
         store.Save(saved);
@@ -125,6 +127,21 @@ public sealed class SettingsStoreTests
         Assert.AreEqual(new PlayerSlotSettings(true, 0), loaded.Players[2]);
         Assert.AreEqual(new PlayerSlotSettings(false, 4), loaded.Players[4], "Only players 1-4 can be human.");
         CollectionAssert.AreEqual(new[] { "averyveryv", "Player 2", "Player 3", "Player 4" }, loaded.Nicknames.ToArray());
+    }
+
+    [TestMethod]
+    public void Load_InvalidNetworkValues_AreRepaired()
+    {
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(Path.Combine(_directory, SettingsStore.FileName), """
+            { "Nicknames": [ "<b>bold</b>", "???", "ok name" ], "LastHost": "Bad Host!", "NetworkPlayerCount": 9 }
+            """);
+
+        var loaded = new SettingsStore(_directory).Load();
+
+        CollectionAssert.AreEqual(new[] { "bboldb", "Player 2", "ok name", "Player 4" }, loaded.Nicknames.ToArray());
+        Assert.AreEqual("localhost", loaded.LastHost);
+        Assert.AreEqual(GameSettings.MaxNetworkPlayers, loaded.NetworkPlayerCount);
     }
 
     [TestMethod]

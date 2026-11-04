@@ -1,4 +1,5 @@
 using Saoss.Game.Rendering.Scene;
+using Saoss.Network.Protocol;
 
 namespace Saoss.Game.Settings;
 
@@ -40,7 +41,10 @@ public sealed record GameSettings
     public const int MaxDetail = 3;
 
     /// <summary>Longest nickname; the network protocol sends ten characters.</summary>
-    public const int MaxNicknameLength = 10;
+    public const int MaxNicknameLength = Nickname.MaxLength;
+
+    /// <summary>Most players one computer brings to a network game.</summary>
+    public const int MaxNetworkPlayers = 4;
 
     private const int MinWidth = 320;
     private const int MinHeight = 240;
@@ -93,6 +97,14 @@ public sealed record GameSettings
     /// <summary>Nicknames of up to four players on this computer, kept for network play [nick].</summary>
     public IReadOnlyList<string> Nicknames { get; init; } = DefaultNicknames;
 
+    /// <summary>Host name or address joined last; replaces the original's lasthost.txt.</summary>
+    public string LastHost { get; init; } = DefaultHost;
+
+    /// <summary>Players from this computer in a network game, 1 to <see cref="MaxNetworkPlayers"/> [hosteja, joinaavia].</summary>
+    public int NetworkPlayerCount { get; init; } = 1;
+
+    private static string DefaultHost => "localhost";
+
     // Teams of the original's sets.txt (stored there one higher); only player 1 is human.
     private static IReadOnlyList<PlayerSlotSettings> DefaultPlayers { get; } =
         [.. new[] { 0, 2, 2, 2, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0 }.Select((team, i) => new PlayerSlotSettings(IsHuman: i == 0, team))];
@@ -115,6 +127,8 @@ public sealed record GameSettings
         CameraMode = Enum.IsDefined(CameraMode) ? CameraMode : CameraMode.Tilted,
         Detail = Math.Clamp(Detail, 0, MaxDetail),
         Nicknames = ValidatedNicknames(Nicknames),
+        LastHost = LastHost is { } host && HostAddress.IsValid(host) ? host : DefaultHost,
+        NetworkPlayerCount = Math.Clamp(NetworkPlayerCount, 1, MaxNetworkPlayers),
     };
 
     // Exactly MaxPlayers slots; only the first MaxLocalHumans may be human, like the original player setup.
@@ -127,12 +141,13 @@ public sealed record GameSettings
         }),
     ];
 
+    // Characters the network refuses are dropped and long names cut; a name left blank falls back to the default.
     private static string[] ValidatedNicknames(IReadOnlyList<string?>? nicknames) =>
     [
         .. DefaultNicknames.Select((fallback, i) =>
         {
-            var nickname = nicknames?.ElementAtOrDefault(i);
-            return string.IsNullOrWhiteSpace(nickname) ? fallback : nickname[..Math.Min(nickname.Length, MaxNicknameLength)];
+            var kept = new string([.. (nicknames?.ElementAtOrDefault(i) ?? string.Empty).Where(Nickname.IsAllowed).Take(Nickname.MaxLength)]);
+            return string.IsNullOrWhiteSpace(kept) ? fallback : kept;
         }),
     ];
 }

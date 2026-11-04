@@ -7,7 +7,7 @@ namespace Saoss.Network.Protocol;
 public static class ProtocolVersion
 {
     /// <summary>Version sent in <see cref="HelloMessage"/>; bump on any change to messages or the snapshot format.</summary>
-    public const int Current = 1;
+    public const int Current = 2;
 
     /// <summary>Bytes that open every <see cref="HelloMessage"/>, so stray connections are recognized at once.</summary>
     public const string Magic = "SAOSS";

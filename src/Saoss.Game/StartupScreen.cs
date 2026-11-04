@@ -19,4 +19,10 @@ public enum StartupScreen
 
     /// <summary>A credits game that ends at once (<c>--victory-preview-credits</c>).</summary>
     CreditsVictoryPreview,
+
+    /// <summary>The host lobby with the saved network settings (<c>--host</c>).</summary>
+    HostLobby,
+
+    /// <summary>Connecting to <see cref="StartupOptions.JoinHost"/> (<c>--join &lt;host&gt;</c>).</summary>
+    Join,
 }

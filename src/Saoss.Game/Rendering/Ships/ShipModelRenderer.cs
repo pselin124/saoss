@@ -8,27 +8,40 @@ using Saoss.Game.Rendering.Ships.Models;
 namespace Saoss.Game.Rendering.Ships;
 
 /// <summary>
-/// Draws a ship's 3D model with its team glow ring, a port of <c>Alus::piirra</c> as called from
-/// <c>Player::piirra</c> during a local match.
+/// Draws a ship's 3D model with its team glow ring, or its nickname in a network game, a port of
+/// <c>Alus::piirra</c> as called from <c>Player::piirra</c>.
 /// </summary>
 public sealed class ShipModelRenderer(LegacyGl gl, SceneTextures textures, ShipModels models)
 {
     private const float GlowScale = 3.0f;
     private const float GlowDepth = -0.2f;
     private const float FlowerScaleOffset = 2f;
+    private const float NicknameBaseSize = 0.5f;
+    private const float NicknameSizePerCameraHeight = 0.0035f;
+    private const float NicknameOffsetPerWidth = -0.4f;
+    private const float LetterWidthSize = 0.5f;
+
+    private readonly GlText _text = new(gl, textures.Font);
 
     /// <summary>
     /// Draws the ship at its position on the ship plane, or at height <paramref name="z"/>. Steps: disable culling,
-    /// draw the team glow quad, draw the ship type's model, draw the Capture-the-Flower flower it carries (if any,
-    /// in the flower team's color), re-enable culling (the original left culling on afterwards).
-    /// Network nicknames are not drawn.
+    /// draw the team glow quad (or the nickname in a network game), draw the ship type's model, draw the
+    /// Capture-the-Flower flower it carries (if any, in the flower team's color), re-enable culling (the original
+    /// left culling on afterwards).
     /// </summary>
     public void Draw(Ship ship, SceneState state, int? carriedFlowerTeam = null, float z = GameConstants.ShipPlaneZ)
     {
         gl.Disable(GlCapability.CullFace);
         gl.PushMatrix();
         gl.Translate(ship.X, ship.Y, z);
-        DrawTeamGlow(ship);
+        if (state.ShipNames?.ElementAtOrDefault(ship.Index) is { } nickname)
+        {
+            DrawNickname(ship, nickname, state);
+        }
+        else
+        {
+            DrawTeamGlow(ship);
+        }
         DrawModel(new ShipDrawContext(gl, models, textures, ship, state.Detail));
         if (carriedFlowerTeam is { } team)
         {
@@ -107,13 +120,34 @@ public sealed class ShipModelRenderer(LegacyGl gl, SceneTextures textures, ShipM
     private void DrawTeamGlow(Ship ship)
     {
         var size = GlowScale * ship.Definition.Radius;
+        PrepareTeamOverlay(ship);
+        gl.BindTexture(textures.TeamGlow);
+        SceneDrawing.Quad(gl, size, GlowDepth);
+    }
+
+    // Network games write the nickname in the team color below the ship and again upside down above it, turning
+    // with the ship and growing as the camera rises.
+    private void DrawNickname(Ship ship, string nickname, SceneState state)
+    {
+        PrepareTeamOverlay(ship);
+        var size = NicknameBaseSize + (state.Camera.Z * NicknameSizePerCameraHeight);
+        var x = NicknameOffsetPerWidth * GlyphMetrics.MeasureWidth(nickname, LetterWidthSize);
+        var y = -GlowScale * ship.Definition.Radius / 2f;
+        gl.PushMatrix();
+        gl.Rotate(ship.Angle, 0, 0, 1);
+        _text.Println(x, y, 0, nickname, size);
+        gl.Rotate(-180f, 0, 0, 1);
+        _text.Println(x, y, 0, nickname, size);
+        gl.PopMatrix();
+    }
+
+    private void PrepareTeamOverlay(Ship ship)
+    {
         gl.Disable(GlCapability.Lighting);
         gl.Enable(GlCapability.Texture2D);
         gl.Enable(GlCapability.Blend);
         gl.Disable(GlCapability.DepthTest);
         SceneDrawing.TeamColor(gl, ship.Team);
         gl.BlendFunc(GlBlend.SrcAlpha, GlBlend.OneMinusSrcColor);
-        gl.BindTexture(textures.TeamGlow);
-        SceneDrawing.Quad(gl, size, GlowDepth);
     }
 }

@@ -27,7 +27,9 @@ public sealed class MenuScene : IDisposable
     private const float ArrowTopY = 1f;
     private const float ArrowLineSpacing = 0.55f;
 
-    private static readonly Vector3 SceneOffset = new(0.1f, 0.1f, 0.01f);
+    /// <summary>The small shift most original menus applied before drawing (glTranslatef(0.1, 0.1, 0.01)).</summary>
+    public static readonly Vector3 SceneOffset = new(0.1f, 0.1f, 0.01f);
+
     private static readonly Color TextColor = Color.Red;
     private static readonly Color PanelColor = new(0f, 0f, 0f, 0.6f);
 
@@ -60,16 +62,23 @@ public sealed class MenuScene : IDisposable
     /// </summary>
     public void Begin(bool withBackground = true)
     {
-        var device = _graphicsDevice;
-        device.Clear(Color.Black);
-        device.RasterizerState = LegacyGraphics.NoCulling;
-        device.SamplerStates[0] = SamplerState.LinearClamp;
-        _effect.Projection = LegacyGraphics.CreateProjection(device.Viewport);
+        BeginFrame();
         if (withBackground)
         {
-            DrawBackground();
+            DrawBackground(_assets.TitleBackground, BackgroundZ);
         }
 
+        _effect.View = Matrix.CreateLookAt(new Vector3(0, 0, CameraZ), Vector3.Zero, Vector3.Up);
+    }
+
+    /// <summary>
+    /// Clears the screen, draws <paramref name="background"/> <paramref name="distance"/> units in front of the
+    /// camera (the lobby menus put their picture a little further than the title picture) and sets up the menu camera.
+    /// </summary>
+    public void Begin(Texture2D background, float distance)
+    {
+        BeginFrame();
+        DrawBackground(background, -distance);
         _effect.View = Matrix.CreateLookAt(new Vector3(0, 0, CameraZ), Vector3.Zero, Vector3.Up);
     }
 
@@ -89,11 +98,14 @@ public sealed class MenuScene : IDisposable
     public void DrawText(float x, float y, string text) => DrawText(new Vector3(x, y, TextZ) + SceneOffset, text, TextColor);
 
     /// <summary>Draws text at exactly <paramref name="position"/> in <paramref name="color"/> (gl_println without offset).</summary>
-    public void DrawText(Vector3 position, string text, Color color)
+    public void DrawText(Vector3 position, string text, Color color) => DrawText(position, text, color, 1f);
+
+    /// <summary>Draws text with glyphs of half size <paramref name="size"/> (gl_println's size argument).</summary>
+    public void DrawText(Vector3 position, string text, Color color, float size)
     {
         _graphicsDevice.BlendState = LegacyGraphics.TextBlend;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        _assets.Font.Draw(_effect, Matrix.CreateTranslation(position), text, color);
+        _assets.Font.Draw(_effect, Matrix.CreateTranslation(position), text, color, size);
     }
 
     /// <summary>
@@ -119,17 +131,26 @@ public sealed class MenuScene : IDisposable
     public void Dispose() => _effect.Dispose();
 
     // The 4:3 picture sits just beyond the near plane, so it is pillarboxed on wide windows like in the original.
-    private void DrawBackground()
+    private void DrawBackground(Texture2D background, float z)
     {
         _effect.View = Matrix.Identity;
         _effect.World = Matrix.Identity;
         _effect.LightingEnabled = false;
         _effect.VertexColorEnabled = true;
         _effect.TextureEnabled = true;
-        _effect.Texture = _assets.TitleBackground;
+        _effect.Texture = background;
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        DrawQuad(new Vector3(-BackgroundHalfWidth, -BackgroundHalfHeight, BackgroundZ), new Vector3(BackgroundHalfWidth, BackgroundHalfHeight, BackgroundZ), Color.White);
+        DrawQuad(new Vector3(-BackgroundHalfWidth, -BackgroundHalfHeight, z), new Vector3(BackgroundHalfWidth, BackgroundHalfHeight, z), Color.White);
+    }
+
+    private void BeginFrame()
+    {
+        var device = _graphicsDevice;
+        device.Clear(Color.Black);
+        device.RasterizerState = LegacyGraphics.NoCulling;
+        device.SamplerStates[0] = SamplerState.LinearClamp;
+        _effect.Projection = LegacyGraphics.CreateProjection(device.Viewport);
     }
 
     private void DrawQuad(Vector3 bottomLeft, Vector3 topRight, Color color)

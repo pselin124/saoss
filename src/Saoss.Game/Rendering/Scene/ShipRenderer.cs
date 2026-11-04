@@ -27,7 +27,13 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
     /// Steps: ship particles and exhaust trails of living ships (liiku, laskeKaasujaljet), respawn sparks
     /// (laskeAlkuSirpaleet), then the particles and respawn animations requested by this tick's events.
     /// </summary>
-    public void Update(World world, SceneState state)
+    public void Update(World world, SceneState state) => Update(world, state, world.Events);
+
+    /// <summary>
+    /// Advances the visual state by one tick whose events are <paramref name="events"/>, e.g. one mirrored network
+    /// tick; see <see cref="Update(World, SceneState)"/>.
+    /// </summary>
+    public void Update(World world, SceneState state, IReadOnlyList<GameEvent> events)
     {
         while (_visuals.Count < world.Ships.Count)
         {
@@ -42,7 +48,7 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
             }
         }
 
-        foreach (var gameEvent in world.Events)
+        foreach (var gameEvent in events)
         {
             _effects.Handle(gameEvent, world, state);
             switch (gameEvent)
@@ -91,8 +97,8 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
         }
     }
 
-    /// <summary>Draws the ship's block of the HUD.</summary>
-    public void DrawHud(Ship ship, World world, SceneState state) => _hud.Draw(ship, world);
+    /// <summary>Draws the ship's block of the HUD, with its nickname in a network game.</summary>
+    public void DrawHud(Ship ship, World world, SceneState state) => _hud.Draw(ship, world, state.ShipNames?.ElementAtOrDefault(ship.Index));
 
     /// <summary>Draws just the ship model and team glow centered at the origin, for the purchase menu.</summary>
     public void DrawPreview(Ship ship, SceneState state) => _models.Draw(ship, state, z: 0f);

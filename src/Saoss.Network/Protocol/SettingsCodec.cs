@@ -12,7 +12,8 @@ internal static class SettingsCodec
     private const int AiTargetsFlag = 1;
     private const int UsesCreditsFlag = 2;
     private const int ChooseShipsFlag = 4;
-    private const int AllFlags = 7;
+    private const int ChoicesPauseFlag = 8;
+    private const int AllFlags = 15;
 
     /// <summary>Writes a UTF-8 string with a ushort byte length.</summary>
     public static void WriteString(BinaryWriter writer, string text, int maxChars)
@@ -47,7 +48,8 @@ internal static class SettingsCodec
         writer.Write((byte)settings.Mode);
         writer.Write((byte)((settings.AiTargetsOnlyEnemies ? AiTargetsFlag : 0)
             | (settings.UsesCredits ? UsesCreditsFlag : 0)
-            | (settings.PlayersChooseShips ? ChooseShipsFlag : 0)));
+            | (settings.PlayersChooseShips ? ChooseShipsFlag : 0)
+            | (settings.ChoicesPauseMatch ? ChoicesPauseFlag : 0)));
         writer.Write(settings.Credits);
     }
 
@@ -74,6 +76,7 @@ internal static class SettingsCodec
             AiTargetsOnlyEnemies = (flags & AiTargetsFlag) != 0,
             UsesCredits = (flags & UsesCreditsFlag) != 0,
             PlayersChooseShips = (flags & ChooseShipsFlag) != 0,
+            ChoicesPauseMatch = (flags & ChoicesPauseFlag) != 0,
             Credits = reader.ReadInt(0, MaxMatchCredits, "credits"),
         };
     }

@@ -20,6 +20,8 @@ public sealed class HostSession : IDisposable
     private readonly NetHost _net;
     private readonly Dictionary<int, RemotePeer> _peers = [];
     private readonly Dictionary<int, ShipControls> _inputs = [];
+    private readonly Dictionary<int, ShipControls> _appliedInputs = [];
+    private readonly HashSet<int> _specialConsumed = [];
     private readonly ChatLog _chat = new();
     private readonly string _chatSender;
     private HashSet<GameEvent> _sentEvents = new(ReferenceEqualityComparer.Instance);
@@ -100,6 +102,8 @@ public sealed class HostSession : IDisposable
         ShipSlots = Lobby.PlayerSlots();
         _shipOwners = [.. ShipSlots.Select(slot => Lobby.Slots[slot].OwnerId)];
         _inputs.Clear();
+        _appliedInputs.Clear();
+        _specialConsumed.Clear();
         _sentEvents = new HashSet<GameEvent>(ReferenceEqualityComparer.Instance);
         foreach (var peer in _peers.Values)
         {
@@ -111,21 +115,44 @@ public sealed class HostSession : IDisposable
         return World;
     }
 
-    /// <summary>Gives every remote human ship the buttons its client sent last.</summary>
+    /// <summary>
+    /// Gives every remote human ship the buttons its client sent last. The special button is latched like a local
+    /// player's: once the simulation clears it, it stays off until the client releases it.
+    /// </summary>
     public void ApplyClientInputs(World world)
     {
         for (var i = 0; i < _shipOwners.Length; i++)
         {
             if (_shipOwners[i] > LobbyState.HostId && world.Ships[i].IsHuman)
             {
-                world.Ships[i].Controls = _inputs.GetValueOrDefault(i);
+                var controls = _inputs.GetValueOrDefault(i);
+                if (!controls.Special)
+                {
+                    _specialConsumed.Remove(i);
+                }
+                else if (_specialConsumed.Contains(i))
+                {
+                    controls.Special = false;
+                }
+
+                world.Ships[i].Controls = controls;
+                _appliedInputs[i] = controls;
             }
         }
     }
 
-    /// <summary>Sends the world and the events no earlier update carried to every client.</summary>
+    /// <summary>Sends the world and the events no earlier update carried to every client; call after the step.</summary>
     public void BroadcastWorld(World world)
     {
+        foreach (var (ship, applied) in _appliedInputs)
+        {
+            if (applied.Special && !world.Ships[ship].Controls.Special)
+            {
+                _specialConsumed.Add(ship);
+            }
+        }
+
+        _appliedInputs.Clear();
         var firstNew = 0;
         while (firstNew < world.Events.Count && _sentEvents.Contains(world.Events[firstNew]))
         {
@@ -272,7 +299,7 @@ public sealed class HostSession : IDisposable
 
     private void HandleShipChoice(RemotePeer peer, ShipChoiceRequestMessage choice)
     {
-        if (World?.PendingChoice?.ShipIndex == choice.ShipIndex && _shipOwners[choice.ShipIndex] == peer.Id)
+        if (World?.IsChoosingShip(choice.ShipIndex) == true && _shipOwners[choice.ShipIndex] == peer.Id)
         {
             World.ChooseShip(choice.ShipIndex, choice.ShipType);
         }

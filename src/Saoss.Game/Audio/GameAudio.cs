@@ -95,6 +95,9 @@ public sealed class GameAudio : IDisposable
     /// <summary>Plays the sounds of the events of <paramref name="world"/>'s last step.</summary>
     public void PlayEvents(World world) => _ships.Play(world.Events);
 
+    /// <summary>Plays the sounds of the given events, e.g. those of one mirrored network tick.</summary>
+    public void PlayEvents(IReadOnlyList<GameEvent> events) => _ships.Play(events);
+
     /// <summary>Stops the ships' looping sounds, when the match is left or paused.</summary>
     public void StopShipLoops() => _ships.StopAll();
 

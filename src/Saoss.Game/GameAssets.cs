@@ -11,9 +11,10 @@ public sealed class GameAssets : IDisposable
 {
     private readonly Texture2D _fontTexture;
 
-    private GameAssets(Texture2D titleBackground, Texture2D fontTexture, Mesh menuArrow)
+    private GameAssets(Texture2D titleBackground, Texture2D lobbyBackground, Texture2D fontTexture, Mesh menuArrow)
     {
         TitleBackground = titleBackground;
+        LobbyBackground = lobbyBackground;
         _fontTexture = fontTexture;
         Font = new BitmapFont(fontTexture);
         MenuArrow = menuArrow;
@@ -21,6 +22,9 @@ public sealed class GameAssets : IDisposable
 
     /// <summary>Picture behind the main menus.</summary>
     public Texture2D TitleBackground { get; }
+
+    /// <summary>Picture behind the network lobby tables [tausta2, texture 29].</summary>
+    public Texture2D LobbyBackground { get; }
 
     /// <summary>The game's only font.</summary>
     public BitmapFont Font { get; }
@@ -35,6 +39,7 @@ public sealed class GameAssets : IDisposable
         MenuArrowModel.Build(arrowBuilder);
         return new GameAssets(
             LoadTexture(graphicsDevice, "title-background.png"),
+            LoadTexture(graphicsDevice, "background-2.png"),
             LoadTexture(graphicsDevice, "font.png"),
             arrowBuilder.Build(graphicsDevice));
     }
@@ -43,6 +48,7 @@ public sealed class GameAssets : IDisposable
     public void Dispose()
     {
         TitleBackground.Dispose();
+        LobbyBackground.Dispose();
         _fontTexture.Dispose();
         MenuArrow.Dispose();
     }

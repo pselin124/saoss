@@ -39,6 +39,12 @@ public sealed record MatchSettings
     public int Credits { get; init; } = DefaultCredits;
 
     /// <summary>
+    /// A human buying a ship pauses the match until the purchase (local games). When false the match goes on and
+    /// the buyer stays out until the purchase, as in network games, where netValitseAlus kept the frames running.
+    /// </summary>
+    public bool ChoicesPauseMatch { get; init; } = true;
+
+    /// <summary>
     /// Settings of a new game started from the local game menu (localgame.cpp onePlayerGameMenu).
     /// </summary>
     public static MatchSettings ForLocalMenu(LocalGameKind kind, IReadOnlyList<PlayerSetup> players, int credits = DefaultCredits) =>

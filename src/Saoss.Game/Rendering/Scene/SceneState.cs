@@ -37,6 +37,11 @@ public sealed class SceneState
     /// <summary>Background stars.</summary>
     public Starfield Stars { get; }
 
+    /// <summary>
+    /// Nickname of every ship in a network game, drawn around the ship and in the HUD; null in a local game.
+    /// </summary>
+    public IReadOnlyList<string>? ShipNames { get; init; }
+
     /// <summary>Spin angles in degrees.</summary>
     public float RotationX { get; private set; }
 

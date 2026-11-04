@@ -136,10 +136,14 @@ Each phase ends with a build that compiles and runs.
    - 5c: 3D intro scene (cloth flag, plants, ships, stencil shadows) at startup; `--skip-intro`. LegacyGl gained stencil, polygon offset, GL_BLEND texture mode and two-sided lighting.
    - XM conversion was not needed: the two XM tracks were in `musics/Musictemp`, which the original never played.
    - Difference: after the intro a random track starts; the original menu was silent.
-6. **Networking**: protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
+6. **Networking** (done): protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
+   - 6a: `Saoss.Network` (TCP transport, versioned protocol, lobby, host/client sessions) and full world snapshots.
+   - 6b: host/join menus, lobbies, chat, in-match "game settings menu", nicknames around ships and in the HUD. `GameScreen` runs local, host and client matches through `IMatchDriver`. Developer flags: `--host`, `--auto-start <n>`, `--join <host>`.
+   - Differences: after a match everybody returns to the lobby (the original ended the network game). Purchases never pause a network match (as in the original), so Core has `MatchSettings.ChoicesPauseMatch`.
 7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
    - Victory screen text: words and numbers are placed as separate pieces with fixed gaps (as in the original), which looks uneven. Lay each line out as one string with normal spacing.
    - Menu wording: fix the original's non-native English labels (e.g. "Musics:" → "Music:").
+   - Network: clipboard paste in text entry; test with two real PCs on a LAN (only localhost tested so far).
 8. **Optional**: gamepads, key remapping, LAN host discovery.
 
 ## 7. Decisions

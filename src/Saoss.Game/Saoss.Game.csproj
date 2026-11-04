@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Saoss.Core\Saoss.Core.csproj" />
+    <ProjectReference Include="..\Saoss.Network\Saoss.Network.csproj" />
   </ItemGroup>
 
   <ItemGroup>

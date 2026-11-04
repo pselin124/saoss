@@ -257,7 +257,7 @@ public sealed class LobbyState
     /// <summary>
     /// Settings of a match from this lobby. Both deathmatches were credits games in network play: random ships
     /// buy random ships, plain deathmatch lets players choose (netpeli.cpp netHostPeli); the point modes use the
-    /// credits as the target score.
+    /// credits as the target score. Nobody waits for a buyer: netValitseAlus kept the match running.
     /// </summary>
     public MatchSettings ToMatchSettings()
     {
@@ -275,6 +275,7 @@ public sealed class LobbyState
             Credits = Credits,
             UsesCredits = deathmatch,
             PlayersChooseShips = Mode == GameMode.Deathmatch,
+            ChoicesPauseMatch = false,
             AiTargetsOnlyEnemies = AiTargetsOnlyEnemies,
         };
     }

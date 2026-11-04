@@ -21,8 +21,11 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
 
     private readonly GlText _text = new(gl, textures.Font);
 
-    /// <summary>Draws the HUD block of <paramref name="ship"/>; in a credits game it includes the credits line.</summary>
-    public void Draw(Ship ship, World world)
+    /// <summary>
+    /// Draws the HUD block of <paramref name="ship"/>; in a credits game it includes the credits line. A network
+    /// game shows <paramref name="nickname"/> instead of "Player N".
+    /// </summary>
+    public void Draw(Ship ship, World world, string? nickname = null)
     {
         gl.PushMatrix();
         gl.Enable(GlCapability.Blend);
@@ -38,7 +41,7 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         // Smaller on wider windows, as in the original.
         var scale = MathF.Sqrt(1f / (gl.ViewportWidth / ReferenceScreenWidth));
         gl.Scale(scale, scale, scale);
-        DrawLabels(ship);
+        DrawLabels(ship, nickname);
         if (world.Settings.UsesCredits)
         {
             DrawCredits(ship, world.Settings.Credits);
@@ -77,11 +80,19 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
     }
 
     // Network games showed the nickname instead of "Player N".
-    private void DrawLabels(Ship ship)
+    private void DrawLabels(Ship ship, string? nickname)
     {
         SceneDrawing.TeamColor(gl, ship.Team);
-        _text.Println(-1f, 1f, 0, "Player", TextSize);
-        _text.Println(1f, 1f, 0, (ship.Index + 1).ToString(CultureInfo.InvariantCulture), TextSize);
+        if (nickname != null)
+        {
+            _text.Println(-1f, 1f, 0, nickname, TextSize);
+        }
+        else
+        {
+            _text.Println(-1f, 1f, 0, "Player", TextSize);
+            _text.Println(1f, 1f, 0, (ship.Index + 1).ToString(CultureInfo.InvariantCulture), TextSize);
+        }
+
         _text.Println(2f, 1f, 0, "team", TextSize);
         _text.Println(3.7f, 1f, 0, (ship.Team + 1).ToString(CultureInfo.InvariantCulture), TextSize);
         _text.Println(-1f, 0.33f, 0, "shield", TextSize);

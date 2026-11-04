@@ -10,7 +10,9 @@ namespace Saoss.Core.Simulation;
 /// The whole match state and the fixed-step update [calculateFrame].
 /// Set each ship's <see cref="Ship.Controls"/>, call <see cref="Step"/>, then read <see cref="Events"/>.
 /// While <see cref="PendingChoice"/> is set the match is paused until <see cref="ChooseShip"/> is called,
-/// and once <see cref="Outcome"/> is set it no longer changes.
+/// and once <see cref="Outcome"/> is set it no longer changes. Without <see cref="MatchSettings.ChoicesPauseMatch"/>
+/// the match goes on while humans choose (<see cref="IsChoosingShip"/>); they stay out until they buy.
+/// </summary>
 /// </summary>
 public sealed class World
 {
@@ -76,7 +78,8 @@ public sealed class World
     public IReadOnlyList<GameEvent> Events => _events;
 
     /// <summary>
-    /// A human player who must buy a ship before the match goes on, or null. AI players buy at once.
+    /// A human player who must buy a ship before the match goes on, or null. AI players buy at once. Always null
+    /// when choices do not pause the match.
     /// </summary>
     public ShipChoice? PendingChoice { get; private set; }
 
@@ -103,6 +106,8 @@ public sealed class World
             return;
         }
 
+        // A player who left while choosing is now AI and buys at once.
+        ResolveAiChoices();
         Tick++;
 
         // The original ran the AI for destroyed ships too.
@@ -173,7 +178,7 @@ public sealed class World
     /// </summary>
     public bool ChooseShip(int shipIndex, ShipType? type)
     {
-        if (PendingChoice?.ShipIndex != shipIndex)
+        if (!IsChoosingShip(shipIndex))
         {
             throw new InvalidOperationException($"Ship {shipIndex} is not choosing a ship.");
         }
@@ -185,11 +190,18 @@ public sealed class World
             return false;
         }
 
-        _choiceQueue.Dequeue();
+        RemoveFromChoiceQueue(shipIndex);
         CompletePurchase(ship, definition);
         ResolveAiChoices();
         return true;
     }
+
+    /// <summary>
+    /// Whether the player may buy a ship now: it is the <see cref="PendingChoice"/>, or, when choices do not pause
+    /// the match, any player waiting to buy.
+    /// </summary>
+    public bool IsChoosingShip(int shipIndex) =>
+        PendingChoice?.ShipIndex == shipIndex || (!Settings.ChoicesPauseMatch && _choiceQueue.Contains(shipIndex));
 
     /// <summary>Queues an event for the presentation layer.</summary>
     public void Emit(GameEvent gameEvent) => _events.Add(gameEvent);
@@ -296,6 +308,11 @@ public sealed class World
     // then a ship whose timer reached the respawn point gets its new ship.
     private void UpdateDeath(Ship ship)
     {
+        if (IsWaitingToBuy(ship))
+        {
+            return;
+        }
+
         if (ship.DeathTimer > 0)
         {
             ship.DeathTimer--;
@@ -369,6 +386,12 @@ public sealed class World
             else if (Settings.PlayersChooseShips)
             {
                 _choiceQueue.Enqueue(ship.Index);
+
+                // A buyer the match does not wait for stays out until the purchase brings it in.
+                if (!Settings.ChoicesPauseMatch && ship.IsHuman)
+                {
+                    ship.DeathTimer = GameConstants.SpawnTicks;
+                }
             }
             else
             {
@@ -409,6 +432,18 @@ public sealed class World
     // The original AI scrolled through the on-screen menu; only its final pick is reproduced.
     private void ResolveAiChoices()
     {
+        if (!Settings.ChoicesPauseMatch)
+        {
+            foreach (var waiting in _choiceQueue.Where(i => !_ships[i].IsHuman).ToList())
+            {
+                RemoveFromChoiceQueue(waiting);
+                var buyer = _ships[waiting];
+                CompletePurchase(buyer, ShipShop.AiChoice(this, buyer) ?? ShipShop.RandomAffordable(buyer, Random));
+            }
+
+            return;
+        }
+
         while (_choiceQueue.TryPeek(out var index) && !_ships[index].IsHuman)
         {
             _choiceQueue.Dequeue();
@@ -417,6 +452,18 @@ public sealed class World
         }
 
         PendingChoice = _choiceQueue.TryPeek(out var pending) ? new ShipChoice(pending) : null;
+    }
+
+    private bool IsWaitingToBuy(Ship ship) => !Settings.ChoicesPauseMatch && _choiceQueue.Contains(ship.Index);
+
+    private void RemoveFromChoiceQueue(int shipIndex)
+    {
+        var rest = _choiceQueue.Where(i => i != shipIndex).ToList();
+        _choiceQueue.Clear();
+        foreach (var index in rest)
+        {
+            _choiceQueue.Enqueue(index);
+        }
     }
 
     private void CompletePurchase(Ship ship, ShipDefinition definition)

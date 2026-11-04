@@ -4,6 +4,8 @@ using Saoss.Core.Simulation;
 using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Audio;
 using Saoss.Game.Input;
+using Saoss.Game.Match;
+using Saoss.Game.Multiplayer;
 using Saoss.Game.Rendering;
 using Saoss.Game.Screens;
 using Saoss.Game.Settings;
@@ -11,15 +13,17 @@ using Saoss.Game.Settings;
 namespace Saoss.Game;
 
 /// <summary>
-/// MonoGame entry point: owns the window, the fixed-rate update loop, the settings, the active screen and the
-/// current local match. The match outlives visits to the local game menu so "Resume Game" can continue it.
+/// MonoGame entry point: owns the window, the fixed-rate update loop, the settings, the active screen, the
+/// current local match and network play. The local match outlives visits to the local game menu so "Resume Game"
+/// can continue it.
 /// </summary>
-public sealed class SaossGame : Microsoft.Xna.Framework.Game
+public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
 {
     private readonly GraphicsDeviceManager _graphics;
     private readonly KeyboardTracker _keyboard = new();
-    private readonly StartupScreen _startup;
+    private readonly StartupOptions _startup;
     private readonly SettingsStore _settingsStore;
+    private readonly MultiplayerLauncher _multiplayer;
     private GameSettings _settings;
     private GameAssets? _assets;
     private GameAudio? _audio;
@@ -32,12 +36,13 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     /// Creates the game window with the saved resolution, fullscreen mode and game speed.
     /// </summary>
     /// <param name="settingsStore">Where the settings are loaded from and saved to.</param>
-    /// <param name="startup">The first screen: the intro, the main menu or a developer view.</param>
-    public SaossGame(SettingsStore settingsStore, StartupScreen startup = StartupScreen.Intro)
+    /// <param name="startup">The first screen: the intro, the main menu, network play or a developer view.</param>
+    public SaossGame(SettingsStore settingsStore, StartupOptions? startup = null)
     {
-        _startup = startup;
+        _startup = startup ?? new StartupOptions();
         _settingsStore = settingsStore;
         _settings = settingsStore.Load();
+        _multiplayer = new MultiplayerLauncher(this);
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = _settings.Width,
@@ -52,14 +57,36 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
         Window.Title = "Saoss";
         Window.AllowUserResizing = true;
         Window.ClientSizeChanged += OnClientSizeChanged;
+        Window.TextInput += (_, e) => _keyboard.AddTypedCharacter(e.Character);
     }
+
+    /// <inheritdoc/>
+    GameAssets IGameShell.Assets => _assets!;
+
+    /// <inheritdoc/>
+    GameSettings IGameShell.Settings => _settings;
+
+    /// <inheritdoc/>
+    GameAudio? IGameShell.Audio => _audio;
+
+    /// <inheritdoc/>
+    IReadOnlyList<Resolution> IGameShell.Resolutions => AvailableResolutions();
+
+    /// <inheritdoc/>
+    void IGameShell.Show(IScreen screen, bool disposePrevious) => ShowScreen(screen, disposePrevious);
+
+    /// <inheritdoc/>
+    void IGameShell.ApplySettings(GameSettings settings) => ApplySettings(settings);
+
+    /// <inheritdoc/>
+    void IGameShell.ShowMainMenu() => ShowMainMenu();
 
     /// <inheritdoc/>
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
         _audio = GameAudio.TryCreate(_settings);
-        switch (_startup)
+        switch (_startup.Screen)
         {
             case StartupScreen.ShipGallery:
                 ShowScreen(new ShipGalleryScreen(GraphicsDevice, Exit));
@@ -75,6 +102,12 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
             case StartupScreen.MainMenu:
                 ShowMainMenu();
                 break;
+            case StartupScreen.HostLobby:
+                _multiplayer.Host(_startup.AutoStartPlayers);
+                break;
+            case StartupScreen.Join when _startup.JoinHost is { } host:
+                _multiplayer.Join(host);
+                break;
             default:
                 ShowIntro();
                 break;
@@ -84,6 +117,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     /// <inheritdoc/>
     protected override void UnloadContent()
     {
+        _multiplayer.Dispose();
         if (_screen != _match)
         {
             (_screen as IDisposable)?.Dispose();
@@ -98,6 +132,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     protected override void Update(GameTime gameTime)
     {
         _keyboard.Update(IsActive);
+        _multiplayer.Update();
         _screen?.Update(_keyboard);
         _audio?.Update();
         base.Update(gameTime);
@@ -110,10 +145,11 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
         base.Draw(gameTime);
     }
 
-    // The match is kept when another screen replaces it, so it can be resumed.
-    private void ShowScreen(IScreen screen)
+    // The local match is kept when another screen replaces it, so it can be resumed; network screens whose owner
+    // disposes them are kept too.
+    private void ShowScreen(IScreen screen, bool disposePrevious = true)
     {
-        if (_screen != _match)
+        if (disposePrevious && _screen != _match && _screen != screen)
         {
             (_screen as IDisposable)?.Dispose();
         }
@@ -135,7 +171,15 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     }
 
     private void ShowMainMenu(bool returningFromSettings) =>
-        ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, OpenLocalGameMenu, () => OpenSettings(() => ShowMainMenu(returningFromSettings: true)), returningFromSettings));
+        ShowScreen(new MainMenuScreen(
+            GraphicsDevice,
+            _assets!,
+            Exit,
+            OpenLocalGameMenu,
+            () => OpenSettings(() => ShowMainMenu(returningFromSettings: true)),
+            _multiplayer.ShowHostSetup,
+            _multiplayer.ShowJoinSetup,
+            returningFromSettings));
 
     private void OpenLocalGameMenu()
     {
@@ -191,7 +235,8 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     private void StartMatch(MatchSettings settings)
     {
         var previous = _match;
-        _match = new GameScreen(GraphicsDevice, settings, _settings.Detail, _settings.CameraMode, Environment.TickCount, _audio, OnMatchLeft);
+        var seed = Environment.TickCount;
+        _match = new GameScreen(GraphicsDevice, new LocalMatchDriver(settings, seed), _settings.Detail, _settings.CameraMode, seed + 1, _audio, OnMatchLeft);
         ShowScreen(_match);
         previous?.Dispose();
     }
