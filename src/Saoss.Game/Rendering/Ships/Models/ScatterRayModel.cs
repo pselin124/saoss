@@ -3,10 +3,10 @@ using Saoss.Game.Rendering.Legacy;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Rayska (ship 8): a pale ray-like creature with a pink tongue in front, two blue eyes, green spots
+/// Scatter Ray (ship 8): a pale ray-like creature with a pink tongue in front, two blue eyes, green spots
 /// along both sides and a flared tail funnel that shows a red exhaust disc while thrusting [alus8, case 8].
 /// </summary>
-public static class RayskaModel
+public static class ScatterRayModel
 {
     /// <summary>
     /// Records the whole ship [DRAW_ALUS_8]. Steps: body, tongue, eyes, spots on both sides, tail funnel.
@@ -55,7 +55,7 @@ public static class RayskaModel
         var gl = c.Gl;
         gl.PushMatrix();
         c.ScaleAndTurn(c.Radius / 1.1f * 0.5f);
-        gl.CallList(c.Models.RayskaBody);
+        gl.CallList(c.Models.ScatterRayBody);
         if (c.IsThrusting)
         {
             gl.Color(0.8f, 0.1f, 0.1f);

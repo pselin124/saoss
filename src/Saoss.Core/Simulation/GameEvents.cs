@@ -59,15 +59,15 @@ public enum EffectKind
     HeavyShotImpact,
 
     /// <summary>
-    /// A Rollu leech crashed into the planet. Original: 50 sparks at the leech, each velocity component
+    /// A Leechmother leech crashed into the planet. Original: 50 sparks at the leech, each velocity component
     /// random(25) / 50 - 0.25 (rerolled until the speed is below 0.3), no z motion, life 50-150 of max 150,
     /// size not set, red, green and blue each 0-1.
     /// </summary>
     LeechPlanetImpact,
 
     /// <summary>
-    /// A Rayska drifting mine hit a ship. Original: 150 + 50 * detail sparks at the target, each velocity component
-    /// random(200) / 1000 - 0.1 (rerolled until the speed is at most 0.1) plus the mine velocity, no z motion,
+    /// A Scatter Ray drifting mine hit a ship. Original: 150 + 50 * detail sparks at the target, each velocity
+    /// component random(200) / 1000 - 0.1 (rerolled until the speed is at most 0.1) plus the mine velocity, no z motion,
     /// life 25-75 of max 75, size 0-0.4, grey: red 0.2-1.45 with green and blue equal to red.
     /// </summary>
     DriftMineImpact,

@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Rollu: fires a heavy bomb that bursts into a ring of 30 fragments when the fire button is released or
+/// Leechmother: fires a heavy bomb that bursts into a ring of 30 fragments when the fire button is released or
 /// its time runs out; the special releases leeches that chase the nearest enemy and drain its fuel.
 /// </summary>
-public sealed class RolluBehavior : ShipBehavior
+public sealed class LeechmotherBehavior : ShipBehavior
 {
     private const float MuzzleDistance = 0.7f;
     private const float BombBoundsPush = 0.03f;
@@ -130,7 +130,7 @@ public sealed class RolluBehavior : ShipBehavior
                 Drain(ship, world, leech, target, ref dx, ref dy);
             }
 
-            // The drag uses the Rollu's own speed, not the leech's.
+            // The drag uses the Leechmother's own speed, not the leech's.
             leech.VelocityX /= 1f + (GameConstants.Friction * (MathF.Abs(ship.VelocityX) + 1f));
             leech.VelocityY /= 1f + (GameConstants.Friction * (MathF.Abs(ship.VelocityY) + 1f));
             if (target != null)

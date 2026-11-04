@@ -3,10 +3,10 @@ using Saoss.Game.Rendering.Legacy;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Bomba (ship 7): a grey cylinder with flattened end caps, a pink speed bulb on top, a red-tipped grey
+/// Thunderbolt (ship 7): a grey cylinder with flattened end caps, a pink speed bulb on top, a red-tipped grey
 /// arrowhead nose, two fan-shaped side wings and an engine bell with a red exhaust disc [alus7, case 7].
 /// </summary>
-public static class BombaModel
+public static class ThunderboltModel
 {
     /// <summary>
     /// Records the whole ship [DRAW_ALUS_7] (the first alus7 in aluspiirto.cpp; the second one is commented out).
@@ -84,7 +84,7 @@ public static class BombaModel
         var gl = c.Gl;
         gl.PushMatrix();
         c.ScaleAndTurn(c.Radius / 1.1f * 0.5f);
-        gl.CallList(c.Models.BombaBody);
+        gl.CallList(c.Models.ThunderboltBody);
 
         gl.PushMatrix();
         gl.Translate(0, -1.5f, 0);

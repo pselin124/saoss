@@ -11,7 +11,7 @@ public sealed class UfoWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Ufo, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 60f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 60f, 50f);
         ship.Controls = new ShipControls { Fire = true };
 
         world.Step();
@@ -30,7 +30,7 @@ public sealed class UfoWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Ufo, 50f, 50f);
-        var enemy = TestWorld.Place(world, 1, ShipType.Bloddu, -100f, -100f);
+        var enemy = TestWorld.Place(world, 1, ShipType.Vampire, -100f, -100f);
         var shot = enemy.PrimaryProjectiles[0];
         shot.Lifetime = 100;
         shot.X = 50f;
@@ -50,7 +50,7 @@ public sealed class UfoWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Ufo, 50f, 50f, angle: 0f);
-        TestWorld.Place(world, 1, ShipType.Bloddu, -100f, -100f);
+        TestWorld.Place(world, 1, ShipType.Vampire, -100f, -100f);
         ship.Controls = new ShipControls { Fire = true };
 
         world.Step();
@@ -66,7 +66,7 @@ public sealed class UfoWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Ufo, 50f, 50f);
-        TestWorld.Place(world, 1, ShipType.Bloddu, -100f, -100f);
+        TestWorld.Place(world, 1, ShipType.Vampire, -100f, -100f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();

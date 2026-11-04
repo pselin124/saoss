@@ -4,14 +4,14 @@ using Saoss.Core.Simulation;
 namespace Saoss.Tests.Simulation.Weapons;
 
 [TestClass]
-public sealed class RayskaWeaponTests
+public sealed class ScatterRayWeaponTests
 {
     [TestMethod]
     public void Fire_SpraysShotsWithinSpread()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Rayska, 50f, 50f, angle: 0f);
-        TestWorld.Place(world, 1, ShipType.Bloddu, -100f, -100f);
+        var ship = TestWorld.Place(world, 0, ShipType.ScatterRay, 50f, 50f, angle: 0f);
+        TestWorld.Place(world, 1, ShipType.Vampire, -100f, -100f);
         ship.Controls = new ShipControls { Fire = true };
 
         for (var i = 0; i < 10; i++)
@@ -33,8 +33,8 @@ public sealed class RayskaWeaponTests
     public void Special_MineHitsShipBehind()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Rayska, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 35f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.ScatterRay, 50f, 50f, angle: 0f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 35f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();

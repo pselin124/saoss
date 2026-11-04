@@ -3,10 +3,10 @@ using Saoss.Game.Rendering.Legacy;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Subni (ship 3): a horizontal grey-pink pole with a red diamond blade in the middle, two blade discs
+/// Twinblade (ship 3): a horizontal grey-pink pole with a red diamond blade in the middle, two blade discs
 /// behind it and a gun arm with a short barrel at each end [alus3, case 3].
 /// </summary>
-public static class SubniModel
+public static class TwinbladeModel
 {
     /// <summary>
     /// Records the whole ship [DRAW_ALUS_3]. Steps: capped pole, blade with its two discs, gun arms, gun barrels.
@@ -75,7 +75,7 @@ public static class SubniModel
     {
         c.Gl.PushMatrix();
         c.ScaleAndTurn(c.Radius / 1.7f);
-        c.Gl.CallList(c.Models.SubniBody);
+        c.Gl.CallList(c.Models.TwinbladeBody);
         c.Gl.PopMatrix();
     }
 }

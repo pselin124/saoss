@@ -4,14 +4,14 @@ using Saoss.Core.Simulation;
 namespace Saoss.Tests.Simulation.Weapons;
 
 [TestClass]
-public sealed class ShapperiWeaponTests
+public sealed class ShapperWeaponTests
 {
     [TestMethod]
     public void Bolt_HurtsShipAheadAndWeakensProjectile()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Shapperi, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 60f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.Shapper, 50f, 50f, angle: 0f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 60f, 50f);
         var shot = target.PrimaryProjectiles[0];
         shot.Lifetime = 100;
         shot.X = 56f;
@@ -33,7 +33,7 @@ public sealed class ShapperiWeaponTests
     public void Special_TogglesShieldModeThatFiresShotPairs()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Shapperi, 50f, 50f, angle: 0f);
+        var ship = TestWorld.Place(world, 0, ShipType.Shapper, 50f, 50f, angle: 0f);
         ship.Controls = new ShipControls { Special = true, Fire = true };
 
         world.Step();

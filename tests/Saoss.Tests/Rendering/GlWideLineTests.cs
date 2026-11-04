@@ -65,7 +65,7 @@ public sealed class GlWideLineTests
     {
         Assert.AreEqual(2f, ProjectileRenderer.BeamWidth(ShipType.Ufo));
         Assert.AreEqual(2f, ProjectileRenderer.BeamWidth(ShipType.PeaceCannon));
-        Assert.AreEqual(2f, ProjectileRenderer.BeamWidth(ShipType.Shapperi));
+        Assert.AreEqual(2f, ProjectileRenderer.BeamWidth(ShipType.Shapper));
         Assert.AreEqual(1.5f, ProjectileRenderer.BeamWidth(ShipType.Electra));
         Assert.AreEqual(1f, ProjectileRenderer.BeamWidth(ShipType.Magneto));
     }

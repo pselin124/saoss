@@ -105,7 +105,7 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
 
     // Ships whose weapons leave lines (special 5, 6, 7, primary 9, 11 or ship 18 in the original).
     private static bool HasBeams(ShipType type) =>
-        type is ShipType.Trek or ShipType.Ufo or ShipType.Bomba or ShipType.PeaceCannon or ShipType.Shapperi or ShipType.Electra;
+        type is ShipType.Trek or ShipType.Ufo or ShipType.Thunderbolt or ShipType.PeaceCannon or ShipType.Shapper or ShipType.Electra;
 
     // The original did this work before the death timer counted down, so the respawn sparks use the
     // timer value from before this tick's step.

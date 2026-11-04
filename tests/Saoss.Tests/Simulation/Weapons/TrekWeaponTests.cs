@@ -11,7 +11,7 @@ public sealed class TrekWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Trek, 50f, 50f, angle: 0f);
-        TestWorld.Place(world, 1, ShipType.Subni, -100f, -100f);
+        TestWorld.Place(world, 1, ShipType.Twinblade, -100f, -100f);
         ship.Controls = new ShipControls { Fire = true };
 
         world.Step();
@@ -25,7 +25,7 @@ public sealed class TrekWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Trek, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Subni, 80f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Twinblade, 80f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();
@@ -53,7 +53,7 @@ public sealed class TrekWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Trek, 50f, 50f, angle: 0f);
-        TestWorld.Place(world, 1, ShipType.Subni, -100f, -100f);
+        TestWorld.Place(world, 1, ShipType.Twinblade, -100f, -100f);
         ship.Controls = new ShipControls { Special = true };
         world.Step();
         ship.Controls = default;

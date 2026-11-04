@@ -23,9 +23,9 @@ public sealed class ShipSoundTableTests
     [TestMethod]
     [DataRow(ShipType.Magneto, ShipSound.Hit, "magneto-fire.wav", 0.5f)]
     [DataRow(ShipType.Tringu, ShipSound.SpecialHit, "magneto-fire.wav", 0.5f)]
-    [DataRow(ShipType.Subni, ShipSound.SpecialFire, "tringu-fire.wav", 0.5f)]
-    [DataRow(ShipType.Rayska, ShipSound.SpecialFire, "trek-fire.wav", 0.75f)]
-    [DataRow(ShipType.Shapperi, ShipSound.Hit, "bloddu-fire.wav", 0.5f)]
+    [DataRow(ShipType.Twinblade, ShipSound.SpecialFire, "tringu-fire.wav", 0.5f)]
+    [DataRow(ShipType.ScatterRay, ShipSound.SpecialFire, "trek-fire.wav", 0.75f)]
+    [DataRow(ShipType.Shapper, ShipSound.Hit, "vampire-fire.wav", 0.5f)]
     [DataRow(ShipType.Moth, ShipSound.SpecialHit, "ufo-special-fire.wav", 0.75f)]
     [DataRow(ShipType.Electra, ShipSound.Hit, "cubix-hit.wav", 0f)]
     public void BorrowedSounds_UseTheOwnersFileWithTheirOwnVolume(ShipType ship, ShipSound sound, string file, float volume) =>
@@ -36,7 +36,7 @@ public sealed class ShipSoundTableTests
     [DataRow(ShipType.Wasp, ShipSound.SpecialHit)]
     [DataRow(ShipType.Ufo, ShipSound.Hit)]
     [DataRow(ShipType.Ufo, ShipSound.SpecialHit)]
-    [DataRow(ShipType.Bomba, ShipSound.SpecialHit)]
+    [DataRow(ShipType.Thunderbolt, ShipSound.SpecialHit)]
     public void NullSounds_HaveNoEntry(ShipType ship, ShipSound sound) =>
         Assert.IsNull(ShipSoundTable.Get(ship, sound));
 

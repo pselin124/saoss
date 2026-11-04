@@ -17,20 +17,20 @@ public static class ShipSoundTable
     private const string TringuFire = "tringu-fire.wav";
     private const string TringuHit = "tringu-hit.wav";
     private const string WaspSpecialFire = "wasp-special-fire.wav";
-    private const string SubniFire = "subni-fire.wav";
-    private const string SubniSpecialHit = "subni-special-hit.wav";
-    private const string RolluFire = "rollu-fire.wav";
-    private const string RolluSpecialFire = "rollu-special-fire.wav";
-    private const string RolluSpecialHit = "rollu-special-hit.wav";
+    private const string TwinbladeFire = "twinblade-fire.wav";
+    private const string TwinbladeSpecialHit = "twinblade-special-hit.wav";
+    private const string LeechmotherFire = "leechmother-fire.wav";
+    private const string LeechmotherSpecialFire = "leechmother-special-fire.wav";
+    private const string LeechmotherSpecialHit = "leechmother-special-hit.wav";
     private const string TrekFire = "trek-fire.wav";
     private const string TrekHit = "trek-hit.wav";
     private const string UfoSpecialFire = "ufo-special-fire.wav";
-    private const string BombaFire = "bomba-fire.wav";
+    private const string ThunderboltFire = "thunderbolt-fire.wav";
     private const string PeaceCannonFire = "peace-cannon-fire.wav";
-    private const string BlodduFire = "bloddu-fire.wav";
-    private const string BlodduSpecialFire = "bloddu-special-fire.wav";
-    private const string ShapperiFire = "shapperi-fire.wav";
-    private const string ShapperiSpecialHit = "shapperi-special-hit.wav";
+    private const string VampireFire = "vampire-fire.wav";
+    private const string VampireSpecialFire = "vampire-special-fire.wav";
+    private const string ShapperFire = "shapper-fire.wav";
+    private const string ShapperSpecialHit = "shapper-special-hit.wav";
     private const string PowerVacuumFire = "power-vacuum-fire.wav";
     private const string PowerVacuumHit = "power-vacuum-hit.wav";
     private const string PowerVacuumSpecialFire = "power-vacuum-special-fire.wav";
@@ -56,15 +56,15 @@ public static class ShipSoundTable
         /* Magneto */ [S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f), S(MagnetoSpecialFire, 0.75f), null],
         /* Tringu */ [S(TringuFire, 1.0f), S(TringuHit, 1.0f), S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f)],
         /* Wasp */ [S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f), S(WaspSpecialFire, 0.5f), null],
-        /* Subni */ [S(SubniFire, 0.75f), S(TringuHit, 0.5f), S(TringuFire, 0.5f), S(SubniSpecialHit, 0.75f)],
-        /* Rollu */ [S(RolluFire, 0.9f), S(MagnetoFire, 0.5f), S(RolluSpecialFire, 0.75f), S(RolluSpecialHit, 0.75f)],
+        /* Twinblade */ [S(TwinbladeFire, 0.75f), S(TringuHit, 0.5f), S(TringuFire, 0.5f), S(TwinbladeSpecialHit, 0.75f)],
+        /* Leechmother */ [S(LeechmotherFire, 0.9f), S(MagnetoFire, 0.5f), S(LeechmotherSpecialFire, 0.75f), S(LeechmotherSpecialHit, 0.75f)],
         /* Trek */ [S(TrekFire, 0.75f), S(TrekHit, 0.75f), S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f)],
         /* Ufo */ [S(MagnetoFire, 0.5f), null, S(UfoSpecialFire, 0.125f), null],
-        /* Bomba */ [S(BombaFire, 0.5f), S(TringuHit, 1.0f), S(MagnetoFire, 0.5f), null],
-        /* Rayska */ [S(MagnetoFire, 0.75f), S(MagnetoFire, 0.5f), S(TrekFire, 0.75f), S(TrekHit, 0.75f)],
+        /* Thunderbolt */ [S(ThunderboltFire, 0.5f), S(TringuHit, 1.0f), S(MagnetoFire, 0.5f), null],
+        /* Scatter Ray */ [S(MagnetoFire, 0.75f), S(MagnetoFire, 0.5f), S(TrekFire, 0.75f), S(TrekHit, 0.75f)],
         /* PeaceCannon */ [new(PeaceCannonFire, 0.75f, Loops: true), S(MagnetoFire, 0.5f), S(TrekFire, 0.75f), S(TrekHit, 0.75f)],
-        /* Bloddu */ [S(BlodduFire, 0.5f), S(BlodduFire, 0.5f), S(BlodduSpecialFire, 0.8f), S(MagnetoFire, 0.3f)],
-        /* Shapperi */ [S(ShapperiFire, 0.5f), S(BlodduFire, 0.5f), S(MagnetoFire, 0.3f), S(ShapperiSpecialHit, 0.25f)],
+        /* Vampire */ [S(VampireFire, 0.5f), S(VampireFire, 0.5f), S(VampireSpecialFire, 0.8f), S(MagnetoFire, 0.3f)],
+        /* Shapper */ [S(ShapperFire, 0.5f), S(VampireFire, 0.5f), S(MagnetoFire, 0.3f), S(ShapperSpecialHit, 0.25f)],
         /* Moth */ [S(MagnetoFire, 0.34f), S(MagnetoFire, 0.34f), S(MagnetoSpecialFire, 0.5f), S(UfoSpecialFire, 0.75f)],
         /* PowerVacuum */ [S(PowerVacuumFire, 0.6f), S(PowerVacuumHit, 0.8f), S(PowerVacuumSpecialFire, 0.6f), S(MagnetoFire, 0f)],
         /* Bulldog */ [S(BulldogFire, 0.99f), S(BulldogHit, 0.6f), S(BulldogSpecialFire, 0.99f), S(MagnetoFire, 0f)],

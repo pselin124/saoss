@@ -15,11 +15,11 @@ public enum ShipType
     /// <summary>"Amppari": small and fast with a rapid-fire gun.</summary>
     Wasp = 2,
 
-    /// <summary>Alternating side guns.</summary>
-    Subni = 3,
+    /// <summary>"Subni": alternating side guns.</summary>
+    Twinblade = 3,
 
-    /// <summary>Heavy ship with a propeller and a long-lived shot.</summary>
-    Rollu = 4,
+    /// <summary>"Rollu": heavy ship with a propeller and a long-lived shot.</summary>
+    Leechmother = 4,
 
     /// <summary>Two big slow shots.</summary>
     Trek = 5,
@@ -27,20 +27,20 @@ public enum ShipType
     /// <summary>"Uhvo": inertia-free saucer with a short-range laser.</summary>
     Ufo = 6,
 
-    /// <summary>Very slow, long-lived shots.</summary>
-    Bomba = 7,
+    /// <summary>"Bomba": very slow, long-lived shots.</summary>
+    Thunderbolt = 7,
 
-    /// <summary>Rapid stream of small shots.</summary>
-    Rayska = 8,
+    /// <summary>"Rayska": rapid stream of small shots.</summary>
+    ScatterRay = 8,
 
     /// <summary>"Rauhantykki": short-range area weapon without projectiles.</summary>
     PeaceCannon = 9,
 
-    /// <summary>Medium gun with a large-area special.</summary>
-    Bloddu = 10,
+    /// <summary>"Bloddu": medium gun with a large-area special.</summary>
+    Vampire = 10,
 
-    /// <summary>Gun and a shielded slow mode.</summary>
-    Shapperi = 11,
+    /// <summary>"Shapperi": gun and a shielded slow mode.</summary>
+    Shapper = 11,
 
     /// <summary>"Perho": may come back to life after being destroyed.</summary>
     Moth = 12,

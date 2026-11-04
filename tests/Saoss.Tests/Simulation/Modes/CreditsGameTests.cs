@@ -139,11 +139,11 @@ public sealed class CreditsGameTests
         Assert.AreEqual(new ShipChoice(1), world.PendingChoice);
         Assert.AreEqual(GameConstants.SpawnTicks, world.Ships[1].DeathTimer);
 
-        world.ChooseShip(1, ShipType.Bomba);
+        world.ChooseShip(1, ShipType.Thunderbolt);
         Assert.IsTrue(world.Events.OfType<ShipRespawning>().Any(e => e.ShipIndex == 1));
         world.Step();
 
-        Assert.AreEqual(ShipType.Bomba, world.Ships[1].Type);
+        Assert.AreEqual(ShipType.Thunderbolt, world.Ships[1].Type);
         Assert.AreEqual(GameConstants.SpawnTicks - 1, world.Ships[1].DeathTimer);
     }
 

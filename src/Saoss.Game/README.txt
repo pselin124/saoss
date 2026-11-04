@@ -153,11 +153,11 @@ price in credits games.
                             Special: Self-destruct! Hurts nearby ships (the closer, the more) and
                                      wipes out nearby shots. The cheapest ship.
 
-  Subni            40   18  Fire:    Single shots, alternating left and right side.
+  Twinblade        40   18  Fire:    Single shots, alternating left and right side.
                             Special: Drops a mine that creeps toward the nearest enemy and
                                      explodes on contact (easy to bump into yourself).
 
-  Rollu            50   30  Fire:    A heavy bomb that flies while you hold Fire and bursts into a ring
+  Leechmother      50   30  Fire:    A heavy bomb that flies while you hold Fire and bursts into a ring
                                      of 30 fragments when you release it (or when it runs out).
                             Special: Leeches that chase the nearest enemy and drain its fuel.
 
@@ -171,10 +171,10 @@ price in credits games.
                             Notes:   No gravity or inertia: moves only while Thrust is held and
                                      stops dead when released.
 
-  Bomba            35   21  Fire:    Slow mines that home in on the nearest enemy.
+  Thunderbolt      35   21  Fire:    Slow mines that home in on the nearest enemy.
                             Special: Short lightning bolts zap every enemy ship and shot close by.
 
-  Rayska           30   16  Fire:    Rapid spray of small shots with random spread.
+  Scatter Ray      30   16  Fire:    Rapid spray of small shots with random spread.
                             Special: Long-lived bouncing mines dropped behind; they knock back any
                                      ship they hit - you too.
 
@@ -183,12 +183,12 @@ price in credits games.
                             Special: Slow black holes that pull in ships and shots and hurt
                                      whatever touches them.
 
-  Bloddu           25   15  Fire:    Single straight shots.
+  Vampire          25   15  Fire:    Single straight shots.
                             Special: Bites hull points off nearby enemies (the closer, the more).
                                      Each point drops out as a little figure that heals whoever
                                      picks it up - go grab them.
 
-  Shapperi         30   20  Fire:    Short blue laser bolt that hurts every ship it crosses and
+  Shapper          30   20  Fire:    Short blue laser bolt that hurts every ship it crosses and
                                      weakens shots.
                             Special: Transforms the ship (toggle). The other form fires pairs of
                                      straight long-range shots and accelerates harder, but turns

@@ -3,10 +3,10 @@ using Saoss.Game.Rendering.Legacy;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Bloddu (ship 10): an orange-red egg on a short cylinder with a small knob on top and three
+/// Vampire (ship 10): an orange-red egg on a short cylinder with a small knob on top and three
 /// ball-footed legs below, like a little rocket on a tripod [alus10, case 10].
 /// </summary>
-public static class BlodduModel
+public static class VampireModel
 {
     /// <summary>Records the whole ship [DRAW_ALUS_10]. Steps: egg body, capped base cylinder, knob, three legs.</summary>
     public static GlDisplayList Record(LegacyGl gl, int detail)
@@ -66,7 +66,7 @@ public static class BlodduModel
     {
         c.Gl.PushMatrix();
         c.ScaleAndTurn(c.Radius / 1.1f * 0.7f);
-        c.Gl.CallList(c.Models.BlodduBody);
+        c.Gl.CallList(c.Models.VampireBody);
         c.Gl.PopMatrix();
     }
 }

@@ -31,7 +31,7 @@ public static class AiPilot
 
         private const double ChaseAimTolerance = 45;
         private const double ChaseDistanceFactor = 2.0 / 3.0;
-        private const double RolluStandOffFactor = 1.2;
+        private const double LeechmotherStandOffFactor = 1.2;
         private const double DefaultThrustAimTolerance = 90;
         private const double BulldogRamDistance = 15;
         private const double BulldogRamAimTolerance = 10;
@@ -59,8 +59,8 @@ public static class AiPilot
 
         private const double FireAimTolerance = 30;
         private const double CloseWeaponAimTolerance = 35;
-        private const double RolluAimTolerance = 7;
-        private const double RolluShotSteerAngle = Pi / 3;
+        private const double LeechmotherAimTolerance = 7;
+        private const double LeechmotherShotSteerAngle = Pi / 3;
         private const double PowerVacuumAimTolerance = 3;
         private const double PowerVacuumRangeFactor = 0.8;
         private const double PowerVacuumReleaseCharge = 250;
@@ -81,8 +81,8 @@ public static class AiPilot
         private const double WaspBehindAngle = 135.0 / 180.0 * Pi;
         private const double RearAngleDegrees = 90;
         private const double UfoReachMargin = 2.5;
-        private const double ShapperiShieldMargin = 5;
-        private const double ShapperiOpenMargin = 15;
+        private const double ShapperShieldMargin = 5;
+        private const double ShapperOpenMargin = 15;
         private const double WiiiiBoostDistance = 30;
         private const double WiiiiBoostAimAngle = Pi / 6;
         private const double ElephantReachFactor = 1.5;
@@ -291,15 +291,15 @@ public static class AiPilot
             {
                 _controls.Thrust = aimError < ChaseAimTolerance && _distance > range * ChaseDistanceFactor;
             }
-            else if (Type == ShipType.Rollu)
+            else if (Type == ShipType.Leechmother)
             {
-                _controls.Thrust = aimError < ChaseAimTolerance && _distance > Range(target.Definition) * RolluStandOffFactor;
+                _controls.Thrust = aimError < ChaseAimTolerance && _distance > Range(target.Definition) * LeechmotherStandOffFactor;
             }
-            else if (Type is ShipType.Rayska or ShipType.StickInsect)
+            else if (Type is ShipType.ScatterRay or ShipType.StickInsect)
             {
                 _controls.Thrust = true;
             }
-            else if (Type == ShipType.Bloddu)
+            else if (Type == ShipType.Vampire)
             {
                 ChasePickups();
                 if (!_steeringChosen)
@@ -322,7 +322,7 @@ public static class AiPilot
             }
         }
 
-        // Bloddu flies to pickups; when moving fast it steers its velocity rather than its nose toward them.
+        // Vampire flies to pickups; when moving fast it steers its velocity rather than its nose toward them.
         private void ChasePickups()
         {
             foreach (var pickup in _world.Pickups)
@@ -376,7 +376,7 @@ public static class AiPilot
             {
                 SetTurn(left: IsCounterClockwiseOf(ToDegrees(_targetAngle), _ship.Angle, 180));
             }
-            else if ((Type != ShipType.Rayska && Type != ShipType.StickInsect)
+            else if ((Type != ShipType.ScatterRay && Type != ShipType.StickInsect)
                 || AimErrorDegrees(_targetAngle) < RammerTurnAwayAimTolerance
                 || _distance > RammerTurnAwayDistance)
             {
@@ -510,8 +510,8 @@ public static class AiPilot
         }
 
         /// <summary>
-        /// Primary weapon trigger. Steps by weapon, first match wins: shielded Shapperi, plain guns (in range and
-        /// aimed), Ufo/Electra (enemy shots or the enemy within reach), Peace Cannon, unshielded Shapperi, Rollu
+        /// Primary weapon trigger. Steps by weapon, first match wins: shielded Shapper, plain guns (in range and
+        /// aimed), Ufo/Electra (enemy shots or the enemy within reach), Peace Cannon, unshielded Shapper, Leechmother
         /// (aim, then hold while the shot heads to the target), Power Vacuum (charge and release), Bulldog, Wiiii,
         /// Cubix, Tongu, Space Turtle, then generic rules by shot size and speed.
         /// </summary>
@@ -523,13 +523,13 @@ public static class AiPilot
             var maxFuel = Exact(_definition.MaxFuel);
             var primaryRadius = Exact(_definition.Primary.Radius);
             bool fire;
-            if (Type == ShipType.Shapperi && _ship.IsShieldActive)
+            if (Type == ShipType.Shapper && _ship.IsShieldActive)
             {
                 fire = _distance < range && leadError < FireAimTolerance
                     && _ship.Fuel >= Exact(_definition.Special.FuelCost) + Exact(_definition.Primary.FuelCost);
             }
-            else if (Type is ShipType.Magneto or ShipType.Tringu or ShipType.Wasp or ShipType.Subni or ShipType.Bloddu
-                or ShipType.Rayska or ShipType.Elephant or ShipType.StickInsect)
+            else if (Type is ShipType.Magneto or ShipType.Tringu or ShipType.Wasp or ShipType.Twinblade or ShipType.Vampire
+                or ShipType.ScatterRay or ShipType.Elephant or ShipType.StickInsect)
             {
                 fire = _distance < range && leadError < FireAimTolerance;
             }
@@ -541,13 +541,13 @@ public static class AiPilot
             {
                 fire = _distance < primaryRadius + Exact(target.Definition.Radius) && aimError <= CloseWeaponAimTolerance;
             }
-            else if (Type == ShipType.Shapperi)
+            else if (Type == ShipType.Shapper)
             {
                 fire = _distance < Exact(_definition.Special.Radius) && aimError <= CloseWeaponAimTolerance;
             }
-            else if (Type == ShipType.Rollu)
+            else if (Type == ShipType.Leechmother)
             {
-                fire = ShouldFireRollu(target);
+                fire = ShouldFireLeechmother(target);
             }
             else if (Type == ShipType.PowerVacuum)
             {
@@ -625,18 +625,18 @@ public static class AiPilot
             return fire;
         }
 
-        // Rollu fires when aimed, then keeps the trigger held while its shot is still heading toward the target.
-        private bool ShouldFireRollu(Ship target)
+        // Leechmother fires when aimed, then keeps the trigger held while its shot is still heading toward the target.
+        private bool ShouldFireLeechmother(Ship target)
         {
             var shot = _ship.PrimaryProjectiles[0];
             if (!shot.IsActive)
             {
-                return AimErrorDegrees(_leadAngle) < RolluAimTolerance;
+                return AimErrorDegrees(_leadAngle) < LeechmotherAimTolerance;
             }
 
             var shotAngle = Math.Atan2(shot.VelocityY, shot.VelocityX);
             var shotToTarget = Math.Atan2(target.Y - shot.Y, target.X - shot.X);
-            return Math.Abs(shotAngle - shotToTarget) < RolluShotSteerAngle;
+            return Math.Abs(shotAngle - shotToTarget) < LeechmotherShotSteerAngle;
         }
 
         /// <summary>
@@ -665,10 +665,10 @@ public static class AiPilot
                 case ShipType.Wasp:
                     _controls.Special = ShouldSting(target);
                     break;
-                case ShipType.Subni:
+                case ShipType.Twinblade:
                     _controls.Special = aimError > RearAngleDegrees && _distance < Range(_definition) && !held;
                     break;
-                case ShipType.Rollu:
+                case ShipType.Leechmother:
                     if (!_controls.Fire)
                     {
                         _controls.Special = true;
@@ -677,29 +677,29 @@ public static class AiPilot
                     break;
                 case ShipType.Trek:
                     _controls.Special = _ship.Energy > Exact(_definition.MaxEnergy) / 2 && _distance > Range(_definition)
-                        && target.Type != ShipType.Bomba;
+                        && target.Type != ShipType.Thunderbolt;
                     break;
                 case ShipType.Ufo:
                     _controls.Special = _distance < ((radius + targetRadius) / 4 * Pi) + UfoReachMargin;
                     break;
-                case ShipType.Bomba:
+                case ShipType.Thunderbolt:
                 case ShipType.Electra:
                     _controls.Special = true;
                     break;
-                case ShipType.Rayska:
+                case ShipType.ScatterRay:
                 case ShipType.StickInsect:
                     _controls.Special = aimError > RearAngleDegrees && !held;
                     break;
                 case ShipType.PeaceCannon:
                     _controls.Special = _distance > Exact(_definition.Primary.Radius) && !_controls.Thrust;
                     break;
-                case ShipType.Bloddu:
+                case ShipType.Vampire:
                     _controls.Special = _distance < Exact(special.Radius);
                     break;
-                case ShipType.Shapperi:
+                case ShipType.Shapper:
                     _controls.Special = _ship.IsShieldActive
-                        ? _distance < Exact(special.Radius) + ShapperiShieldMargin
-                        : _distance > Exact(special.Radius) + ShapperiOpenMargin;
+                        ? _distance < Exact(special.Radius) + ShapperShieldMargin
+                        : _distance > Exact(special.Radius) + ShapperOpenMargin;
                     break;
                 case ShipType.Moth:
                     _controls.Special = _ship.Fuel < maxFuel;

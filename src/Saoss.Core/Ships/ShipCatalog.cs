@@ -136,8 +136,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Subni,
-            Name = "Subni",
+            Type = ShipType.Twinblade,
+            Name = "Twinblade",
             Mass = 150.0f,
             Thrust = 0.003f,
             Radius = 2.8f,
@@ -178,8 +178,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Rollu,
-            Name = "Rollu",
+            Type = ShipType.Leechmother,
+            Name = "Leechmother",
             Mass = 500.0f,
             Thrust = 0.0015f,
             Radius = 4.4f,
@@ -304,8 +304,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Bomba,
-            Name = "Bomba",
+            Type = ShipType.Thunderbolt,
+            Name = "Thunderbolt",
             Mass = 180.0f,
             Thrust = 0.0015f,
             Radius = 2.8f,
@@ -346,8 +346,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Rayska,
-            Name = "Rayska",
+            Type = ShipType.ScatterRay,
+            Name = "Scatter Ray",
             Mass = 150.0f,
             Thrust = 0.0030f,
             Radius = 2.4f,
@@ -430,8 +430,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Bloddu,
-            Name = "Bloddu",
+            Type = ShipType.Vampire,
+            Name = "Vampire",
             Mass = 180.0f,
             Thrust = 0.002f,
             Radius = 2.4f,
@@ -472,8 +472,8 @@ public static class ShipCatalog
         },
         new()
         {
-            Type = ShipType.Shapperi,
-            Name = "Shapperi",
+            Type = ShipType.Shapper,
+            Name = "Shapper",
             Mass = 200.0f,
             Thrust = 0.0012f,
             Radius = 3.0f,

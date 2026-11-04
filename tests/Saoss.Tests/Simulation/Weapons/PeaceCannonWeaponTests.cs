@@ -11,7 +11,7 @@ public sealed class PeaceCannonWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.PeaceCannon, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 60f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 60f, 50f);
         var shot = target.PrimaryProjectiles[0];
         shot.Lifetime = 100;
         shot.X = 56f;
@@ -38,7 +38,7 @@ public sealed class PeaceCannonWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.PeaceCannon, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 30f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 30f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();

@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Bloddu: fires single straight shots; the special bites hit points off nearby enemies, the closer the more,
+/// Vampire: fires single straight shots; the special bites hit points off nearby enemies, the closer the more,
 /// and each bitten point drops out as a health pickup that any ship can collect.
 /// </summary>
-public sealed class BlodduBehavior : ShipBehavior
+public sealed class VampireBehavior : ShipBehavior
 {
     private const float MuzzleDistance = 0.8f;
     private const float BiteChance = 75f;

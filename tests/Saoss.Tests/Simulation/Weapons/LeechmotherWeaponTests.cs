@@ -4,13 +4,13 @@ using Saoss.Core.Simulation;
 namespace Saoss.Tests.Simulation.Weapons;
 
 [TestClass]
-public sealed class RolluWeaponTests
+public sealed class LeechmotherWeaponTests
 {
     [TestMethod]
     public void Bomb_BurstsIntoFragmentsWhenFireIsReleased()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Rollu, 50f, 50f, angle: 0f);
+        var ship = TestWorld.Place(world, 0, ShipType.Leechmother, 50f, 50f, angle: 0f);
         TestWorld.Place(world, 1, ShipType.Trek, -100f, -100f);
         ship.Controls = new ShipControls { Fire = true };
 
@@ -30,7 +30,7 @@ public sealed class RolluWeaponTests
     public void Special_LeechDrainsEnemyFuel()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Rollu, 50f, 50f, angle: 0f);
+        var ship = TestWorld.Place(world, 0, ShipType.Leechmother, 50f, 50f, angle: 0f);
         var target = TestWorld.Place(world, 1, ShipType.Trek, 38f, 50f);
         ship.Controls = new ShipControls { Special = true };
         var drained = false;

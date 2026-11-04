@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Shapperi: normally fires a short blue laser bolt that hurts every ship and weakens every projectile it crosses;
+/// Shapper: normally fires a short blue laser bolt that hurts every ship and weakens every projectile it crosses;
 /// the special toggles a slow shield mode in which it fires pairs of straight shots instead.
 /// </summary>
-public sealed class ShapperiBehavior : ShipBehavior
+public sealed class ShapperBehavior : ShipBehavior
 {
     private const float ShotSideAngle = 15f;
     private const float ShotMuzzleDistance = 1.6f;

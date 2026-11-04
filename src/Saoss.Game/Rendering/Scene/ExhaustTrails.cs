@@ -16,12 +16,12 @@ public static class ExhaustTrails
     private const float StraightBack = -180f;
 
     /// <summary>
-    /// Heading offsets in degrees of the ship's engines: Rollu and Popper have two, every other ship one
+    /// Heading offsets in degrees of the ship's engines: Leechmother and Popper have two, every other ship one
     /// straight back. Shared with the thrust sparks.
     /// </summary>
     public static (float First, float? Second) NozzleOffsets(ShipType type) => type switch
     {
-        ShipType.Rollu => (-145f, -215f),
+        ShipType.Leechmother => (-145f, -215f),
         ShipType.Popper => (-155f, -205f),
         _ => (StraightBack, null),
     };
@@ -105,7 +105,7 @@ public static class ExhaustTrails
         gl.BlendFunc(GlBlend.SrcColor, GlBlend.OneMinusSrcColor);
     }
 
-    private static bool HasTwinTrail(ShipType type) => type is ShipType.Rollu or ShipType.Popper;
+    private static bool HasTwinTrail(ShipType type) => type is ShipType.Leechmother or ShipType.Popper;
 
     private static void Shift(ExhaustPuff[] trail)
     {

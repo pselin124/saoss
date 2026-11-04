@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Bomba: lays slow mines that home in on the nearest enemy; the special zaps every enemy ship and breakable
-/// enemy projectile close to the Bomba with a short cyan lightning bolt.
+/// Thunderbolt: lays slow mines that home in on the nearest enemy; the special zaps every enemy ship and breakable
+/// enemy projectile close to the Thunderbolt with a short cyan lightning bolt.
 /// </summary>
-public sealed class BombaBehavior : ShipBehavior
+public sealed class ThunderboltBehavior : ShipBehavior
 {
     private const float MuzzleDistance = 1.4f;
     private const float LaunchSpeedFactor = 150f;
@@ -39,7 +39,7 @@ public sealed class BombaBehavior : ShipBehavior
     }
 
     /// <summary>
-    /// Per mine: move, planet, hit every ship it touches (the Bomba itself included), then accelerate toward the
+    /// Per mine: move, planet, hit every ship it touches (the Thunderbolt itself included), then accelerate toward the
     /// nearest enemy with drag and face it.
     /// </summary>
     public override void UpdatePrimaryProjectiles(Ship ship, World world)

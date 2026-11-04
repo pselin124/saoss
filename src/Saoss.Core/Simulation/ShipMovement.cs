@@ -50,11 +50,11 @@ public static class ShipMovement
         }
 
         var isBoosting = ship.Type == ShipType.Wiiii && ship.IsShieldActive;
-        var isShapperiShield = ship.Type == ShipType.Shapperi && ship.IsShieldActive;
+        var isShapperShield = ship.Type == ShipType.Shapper && ship.IsShieldActive;
         ship.IsThrusting = controls.Thrust || isBoosting || ship.Type == ShipType.Electra;
         if (ship.IsThrusting)
         {
-            ApplyThrust(ship, slowdown, isBoosting, isShapperiShield);
+            ApplyThrust(ship, slowdown, isBoosting, isShapperShield);
         }
 
         if (!controls.Thrust && (ship.Type == ShipType.Ufo || ship.Type == ShipType.StarWorm))
@@ -64,14 +64,14 @@ public static class ShipMovement
         }
 
         ship.ShiftTail(recordCurrent: ship.Type == ShipType.StarWorm);
-        Turn(ship, controls, slowdown, isBoosting, isShapperiShield);
+        Turn(ship, controls, slowdown, isBoosting, isShapperShield);
 
         if (ship.FireCooldown > 0)
         {
             ship.FireCooldown--;
         }
 
-        RegenerateFuel(ship, isShapperiShield);
+        RegenerateFuel(ship, isShapperShield);
 
         if (!definition.IsInertiaFree)
         {
@@ -81,7 +81,7 @@ public static class ShipMovement
 
         KeepInArena(ship, isBoosting);
 
-        if (ship.Type is ShipType.Rollu or ShipType.Elephant or ShipType.Electra)
+        if (ship.Type is ShipType.Leechmother or ShipType.Elephant or ShipType.Electra)
         {
             var (headingX, headingY) = ship.Heading;
             ship.PropellerAngle += ((headingX * ship.VelocityX) + (headingY * ship.VelocityY)) * PropellerFactor;
@@ -219,7 +219,7 @@ public static class ShipMovement
         }
     }
 
-    private static void ApplyThrust(Ship ship, float slowdown, bool isBoosting, bool isShapperiShield)
+    private static void ApplyThrust(Ship ship, float slowdown, bool isBoosting, bool isShapperShield)
     {
         var thrust = ship.Definition.Thrust;
         var (headingX, headingY) = ship.Heading;
@@ -231,17 +231,17 @@ public static class ShipMovement
         }
 
         var (factor, drag) = isBoosting ? (BoostThrustFactor, BoostDrag)
-            : isShapperiShield ? (ShieldThrustFactor, ShieldDrag)
+            : isShapperShield ? (ShieldThrustFactor, ShieldDrag)
             : (1f, NormalThrustDrag);
         ship.VelocityX = Drag(ship.VelocityX + (thrust * factor * headingX * slowdown), drag);
         ship.VelocityY = Drag(ship.VelocityY + (thrust * factor * headingY * slowdown), drag);
     }
 
-    private static void Turn(Ship ship, ShipControls controls, float slowdown, bool isBoosting, bool isShapperiShield)
+    private static void Turn(Ship ship, ShipControls controls, float slowdown, bool isBoosting, bool isShapperShield)
     {
         var turnRate = ship.Definition.TurnRate;
         var step = isBoosting ? turnRate * BoostTurnFactor
-            : isShapperiShield ? turnRate / ShieldTurnDivisor
+            : isShapperShield ? turnRate / ShieldTurnDivisor
             : turnRate;
 
         // Left and right are applied separately in the original, so holding both cancels out.
@@ -275,7 +275,7 @@ public static class ShipMovement
         }
     }
 
-    private static void RegenerateFuel(Ship ship, bool isShapperiShield)
+    private static void RegenerateFuel(Ship ship, bool isShapperShield)
     {
         var definition = ship.Definition;
         if (ship.Fuel >= definition.MaxFuel)
@@ -283,7 +283,7 @@ public static class ShipMovement
             return;
         }
 
-        if (isShapperiShield)
+        if (isShapperShield)
         {
             ship.Fuel += definition.FuelRegen / ShieldFuelRegenDivisor;
         }

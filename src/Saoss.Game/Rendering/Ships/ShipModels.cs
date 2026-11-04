@@ -18,15 +18,15 @@ public sealed class ShipModels
         (MagnetoHull, MagnetoCanopy, MagnetoGuns) = MagnetoModel.Record(gl, detail);
         TringuBody = TringuModel.Record(gl, shared, detail);
         WaspBody = WaspModel.Record(gl, detail);
-        SubniBody = SubniModel.Record(gl, detail);
-        (RolluMast, RolluBody) = RolluModel.Record(gl, shared, detail);
+        TwinbladeBody = TwinbladeModel.Record(gl, detail);
+        (LeechmotherMast, LeechmotherBody) = LeechmotherModel.Record(gl, shared, detail);
         TrekBody = TrekModel.Record(gl, detail);
         (UfoSaucer, UfoCannon) = UfoModel.Record(gl, detail);
-        BombaBody = BombaModel.Record(gl, detail);
-        RayskaBody = RayskaModel.Record(gl, detail);
+        ThunderboltBody = ThunderboltModel.Record(gl, detail);
+        ScatterRayBody = ScatterRayModel.Record(gl, detail);
         PeaceCannonBody = PeaceCannonModel.Record(gl, shared, detail);
-        BlodduBody = BlodduModel.Record(gl, detail);
-        ShapperiBody = ShapperiModel.Record(gl, detail);
+        VampireBody = VampireModel.Record(gl, detail);
+        ShapperBody = ShapperModel.Record(gl, detail);
         (MothSpine, MothWings) = MothModel.Record(gl, detail);
         PowerVacuumBody = PowerVacuumModel.Record(gl, detail);
         (BulldogBarrel, BulldogRear) = BulldogModel.Record(gl, detail);
@@ -60,13 +60,13 @@ public sealed class ShipModels
     public GlDisplayList WaspBody { get; }
 
     /// <summary>[DRAW_ALUS_3].</summary>
-    public GlDisplayList SubniBody { get; }
+    public GlDisplayList TwinbladeBody { get; }
 
     /// <summary>[DRAW_ALUS_4_OSA_1].</summary>
-    public GlDisplayList RolluMast { get; }
+    public GlDisplayList LeechmotherMast { get; }
 
     /// <summary>[DRAW_ALUS_4_OSA_2].</summary>
-    public GlDisplayList RolluBody { get; }
+    public GlDisplayList LeechmotherBody { get; }
 
     /// <summary>[DRAW_ALUS_5].</summary>
     public GlDisplayList TrekBody { get; }
@@ -78,19 +78,19 @@ public sealed class ShipModels
     public GlDisplayList UfoCannon { get; }
 
     /// <summary>[DRAW_ALUS_7].</summary>
-    public GlDisplayList BombaBody { get; }
+    public GlDisplayList ThunderboltBody { get; }
 
     /// <summary>[DRAW_ALUS_8].</summary>
-    public GlDisplayList RayskaBody { get; }
+    public GlDisplayList ScatterRayBody { get; }
 
     /// <summary>[DRAW_ALUS_9].</summary>
     public GlDisplayList PeaceCannonBody { get; }
 
     /// <summary>[DRAW_ALUS_10].</summary>
-    public GlDisplayList BlodduBody { get; }
+    public GlDisplayList VampireBody { get; }
 
     /// <summary>[DRAW_ALUS_11].</summary>
-    public GlDisplayList ShapperiBody { get; }
+    public GlDisplayList ShapperBody { get; }
 
     /// <summary>[DRAW_ALUS_12_OSA_1].</summary>
     public GlDisplayList MothSpine { get; }

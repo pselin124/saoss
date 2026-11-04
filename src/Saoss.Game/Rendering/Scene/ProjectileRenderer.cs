@@ -18,7 +18,7 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
     private const float ElectraBeamWidth = 1.5f;
 
     /// <summary>
-    /// Draws the primary projectiles [piirraPadit]. Power Vacuum, Rollu and Wiiii have their own look;
+    /// Draws the primary projectiles [piirraPadit]. Power Vacuum, Leechmother and Wiiii have their own look;
     /// all others are camera-facing textured quads turned to the shot's heading.
     /// </summary>
     public void DrawPrimary(Ship ship, GameCamera camera)
@@ -35,8 +35,8 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
             case ShipType.PowerVacuum:
                 DrawVacuumOrbs(ship);
                 break;
-            case ShipType.Rollu:
-                DrawRolluShots(ship, camera);
+            case ShipType.Leechmother:
+                DrawLeechmotherShots(ship, camera);
                 break;
             case ShipType.Wiiii:
                 DrawWiiiiBubbles(ship);
@@ -153,7 +153,7 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
     /// <summary>Beam line width of a ship's weapon in pixels at the reference resolution.</summary>
     public static float BeamWidth(ShipType type) => type switch
     {
-        ShipType.Ufo or ShipType.PeaceCannon or ShipType.Shapperi => WideBeamWidth,
+        ShipType.Ufo or ShipType.PeaceCannon or ShipType.Shapper => WideBeamWidth,
         ShipType.Electra => ElectraBeamWidth,
         _ => 1f,
     };
@@ -199,7 +199,7 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
     }
 
     // The first slot is the big leech-catching shot drawn with the ship's detail texture at the special's size.
-    private void DrawRolluShots(Ship ship, GameCamera camera)
+    private void DrawLeechmotherShots(Ship ship, GameCamera camera)
     {
         var definition = ship.Definition;
         foreach (var (index, projectile) in ActiveWithIndex(ship.PrimaryProjectiles, definition.Primary.MaxProjectiles))

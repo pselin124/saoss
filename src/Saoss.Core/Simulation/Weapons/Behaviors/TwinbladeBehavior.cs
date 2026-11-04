@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Subni: fires single shots alternately from the left and right side; the special drops a mine behind
+/// Twinblade: fires single shots alternately from the left and right side; the special drops a mine behind
 /// the ship that creeps toward the nearest enemy and explodes on contact.
 /// </summary>
-public sealed class SubniBehavior : ShipBehavior
+public sealed class TwinbladeBehavior : ShipBehavior
 {
     private const float SideAngle = 55f;
     private const float MuzzleDistance = 0.8f;
@@ -81,7 +81,7 @@ public sealed class SubniBehavior : ShipBehavior
         }
     }
 
-    // Every ship touching the mine is hit, including the Subni itself and its teammates.
+    // Every ship touching the mine is hit, including the Twinblade itself and its teammates.
     private static void Detonate(Ship ship, World world, Projectile mine)
     {
         var special = ship.Definition.Special;

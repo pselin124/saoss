@@ -27,7 +27,7 @@ public sealed class WiiiiWeaponTests
     {
         var world = TestWorld.Create();
         var ship = TestWorld.Place(world, 0, ShipType.Wiiii, 50f, 50f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 70f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 70f, 50f);
         var mine = ship.PrimaryProjectiles[0];
         mine.Lifetime = 100;
         mine.X = 70f;

@@ -1,10 +1,10 @@
 namespace Saoss.Core.Simulation.Weapons.Behaviors;
 
 /// <summary>
-/// Rayska: sprays a rapid stream of small shots with random spread; the special drops long-lived mines behind
+/// Scatter Ray: sprays a rapid stream of small shots with random spread; the special drops long-lived mines behind
 /// the ship that drift, bounce off the arena edges and knock back any ship they hit.
 /// </summary>
-public sealed class RayskaBehavior : ShipBehavior
+public sealed class ScatterRayBehavior : ShipBehavior
 {
     private const float MaxSpread = 20f;
     private const float SpreadRoll = 10000f;
@@ -66,7 +66,7 @@ public sealed class RayskaBehavior : ShipBehavior
 
     /// <summary>
     /// Per mine: push back inside the arena, move, face the flight direction, planet, then hit every ship it
-    /// touches (the Rayska itself included).
+    /// touches (the Scatter Ray itself included).
     /// </summary>
     public override void UpdateSpecialProjectiles(Ship ship, World world)
     {

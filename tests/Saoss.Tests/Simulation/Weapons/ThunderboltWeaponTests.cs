@@ -4,14 +4,14 @@ using Saoss.Core.Simulation;
 namespace Saoss.Tests.Simulation.Weapons;
 
 [TestClass]
-public sealed class BombaWeaponTests
+public sealed class ThunderboltWeaponTests
 {
     [TestMethod]
     public void Mine_HomesInOnEnemyAndDealsDoubleDamage()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bomba, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 50f, 70f);
+        var ship = TestWorld.Place(world, 0, ShipType.Thunderbolt, 50f, 50f, angle: 0f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 50f, 70f);
         ship.Controls = new ShipControls { Fire = true };
 
         world.Step();
@@ -32,8 +32,8 @@ public sealed class BombaWeaponTests
     public void Special_CostsNothingWithoutTarget()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bomba, 50f, 50f);
-        TestWorld.Place(world, 1, ShipType.Bloddu, -100f, -100f);
+        var ship = TestWorld.Place(world, 0, ShipType.Thunderbolt, 50f, 50f);
+        TestWorld.Place(world, 1, ShipType.Vampire, -100f, -100f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();
@@ -47,8 +47,8 @@ public sealed class BombaWeaponTests
     public void Special_ZapsNearbyEnemy()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bomba, 50f, 50f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 55.5f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.Thunderbolt, 50f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 55.5f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();

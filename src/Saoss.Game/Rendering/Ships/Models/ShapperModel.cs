@@ -3,10 +3,10 @@ using Saoss.Game.Rendering.Legacy;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Shapperi (ship 11): a grey triangular delta with a central barrel, a bluish nose pod and a gun turret
+/// Shapper (ship 11): a grey triangular delta with a central barrel, a bluish nose pod and a gun turret
 /// on each wing tip. Stretches long and thin while its shielded slow mode is on [alus11, case 11].
 /// </summary>
-public static class ShapperiModel
+public static class ShapperModel
 {
     /// <summary>Records the whole ship [DRAW_ALUS_11]. Steps: delta, barrel, barrel base, nose, two wing guns.</summary>
     public static GlDisplayList Record(LegacyGl gl, int detail)
@@ -60,7 +60,7 @@ public static class ShapperiModel
             gl.Scale(0.7f, 1.3f, 0.8f);
         }
 
-        gl.CallList(c.Models.ShapperiBody);
+        gl.CallList(c.Models.ShapperBody);
         gl.PopMatrix();
     }
 

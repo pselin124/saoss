@@ -8,14 +8,14 @@ namespace Saoss.Game.Rendering.Intro;
 
 /// <summary>
 /// The ships of the intro (the "Vieraan jutun alku" block of lippu.cpp <c>draw</c>): a Stick Insect standing on the
-/// meadow, a Rayska circling the pole, a Moth fluttering past, a Bulldog tumbling across the sky from a random start,
-/// and a random ship crossing the meadow. Each repeats on its own frame cycle.
+/// meadow, a Scatter Ray circling the pole, a Moth fluttering past, a Bulldog tumbling across the sky from a random
+/// start, and a random ship crossing the meadow. Each repeats on its own frame cycle.
 /// </summary>
 public sealed class IntroShips
 {
     // The original forced detail 1 while drawing the intro's ships.
     private const int ShipDetail = 1;
-    private const int RayskaCycle = 2400;
+    private const int ScatterRayCycle = 2400;
     private const int BulldogCycle = 2700;
     private const float BulldogDelay = 400f;
     private const int BulldogHiddenUntil = -350;
@@ -28,7 +28,7 @@ public sealed class IntroShips
     // random(15) picks one of these; the original's switch has no case 7, which falls to the default (Popper).
     private static readonly ShipType[] PasserTypes =
     [
-        ShipType.Tringu, ShipType.Wasp, ShipType.Ufo, ShipType.Rayska, ShipType.PeaceCannon, ShipType.Shapperi,
+        ShipType.Tringu, ShipType.Wasp, ShipType.Ufo, ShipType.ScatterRay, ShipType.PeaceCannon, ShipType.Shapper,
         ShipType.Moth, ShipType.Popper, ShipType.Bulldog, ShipType.Wiiii, ShipType.Cubix, ShipType.Tongu,
         ShipType.StickInsect, ShipType.StarWorm,
     ];
@@ -74,15 +74,15 @@ public sealed class IntroShips
     /// <summary>Draws all ships of intro frame <paramref name="frame"/> in the meadow's unscaled frame.</summary>
     public void Draw(int frame)
     {
-        var rayskaFrame = frame % RayskaCycle;
+        var scatterRayFrame = frame % ScatterRayCycle;
         var bulldogFrame = (int)((frame % BulldogCycle) - BulldogDelay);
         var passerFrame = frame % PasserCycle;
 
         DrawStickInsect();
-        DrawRayska(rayskaFrame);
-        if (rayskaFrame > MothFirstFrame && rayskaFrame < MothLastFrame)
+        DrawScatterRay(scatterRayFrame);
+        if (scatterRayFrame > MothFirstFrame && scatterRayFrame < MothLastFrame)
         {
-            DrawMoth(rayskaFrame);
+            DrawMoth(scatterRayFrame);
         }
 
         DrawBulldog(bulldogFrame);
@@ -112,9 +112,9 @@ public sealed class IntroShips
     }
 
     // An ellipse around the pole, 12 units up, banking with its heading.
-    private void DrawRayska(int rayskaFrame)
+    private void DrawScatterRay(int scatterRayFrame)
     {
-        var phase = rayskaFrame / (RayskaCycle / (2f * MathF.PI));
+        var phase = scatterRayFrame / (ScatterRayCycle / (2f * MathF.PI));
         _gl.PushMatrix();
         _gl.Rotate(180, 0, 1, 0);
         _gl.Translate(MathF.Cos(phase) * 20f, 12, MathF.Sin(phase) * 25f);
@@ -122,16 +122,16 @@ public sealed class IntroShips
         _gl.Rotate((MathF.Cos(phase) * DegreesPerRadianApprox) - 180f, 0, 0, 1);
         _gl.Rotate(20, 1, 0, 0);
         _gl.Scale(1.5f, 1.5f, 1.5f);
-        _renderer.DrawModelOnly(_ships[ShipType.Rayska], ShipDetail);
+        _renderer.DrawModelOnly(_ships[ShipType.ScatterRay], ShipDetail);
         _gl.PopMatrix();
     }
 
-    private void DrawMoth(int rayskaFrame)
+    private void DrawMoth(int scatterRayFrame)
     {
         _gl.PushMatrix();
         _gl.Rotate(180, 0, 1, 0);
-        _gl.Translate((MathF.Sin(rayskaFrame / 100.0f) * 35.0f) - 20, (MathF.Cos(rayskaFrame / 300.0f) * 40) + 20, 34);
-        _gl.Rotate(-MathF.Cos(rayskaFrame / 400.0f) * DegreesPerRadianApprox, 0, 0, 1);
+        _gl.Translate((MathF.Sin(scatterRayFrame / 100.0f) * 35.0f) - 20, (MathF.Cos(scatterRayFrame / 300.0f) * 40) + 20, 34);
+        _gl.Rotate(-MathF.Cos(scatterRayFrame / 400.0f) * DegreesPerRadianApprox, 0, 0, 1);
         _gl.Rotate(-20, 1, 0, 0);
         _gl.Scale(1.5f, 1.5f, 1.5f);
         _renderer.DrawModelOnly(_ships[ShipType.Moth], ShipDetail);

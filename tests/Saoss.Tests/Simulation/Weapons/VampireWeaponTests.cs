@@ -4,14 +4,14 @@ using Saoss.Core.Simulation;
 namespace Saoss.Tests.Simulation.Weapons;
 
 [TestClass]
-public sealed class BlodduWeaponTests
+public sealed class VampireWeaponTests
 {
     [TestMethod]
     public void Fire_ShotHitsEnemy()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bloddu, 50f, 50f, angle: 0f);
-        var target = TestWorld.Place(world, 1, ShipType.Bomba, 60f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.Vampire, 50f, 50f, angle: 0f);
+        var target = TestWorld.Place(world, 1, ShipType.Thunderbolt, 60f, 50f);
         ship.Controls = new ShipControls { Fire = true };
 
         world.Step();
@@ -30,8 +30,8 @@ public sealed class BlodduWeaponTests
     public void Special_BitesNearbyEnemyIntoPickups()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bloddu, 50f, 50f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 55f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.Vampire, 50f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 55f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();
@@ -46,8 +46,8 @@ public sealed class BlodduWeaponTests
     public void Special_DoesNothingToFarEnemy()
     {
         var world = TestWorld.Create();
-        var ship = TestWorld.Place(world, 0, ShipType.Bloddu, 50f, 50f);
-        var target = TestWorld.Place(world, 1, ShipType.Bloddu, 80f, 50f);
+        var ship = TestWorld.Place(world, 0, ShipType.Vampire, 50f, 50f);
+        var target = TestWorld.Place(world, 1, ShipType.Vampire, 80f, 50f);
         ship.Controls = new ShipControls { Special = true };
 
         world.Step();

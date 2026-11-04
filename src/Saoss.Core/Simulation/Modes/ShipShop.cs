@@ -11,15 +11,15 @@ public static class ShipShop
     private const int RichAiCredits = 50;
     private const float CounterPickRoll = 100f;
 
-    // Ufo is answered with Ufo or Moth, Trek with Rollu or Wasp, Power Vacuum with Rollu, Elephant with Magneto.
-    // A row applies when the percentage roll is below its limit; rows of one opponent are checked in order.
+    // Ufo is answered with Ufo or Moth, Trek with Leechmother or Wasp, Power Vacuum with Leechmother, Elephant with
+    // Magneto. A row applies when the percentage roll is below its limit; rows of one opponent are checked in order.
     private static readonly (ShipType Opponent, int RollBelow, ShipType Pick)[] CounterPicks =
     [
         (ShipType.Ufo, 40, ShipType.Ufo),
         (ShipType.Ufo, 80, ShipType.Moth),
-        (ShipType.Trek, 50, ShipType.Rollu),
+        (ShipType.Trek, 50, ShipType.Leechmother),
         (ShipType.Trek, 70, ShipType.Wasp),
-        (ShipType.PowerVacuum, 50, ShipType.Rollu),
+        (ShipType.PowerVacuum, 50, ShipType.Leechmother),
         (ShipType.Elephant, 50, ShipType.Magneto),
     ];
 

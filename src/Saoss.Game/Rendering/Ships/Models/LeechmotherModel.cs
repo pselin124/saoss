@@ -4,11 +4,11 @@ using Saoss.Game.Rendering.Scene;
 namespace Saoss.Game.Rendering.Ships.Models;
 
 /// <summary>
-/// Rollu (ship 4): a pale propeller plane seen from above: a short mast carrying a spinning three-blade
+/// Leechmother (ship 4): a pale propeller plane seen from above: a short mast carrying a spinning three-blade
 /// propeller, a flat wing with two yellow engine cones, a pink fan-shaped hull, two white struts,
 /// a pale oval cockpit and three blue lights. Red exhaust discs glow while thrusting [alus4, case 4].
 /// </summary>
-public static class RolluModel
+public static class LeechmotherModel
 {
     /// <summary>
     /// Records the mast [DRAW_ALUS_4_OSA_1] and the rest of the plane [DRAW_ALUS_4_OSA_2]. The mast list
@@ -54,7 +54,7 @@ public static class RolluModel
         gl.PushMatrix();
         gl.Scale(c.Radius / 1.0f * 0.6f, c.Radius / 1.0f * 0.6f, c.Radius / 1.0f * 0.7f);
         gl.Rotate(c.Angle - 90f, 0, 0, 1);
-        gl.CallList(c.Models.RolluMast);
+        gl.CallList(c.Models.LeechmotherMast);
 
         for (var i = 0; i < 3; i++)
         {
@@ -83,7 +83,7 @@ public static class RolluModel
 
         gl.PopMatrix();
 
-        gl.CallList(c.Models.RolluBody);
+        gl.CallList(c.Models.LeechmotherBody);
         gl.PopMatrix();
     }
 
