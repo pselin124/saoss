@@ -1,4 +1,5 @@
 using Saoss.Core.Ships;
+using Saoss.Core.Simulation.Ai;
 using Saoss.Core.Simulation.Weapons;
 
 namespace Saoss.Core.Simulation;
@@ -53,13 +54,22 @@ public sealed class World
     public IReadOnlyList<GameEvent> Events => _events;
 
     /// <summary>
-    /// Advances the match by one tick. Steps: ship movement and weapons (in ship order), pickups,
+    /// Advances the match by one tick. Steps: AI pilots, ship movement and weapons (in ship order), pickups,
     /// asteroids, planet gravity and impacts, death timers, explosions, and respawns.
     /// </summary>
     public void Step()
     {
         _events.Clear();
         Tick++;
+
+        // The original ran the AI for destroyed ships too.
+        foreach (var ship in _ships)
+        {
+            if (ship.IsInGame && !ship.IsHuman)
+            {
+                AiPilot.Update(ship, this);
+            }
+        }
 
         foreach (var ship in _ships)
         {

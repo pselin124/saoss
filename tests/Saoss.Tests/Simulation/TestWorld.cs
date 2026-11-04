@@ -8,13 +8,19 @@ namespace Saoss.Tests.Simulation;
 /// </summary>
 internal static class TestWorld
 {
-    /// <summary>Creates a world with the given number of AI players on separate teams.</summary>
-    public static World Create(int players = 2, int seed = 1)
-    {
-        var settings = new MatchSettings
+    /// <summary>
+    /// Creates a world with the given number of players on separate teams. They are human (driven only by
+    /// the test) unless <paramref name="ai"/> is set.
+    /// </summary>
+    public static World Create(int players = 2, int seed = 1, bool ai = false) =>
+        Create(new MatchSettings
         {
-            Players = [.. Enumerable.Range(0, players).Select(i => new PlayerSetup(Team: i, IsHuman: false))],
-        };
+            Players = [.. Enumerable.Range(0, players).Select(i => new PlayerSetup(Team: i, IsHuman: !ai))],
+        }, seed);
+
+    /// <summary>Creates a world from explicit settings with the asteroids parked.</summary>
+    public static World Create(MatchSettings settings, int seed = 1)
+    {
         var world = new World(settings, seed);
         ParkAsteroids(world);
         return world;
