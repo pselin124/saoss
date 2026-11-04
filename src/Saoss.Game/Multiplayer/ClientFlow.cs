@@ -98,7 +98,7 @@ public sealed class ClientFlow : IMultiplayerFlow
         _matchWorld = _session.World;
         var names = _session.Lobby is { } lobby ? LobbyTexts.ShipNames(lobby, _session.ShipSlots) : null;
         var settings = _shell.Settings;
-        _match = new GameScreen(_shell.GraphicsDevice, new ClientMatchDriver(_session), settings.Detail, settings.CameraMode, Environment.TickCount, _shell.Audio, OnMatchEnded, OpenMatchMenu, names);
+        _match = new GameScreen(_shell.GraphicsDevice, new ClientMatchDriver(_session), settings.LocalControls(), settings.Detail, settings.CameraMode, Environment.TickCount, _shell.Audio, OnMatchEnded, OpenMatchMenu, names);
         _shell.Show(_match);
         previous?.Dispose();
     }

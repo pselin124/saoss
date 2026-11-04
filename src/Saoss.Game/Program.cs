@@ -7,6 +7,7 @@ using Saoss.Game.Settings;
 //   --skip-intro                 open the main menu instead of the intro
 //   --settings-dir <path>        read and write settings.json there, keeping test runs away from the player's own
 //   --ship-gallery               the ship model gallery
+//   --controls-menu              the controls menu (settings menu > Controls); leaving it returns to the settings
 //   --victory-preview            a Flower Domination match that ends at once
 //   --victory-preview-credits    a credits game that ends at once
 //   --winners <n>                with a victory preview: n ships on the winning team
@@ -49,6 +50,7 @@ var screen = args switch
 {
     _ when benchPlayers != null => StartupScreen.BenchmarkMatch,
     _ when args.Contains("--ship-gallery") => StartupScreen.ShipGallery,
+    _ when args.Contains("--controls-menu") => StartupScreen.ControlsMenu,
     _ when args.Contains("--victory-preview") => StartupScreen.VictoryPreview,
     _ when args.Contains("--victory-preview-credits") => StartupScreen.CreditsVictoryPreview,
     _ when args.Contains("--host") => StartupScreen.HostLobby,

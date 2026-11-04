@@ -35,6 +35,9 @@ public enum SettingsMenuItem
     /// <summary>Opens the player setup (human or CPU, and team, of each player).</summary>
     PlayerSetup,
 
+    /// <summary>Opens the controls menu (device and keys of local players 1-4); not in the original.</summary>
+    Controls,
+
     /// <summary>Skill of the computer pilots; not in the original.</summary>
     AiLevel,
 

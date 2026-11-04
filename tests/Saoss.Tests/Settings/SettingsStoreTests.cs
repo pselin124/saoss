@@ -54,7 +54,7 @@ public sealed class SettingsStoreTests
         store.Save(saved);
         var loaded = store.Load();
 
-        Assert.AreEqual(saved with { Players = loaded.Players, Nicknames = loaded.Nicknames }, loaded);
+        Assert.AreEqual(saved with { Players = loaded.Players, Nicknames = loaded.Nicknames, Controls = loaded.Controls }, loaded);
         CollectionAssert.AreEqual(players, loaded.Players.ToArray());
         CollectionAssert.AreEqual(saved.Nicknames.ToArray(), loaded.Nicknames.ToArray());
     }
@@ -172,8 +172,9 @@ public sealed class SettingsStoreTests
     private static void AssertDefaults(GameSettings loaded)
     {
         var defaults = new GameSettings();
-        Assert.AreEqual(defaults with { Players = loaded.Players, Nicknames = loaded.Nicknames }, loaded);
+        Assert.AreEqual(defaults with { Players = loaded.Players, Nicknames = loaded.Nicknames, Controls = loaded.Controls }, loaded);
         CollectionAssert.AreEqual(defaults.Players.ToArray(), loaded.Players.ToArray());
         CollectionAssert.AreEqual(defaults.Nicknames.ToArray(), loaded.Nicknames.ToArray());
+        CollectionAssert.AreEqual(defaults.Controls.ToArray(), loaded.Controls.ToArray());
     }
 }

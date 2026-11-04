@@ -28,7 +28,7 @@ public sealed class GameScreen : IScreen, IDisposable
     private readonly ShipPurchaseRenderer _purchaseRenderer;
     private readonly VictoryRenderer _victoryRenderer;
     private readonly ShipPurchaseMenu _purchaseMenu = new();
-    private readonly Dictionary<int, (LocalPlayerInput Input, PlayerKeyBindings Keys)> _humans;
+    private readonly Dictionary<int, (LocalPlayerInput Input, PlayerControls Controls)> _humans;
     private readonly Action<MatchOutcome?> _exit;
     private readonly Action? _escape;
     private readonly GameAudio? _audio;
@@ -39,13 +39,15 @@ public sealed class GameScreen : IScreen, IDisposable
     /// <summary>
     /// Shows the match run by <paramref name="driver"/>, drawn at <paramref name="detail"/> (0-3) with
     /// <paramref name="cameraMode"/>; <paramref name="visualSeed"/> seeds the visual-only effects. The driver's local
-    /// ships get the original keyboard layouts in order. <paramref name="audio"/> plays the match's sounds; null runs
-    /// it silently. <paramref name="escape"/> handles Escape in a network game; without it Escape leaves the match.
-    /// <paramref name="shipNames"/> are the network nicknames shown around the ships and in the HUD.
+    /// ships get <paramref name="controls"/> in order. <paramref name="audio"/> plays the match's sounds; null runs
+    /// it silently. <paramref name="escape"/> handles Escape (or Start or Back on a gamepad) in a network game;
+    /// without it Escape leaves the match. <paramref name="shipNames"/> are the network nicknames shown around the
+    /// ships and in the HUD.
     /// </summary>
     public GameScreen(
         GraphicsDevice device,
         IMatchDriver driver,
+        IReadOnlyList<PlayerControls> controls,
         int detail,
         CameraMode cameraMode,
         int visualSeed,
@@ -67,8 +69,8 @@ public sealed class GameScreen : IScreen, IDisposable
         _victoryRenderer = new VictoryRenderer(_gl, _textures, _ships);
         _state = new SceneState(detail, cameraMode, visualSeed) { ShipNames = shipNames };
         _humans = driver.LocalShips
-            .Select((index, i) => (Index: index, Keys: PlayerKeyBindings.Defaults[i % PlayerKeyBindings.Defaults.Count]))
-            .ToDictionary(h => h.Index, h => (new LocalPlayerInput(h.Keys), h.Keys));
+            .Select((index, i) => (Index: index, Controls: controls[i % controls.Count]))
+            .ToDictionary(h => h.Index, h => (new LocalPlayerInput(h.Controls), h.Controls));
     }
 
     /// <summary>How the match ended, or null while it is running.</summary>
@@ -90,7 +92,7 @@ public sealed class GameScreen : IScreen, IDisposable
         {
             Overlay.Update(keyboard);
         }
-        else if (keyboard.WasPressed(Keys.Escape))
+        else if (IsEscapePressed(keyboard))
         {
             if (_escape == null)
             {
@@ -164,6 +166,10 @@ public sealed class GameScreen : IScreen, IDisposable
         _textures.Dispose();
     }
 
+    // B is a gamepad player's special weapon here, so only Start and Back stand for Escape.
+    private static bool IsEscapePressed(KeyboardTracker keyboard) =>
+        keyboard.WasKeyPressed(Keys.Escape) || keyboard.WasAnyPadPressed(Buttons.Start) || keyboard.WasAnyPadPressed(Buttons.Back);
+
     // A local match is paused while the menu is up, like the original's blocking menu loop.
     private void UpdatePurchase(KeyboardTracker keyboard, int ship)
     {
@@ -178,7 +184,7 @@ public sealed class GameScreen : IScreen, IDisposable
         }
 
         _menuTicks++;
-        if (!_humans.TryGetValue(ship, out var human) || !_purchaseMenu.Update(keyboard, human.Keys))
+        if (!_humans.TryGetValue(ship, out var human) || !_purchaseMenu.Update(keyboard, human.Controls))
         {
             return;
         }

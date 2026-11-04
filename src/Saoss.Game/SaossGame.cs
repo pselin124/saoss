@@ -120,6 +120,9 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
             case StartupScreen.MainMenu:
                 ShowMainMenu();
                 break;
+            case StartupScreen.ControlsMenu:
+                OpenSettings(ShowMainMenu).OpenControls();
+                break;
             case StartupScreen.HostLobby:
                 _multiplayer.Host(_startup.AutoStartPlayers);
                 break;
@@ -243,8 +246,9 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
         ShowScreen(new LocalGameMenuScreen(GraphicsDevice, _assets!, _settings.Credits, _localMenuSelection, OnLocalGameMenuChoice));
 
     // Both the main menu and the local game menu open the settings; leaving them returns to the opener.
-    private void OpenSettings(Action back) =>
-        ShowScreen(new SettingsMenuScreen(
+    private SettingsMenuScreen OpenSettings(Action back)
+    {
+        var menu = new SettingsMenuScreen(
             GraphicsDevice,
             _assets!,
             _settings,
@@ -255,7 +259,10 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
                 ApplySettings(settings);
                 back();
             },
-            volume => _audio?.PreviewMusicVolume(volume)));
+            volume => _audio?.PreviewMusicVolume(volume));
+        ShowScreen(menu);
+        return menu;
+    }
 
     // The menu remembers its selection between matches, like the original's menu loop.
     private void OnLocalGameMenuChoice(LocalGameMenuItem item)
@@ -288,7 +295,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
     {
         var previous = _match;
         var seed = fixedSeed ?? (_startup.Capture != null ? FrameCapture.Seed : Environment.TickCount);
-        _match = new GameScreen(GraphicsDevice, new LocalMatchDriver(settings, seed), _settings.Detail, _settings.CameraMode, seed + 1, _audio, OnMatchLeft);
+        _match = new GameScreen(GraphicsDevice, new LocalMatchDriver(settings, seed), _settings.LocalControls(), _settings.Detail, _settings.CameraMode, seed + 1, _audio, OnMatchLeft);
         ShowScreen(_match);
         previous?.Dispose();
     }

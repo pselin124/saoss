@@ -73,7 +73,7 @@ public sealed class HostFlow : IMultiplayerFlow
         _session.StartMatch(seed);
         var names = LobbyTexts.ShipNames(_session.Lobby, _session.ShipSlots);
         var settings = _shell.Settings;
-        _match = new GameScreen(_shell.GraphicsDevice, new HostMatchDriver(_session), settings.Detail, settings.CameraMode, seed + 1, _shell.Audio, OnMatchEnded, OpenMatchMenu, names);
+        _match = new GameScreen(_shell.GraphicsDevice, new HostMatchDriver(_session), settings.LocalControls(), settings.Detail, settings.CameraMode, seed + 1, _shell.Audio, OnMatchEnded, OpenMatchMenu, names);
         _shell.Show(_match);
     }
 

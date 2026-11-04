@@ -1,5 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Xna.Framework.Input;
+using Saoss.Game.Input;
 
 namespace Saoss.Game.Settings;
 
@@ -16,7 +18,12 @@ public sealed class SettingsStore(string directory)
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
+        Converters =
+        {
+            new LenientEnumConverter<Keys>(),
+            new LenientEnumConverter<InputDevice>(),
+            new JsonStringEnumConverter(),
+        },
     };
 
     /// <summary>The per-user settings folder.</summary>

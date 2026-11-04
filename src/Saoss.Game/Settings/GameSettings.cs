@@ -1,4 +1,5 @@
 using Saoss.Core.Simulation.Ai;
+using Saoss.Game.Input;
 using Saoss.Game.Rendering.Scene;
 using Saoss.Network.Protocol;
 
@@ -17,7 +18,9 @@ public sealed record GameSettings
     /// <summary>Most players in a match [maxplayers].</summary>
     public const int MaxPlayers = 16;
 
-    /// <summary>Local humans share one keyboard, which has four layouts; only the first four slots can be human.</summary>
+    /// <summary>
+    /// Only the first four slots can be human: four local players share the keyboard's four layouts or bring gamepads.
+    /// </summary>
     public const int MaxLocalHumans = 4;
 
     /// <summary>Highest team number [MAXNETPLAYERS - 1].</summary>
@@ -107,6 +110,15 @@ public sealed record GameSettings
     /// <summary>Players from this computer in a network game, 1 to <see cref="MaxNetworkPlayers"/> [hosteja, joinaavia].</summary>
     public int NetworkPlayerCount { get; init; } = 1;
 
+    /// <summary>
+    /// Device and keys of local players 1-4 (the humans of a local match in slot order, or this computer's network
+    /// players); not in the original, which had fixed keys.
+    /// </summary>
+    public IReadOnlyList<PlayerControlSettings> Controls { get; init; } = DefaultControls;
+
+    private static IReadOnlyList<PlayerControlSettings> DefaultControls { get; } =
+        [.. Enumerable.Range(0, MaxLocalHumans).Select(PlayerControlSettings.Default)];
+
     private static string DefaultHost => "localhost";
 
     // Teams of the original's sets.txt (stored there one higher); only player 1 is human.
@@ -134,7 +146,16 @@ public sealed record GameSettings
         Nicknames = ValidatedNicknames(Nicknames),
         LastHost = LastHost is { } host && HostAddress.IsValid(host) ? host : DefaultHost,
         NetworkPlayerCount = Math.Clamp(NetworkPlayerCount, 1, MaxNetworkPlayers),
+        Controls = ValidatedControls(Controls),
     };
+
+    /// <summary>The controls of local players 1-4.</summary>
+    public IReadOnlyList<PlayerControls> LocalControls() => [.. Controls.Select((c, i) => c.ToControls(i))];
+
+    private static PlayerControlSettings[] ValidatedControls(IReadOnlyList<PlayerControlSettings?>? controls) =>
+    [
+        .. Enumerable.Range(0, MaxLocalHumans).Select(i => controls?.ElementAtOrDefault(i)?.Validated(i) ?? PlayerControlSettings.Default(i)),
+    ];
 
     // Exactly MaxPlayers slots; only the first MaxLocalHumans may be human, like the original player setup.
     private static PlayerSlotSettings[] ValidatedPlayers(IReadOnlyList<PlayerSlotSettings?>? players) =>

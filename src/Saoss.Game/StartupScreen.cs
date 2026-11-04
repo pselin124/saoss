@@ -11,6 +11,9 @@ public enum StartupScreen
     /// <summary>The main menu, skipping the intro (<c>--skip-intro</c>).</summary>
     MainMenu,
 
+    /// <summary>The controls menu inside the settings menu (<c>--controls-menu</c>).</summary>
+    ControlsMenu,
+
     /// <summary>The ship model gallery (<c>--ship-gallery</c>).</summary>
     ShipGallery,
 

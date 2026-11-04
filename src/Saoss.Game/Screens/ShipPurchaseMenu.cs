@@ -8,7 +8,7 @@ namespace Saoss.Game.Screens;
 /// <summary>
 /// Selection state and keys of the in-match ship purchase menu (the human part of valitseAlus).
 /// Entries are the 24 ship types followed by "random ship". Thrust or Right moves to the previous entry,
-/// Brake or Left to the next, Fire or Enter buys.
+/// Down or Left to the next, Fire or Enter buys. The buttons come from the buying player's keys or gamepad.
 /// </summary>
 public sealed class ShipPurchaseMenu
 {
@@ -28,18 +28,24 @@ public sealed class ShipPurchaseMenu
     public void JumpToFallback(ShipType fallback) => Selection = (int)fallback;
 
     /// <summary>Applies this update's key presses; returns true when the player confirmed the purchase.</summary>
-    public bool Update(KeyboardTracker keyboard, PlayerKeyBindings keys)
+    public bool Update(KeyboardTracker keyboard, PlayerControls controls) => Update(controls.Pressed(keyboard), keyboard.WasKeyPressed(Keys.Enter));
+
+    /// <summary>
+    /// Applies the player's buttons <paramref name="pressed"/> this update; <paramref name="isEnterPressed"/> buys
+    /// like Fire. Returns true when the player confirmed the purchase.
+    /// </summary>
+    public bool Update(PlayerButtons pressed, bool isEnterPressed)
     {
-        if (keyboard.WasPressed(Keys.Enter) || keyboard.WasPressed(keys.Fire))
+        if (isEnterPressed || pressed.Fire)
         {
             return true;
         }
 
-        if (keyboard.WasPressed(keys.Thrust) || keyboard.WasPressed(keys.Right))
+        if (pressed.Thrust || pressed.Right)
         {
             Selection = Selection > 0 ? Selection - 1 : RandomEntry;
         }
-        else if (keyboard.WasPressed(keys.Brake) || keyboard.WasPressed(keys.Left))
+        else if (pressed.Down || pressed.Left)
         {
             Selection = Selection < RandomEntry ? Selection + 1 : 0;
         }

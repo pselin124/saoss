@@ -3,28 +3,32 @@ using Saoss.Core.Simulation;
 namespace Saoss.Game.Input;
 
 /// <summary>
-/// Turns one player's keys into <see cref="ShipControls"/>. The special button is latched like the original's
-/// key-down flag: if the simulation clears it (the Moth does), it stays off until the key is pressed again.
+/// Turns one player's keys or gamepad into <see cref="ShipControls"/>. The special button is latched like the
+/// original's key-down flag: if the simulation clears it (the Moth does), it stays off until the button is pressed
+/// again.
 /// </summary>
-public sealed class LocalPlayerInput(PlayerKeyBindings bindings)
+public sealed class LocalPlayerInput(PlayerControls controls)
 {
     private bool _isSpecialConsumed;
 
-    /// <summary>Builds this tick's controls from the keyboard.</summary>
-    public ShipControls Read(KeyboardTracker keyboard)
+    /// <summary>Builds this tick's controls from the player's device.</summary>
+    public ShipControls Read(KeyboardTracker input) => Read(controls.Held(input));
+
+    /// <summary>Builds this tick's controls from the buttons held.</summary>
+    public ShipControls Read(PlayerButtons held)
     {
-        if (!keyboard.IsDown(bindings.Special))
+        if (!held.Special)
         {
             _isSpecialConsumed = false;
         }
 
         return new ShipControls
         {
-            Thrust = keyboard.IsDown(bindings.Thrust),
-            Left = keyboard.IsDown(bindings.Left),
-            Right = keyboard.IsDown(bindings.Right),
-            Fire = keyboard.IsDown(bindings.Fire),
-            Special = keyboard.IsDown(bindings.Special) && !_isSpecialConsumed,
+            Thrust = held.Thrust,
+            Left = held.Left,
+            Right = held.Right,
+            Fire = held.Fire,
+            Special = held.Special && !_isSpecialConsumed,
         };
     }
 

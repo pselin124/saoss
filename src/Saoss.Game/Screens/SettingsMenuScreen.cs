@@ -11,7 +11,8 @@ namespace Saoss.Game.Screens;
 /// <summary>
 /// The settings menu (Menu.cpp asetusmenu and drawAsetusmenu): red labels on black with the values beside them and
 /// one rotating arrow. Up and Down move with wrap-around; Left and Right change the value (Enter acts like Right);
-/// on "Player Setup" any of them opens the player setup. Holding a fire key (Shift) changes volumes in steps of 1.
+/// on "Player Setup" and "Controls" any of them opens that submenu. Holding player 1's or 2's fire key changes
+/// volumes in steps of 1.
 /// Changes stay in the menu until "Apply and Save Settings" or "Apply, Save and Exit Menu"; Escape also applies,
 /// saves and leaves, as in the original.
 /// </summary>
@@ -43,6 +44,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         "Music Volume:",
         "Sound Volume:",
         "Player Setup",
+        "Controls",
         "AI Level:",
         "Camera Mode:",
         "Detail:",
@@ -57,7 +59,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private readonly Action<int>? _previewMusicVolume;
     private GameSettings _settings;
     private int _resolutionIndex;
-    private PlayerSetupMenuScreen? _playerSetup;
+    private IScreen? _submenu;
     private float _arrowSpinDegrees;
 
     /// <summary>
@@ -86,12 +88,19 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     /// <summary>The highlighted entry.</summary>
     public SettingsMenuItem Selection { get; private set; }
 
+    /// <summary>Opens the controls menu, as if the player chose "Controls".</summary>
+    public void OpenControls()
+    {
+        Selection = SettingsMenuItem.Controls;
+        _submenu = new ControlsMenuScreen(_scene, _settings.Controls, CloseControls);
+    }
+
     /// <inheritdoc/>
     public void Update(KeyboardTracker keyboard)
     {
-        if (_playerSetup != null)
+        if (_submenu != null)
         {
-            _playerSetup.Update(keyboard);
+            _submenu.Update(keyboard);
             return;
         }
 
@@ -122,9 +131,9 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     /// <inheritdoc/>
     public void Draw()
     {
-        if (_playerSetup != null)
+        if (_submenu != null)
         {
-            _playerSetup.Draw();
+            _submenu.Draw();
             return;
         }
 
@@ -150,15 +159,18 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     // Player 1's and player 2's fire keys, like the original.
-    private static bool IsFineStepHeld(KeyboardTracker keyboard) =>
-        keyboard.IsDown(PlayerKeyBindings.Defaults[0].Fire) || keyboard.IsDown(PlayerKeyBindings.Defaults[1].Fire);
+    private bool IsFineStepHeld(KeyboardTracker keyboard) =>
+        _settings.LocalControls().Take(2).Any(c => keyboard.IsDown(c.Keys.Fire));
 
     private void Choose(bool increase, bool fine)
     {
         switch (Selection)
         {
             case SettingsMenuItem.PlayerSetup:
-                _playerSetup = new PlayerSetupMenuScreen(_scene, _settings, ClosePlayerSetup);
+                _submenu = new PlayerSetupMenuScreen(_scene, _settings, ClosePlayerSetup);
+                break;
+            case SettingsMenuItem.Controls:
+                OpenControls();
                 break;
             case SettingsMenuItem.ApplyAndSave:
                 _apply(_settings);
@@ -204,7 +216,13 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private void ClosePlayerSetup(GameSettings settings)
     {
         _settings = settings;
-        _playerSetup = null;
+        _submenu = null;
+    }
+
+    private void CloseControls(IReadOnlyList<PlayerControlSettings> controls)
+    {
+        _settings = _settings with { Controls = controls };
+        _submenu = null;
     }
 
     private void DrawValues()
