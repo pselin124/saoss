@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Saoss.Core.Simulation;
 using Saoss.Core.Simulation.Modes;
+using Saoss.Game.Audio;
 using Saoss.Game.Input;
 using Saoss.Game.Rendering.Legacy;
 using Saoss.Game.Rendering.Scene;
@@ -26,16 +27,19 @@ public sealed class GameScreen : IScreen, IDisposable
     private readonly ShipPurchaseMenu _purchaseMenu = new();
     private readonly Dictionary<int, (LocalPlayerInput Input, PlayerKeyBindings Keys)> _humans;
     private readonly Action<MatchOutcome?> _exit;
+    private readonly GameAudio? _audio;
     private ShipChoice? _shownChoice;
     private int _menuTicks;
 
     /// <summary>
     /// Starts a match drawn at <paramref name="detail"/> (0-3) with <paramref name="cameraMode"/>. Players marked
-    /// human are mapped to the original keyboard layouts in order.
+    /// human are mapped to the original keyboard layouts in order. <paramref name="audio"/> plays the match's sounds;
+    /// null runs it silently.
     /// </summary>
-    public GameScreen(GraphicsDevice device, MatchSettings settings, int detail, CameraMode cameraMode, int seed, Action<MatchOutcome?> exit)
+    public GameScreen(GraphicsDevice device, MatchSettings settings, int detail, CameraMode cameraMode, int seed, GameAudio? audio, Action<MatchOutcome?> exit)
     {
         _exit = exit;
+        _audio = audio;
         _world = new World(settings, seed);
         _gl = new LegacyGl(device);
         _textures = new SceneTextures(device);
@@ -62,6 +66,7 @@ public sealed class GameScreen : IScreen, IDisposable
     {
         if (keyboard.WasPressed(Keys.Escape))
         {
+            _audio?.StopShipLoops();
             _exit(null);
             return;
         }
@@ -75,6 +80,7 @@ public sealed class GameScreen : IScreen, IDisposable
         StepMatch(keyboard);
         if (_world.Outcome is { } outcome)
         {
+            _audio?.StopShipLoops();
             _exit(outcome);
         }
     }
@@ -108,6 +114,7 @@ public sealed class GameScreen : IScreen, IDisposable
         {
             _shownChoice = choice;
             _purchaseMenu.Reset();
+            _audio?.StopShipLoops();
         }
 
         _menuTicks++;
@@ -132,6 +139,9 @@ public sealed class GameScreen : IScreen, IDisposable
         }
 
         _world.Step();
+
+        // Events of ship purchases made since the previous step are still in the list and play now.
+        _audio?.PlayEvents(_world);
 
         foreach (var (index, human) in _humans)
         {

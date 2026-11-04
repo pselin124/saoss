@@ -12,6 +12,8 @@
 
   <ItemGroup>
     <PackageReference Include="MonoGame.Framework.DesktopGL" />
+    <PackageReference Include="NLayer" />
+    <PackageReference Include="NVorbis" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Saoss.Core.Simulation;
 using Saoss.Core.Simulation.Modes;
+using Saoss.Game.Audio;
 using Saoss.Game.Input;
 using Saoss.Game.Rendering;
 using Saoss.Game.Screens;
@@ -21,6 +22,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     private readonly SettingsStore _settingsStore;
     private GameSettings _settings;
     private GameAssets? _assets;
+    private GameAudio? _audio;
     private IScreen? _screen;
     private GameScreen? _match;
     private LocalGameMenuItem _localMenuSelection;
@@ -56,6 +58,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     protected override void LoadContent()
     {
         _assets = GameAssets.Load(GraphicsDevice);
+        _audio = GameAudio.TryCreate(_settings);
         switch (_startup)
         {
             case StartupScreen.ShipGallery:
@@ -85,6 +88,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
         _match?.Dispose();
         _assets?.Dispose();
+        _audio?.Dispose();
     }
 
     /// <inheritdoc/>
@@ -92,6 +96,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     {
         _keyboard.Update(IsActive);
         _screen?.Update(_keyboard);
+        _audio?.Update();
         base.Update(gameTime);
     }
 
@@ -129,11 +134,18 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
     // Both the main menu and the local game menu open the settings; leaving them returns to the opener.
     private void OpenSettings(Action back) =>
-        ShowScreen(new SettingsMenuScreen(GraphicsDevice, _assets!, _settings, AvailableResolutions(), ApplySettings, settings =>
-        {
-            ApplySettings(settings);
-            back();
-        }));
+        ShowScreen(new SettingsMenuScreen(
+            GraphicsDevice,
+            _assets!,
+            _settings,
+            AvailableResolutions(),
+            ApplySettings,
+            settings =>
+            {
+                ApplySettings(settings);
+                back();
+            },
+            volume => _audio?.PreviewMusicVolume(volume)));
 
     // The menu remembers its selection between matches, like the original's menu loop.
     private void OnLocalGameMenuChoice(LocalGameMenuItem item)
@@ -165,7 +177,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     private void StartMatch(MatchSettings settings)
     {
         var previous = _match;
-        _match = new GameScreen(GraphicsDevice, settings, _settings.Detail, _settings.CameraMode, Environment.TickCount, OnMatchLeft);
+        _match = new GameScreen(GraphicsDevice, settings, _settings.Detail, _settings.CameraMode, Environment.TickCount, _audio, OnMatchLeft);
         ShowScreen(_match);
         previous?.Dispose();
     }
@@ -207,14 +219,15 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
     /// <summary>
     /// Applies and saves settings from the settings menu (asetusmenu "Apply"): the game speed at once, the window
-    /// only when its size or fullscreen mode changed. Players, credits, camera and detail apply to the next match;
-    /// music and sound settings are kept for the audio.
+    /// only when its size or fullscreen mode changed, and the audio at once. Players, credits, camera and detail apply
+    /// to the next match.
     /// </summary>
     private void ApplySettings(GameSettings settings)
     {
         var videoChanged = settings.Width != _settings.Width || settings.Height != _settings.Height || settings.Fullscreen != _settings.Fullscreen;
         _settings = settings;
         TargetElapsedTime = TickDuration(settings.TicksPerSecond);
+        _audio?.Apply(settings);
         if (videoChanged)
         {
             ApplyVideoMode();

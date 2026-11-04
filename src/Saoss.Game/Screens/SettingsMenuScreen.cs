@@ -55,6 +55,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private readonly IReadOnlyList<Resolution> _resolutions;
     private readonly Action<GameSettings> _apply;
     private readonly Action<GameSettings> _applyAndExit;
+    private readonly Action<int>? _previewMusicVolume;
     private GameSettings _settings;
     private int _resolutionIndex;
     private PlayerSetupMenuScreen? _playerSetup;
@@ -62,7 +63,8 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
 
     /// <summary>
     /// Opens the menu on <paramref name="settings"/>. <paramref name="apply"/> runs for "Apply and Save Settings";
-    /// <paramref name="applyAndExit"/> for "Apply, Save and Exit Menu" and Escape.
+    /// <paramref name="applyAndExit"/> for "Apply, Save and Exit Menu" and Escape. <paramref name="previewMusicVolume"/>
+    /// gets every new music volume at once, so the change can be heard before it is applied, as in the original.
     /// </summary>
     public SettingsMenuScreen(
         GraphicsDevice graphicsDevice,
@@ -70,8 +72,10 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         GameSettings settings,
         IReadOnlyList<Resolution> resolutions,
         Action<GameSettings> apply,
-        Action<GameSettings> applyAndExit)
+        Action<GameSettings> applyAndExit,
+        Action<int>? previewMusicVolume = null)
     {
+        _previewMusicVolume = previewMusicVolume;
         _scene = new MenuScene(graphicsDevice, assets);
         _settings = settings;
         _resolutions = resolutions;
@@ -167,6 +171,10 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
                 _resolutionIndex = ResolutionOptions.Step(_resolutionIndex, _resolutions.Count, larger: increase);
                 var resolution = _resolutions[_resolutionIndex];
                 _settings = _settings with { Width = resolution.Width, Height = resolution.Height };
+                break;
+            case SettingsMenuItem.MusicVolume:
+                _settings = ChangeValue(Selection, increase, fine);
+                _previewMusicVolume?.Invoke(_settings.MusicVolume);
                 break;
             default:
                 _settings = ChangeValue(Selection, increase, fine);
