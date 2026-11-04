@@ -24,6 +24,11 @@ public class ShipBehavior
     {
     }
 
+    /// <summary>Runs on the tick a timed special (<see cref="Ship.SpecialTimeLeft"/>) runs out.</summary>
+    public virtual void EndSpecial(Ship ship, World world)
+    {
+    }
+
     /// <summary>Moves primary projectiles and resolves their hits [liikutaPadit].</summary>
     public virtual void UpdatePrimaryProjectiles(Ship ship, World world) => UpdateStandardPrimary(ship, world);
 

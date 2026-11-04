@@ -1,5 +1,6 @@
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation.Weapons;
+using Saoss.Core.Simulation.Weapons.Behaviors;
 
 namespace Saoss.Core.Simulation;
 
@@ -134,6 +135,10 @@ public static class ShipMovement
         if (ship.SpecialTimeLeft > 0)
         {
             ship.SpecialTimeLeft--;
+            if (ship.SpecialTimeLeft == 0)
+            {
+                behavior.EndSpecial(ship, world);
+            }
         }
 
         if (ship.Type == ShipType.Wiiii && ship.IsShieldActive)
@@ -225,8 +230,9 @@ public static class ShipMovement
         var (headingX, headingY) = ship.Heading;
         if (ship.Definition.IsInertiaFree)
         {
-            ship.VelocityX = thrust * headingX * slowdown;
-            ship.VelocityY = thrust * headingY * slowdown;
+            var speed = InertiaFreeSpeed(ship);
+            ship.VelocityX = speed * headingX * slowdown;
+            ship.VelocityY = speed * headingY * slowdown;
             return;
         }
 
@@ -297,7 +303,7 @@ public static class ShipMovement
     {
         if (ship.Definition.IsInertiaFree)
         {
-            var step = ship.Definition.Thrust;
+            var step = InertiaFreeSpeed(ship);
             ship.X += ship.X > GameConstants.ArenaMaxX ? -step : ship.X < GameConstants.ArenaMinX ? step : 0;
             ship.Y += ship.Y > GameConstants.ArenaMaxY ? -step : ship.Y < GameConstants.ArenaMinY ? step : 0;
             return;
@@ -311,4 +317,8 @@ public static class ShipMovement
     /// <summary>Wraps an angle in degrees once into [-180, 180], like the original.</summary>
     public static float WrapAngle(float degrees) =>
         degrees > 180f ? degrees - 360f : degrees < -180f ? degrees + 360f : degrees;
+
+    // An inertia-free ship's fixed speed; the arena edge pushes back by the same step so a fast ship cannot escape.
+    private static float InertiaFreeSpeed(Ship ship) =>
+        ship.Definition.Thrust * (ElectraBehavior.IsBoosting(ship) ? ElectraBehavior.BoostSpeedFactor : 1f);
 }

@@ -774,7 +774,10 @@ public static class ShipCatalog
             TurnRate = 1.4f,
             MaxEnergy = 24.0f,
             MaxFuel = 35.0f,
-            FuelRegen = 0.0f,
+
+            // Not from the original (0 regeneration, asteroid-eating special): slow regeneration and the
+            // overcharge special below; Duration is the boost, Damage the first chain link and Radius its reach.
+            FuelRegen = 0.025f,
             TrailSize = 0.15f,
             Cost = 18,
             Primary = new()
@@ -793,13 +796,13 @@ public static class ShipCatalog
             },
             Special = new()
             {
-                FuelCost = 0.0f,
-                Duration = 300,
-                Cooldown = 10,
+                FuelCost = 12.0f,
+                Duration = 100,
+                Cooldown = 600,
                 Speed = 0.0f,
-                MaxProjectiles = 100,
-                Damage = 0.0f,
-                Radius = 8.0f,
+                MaxProjectiles = 0,
+                Damage = 10.0f,
+                Radius = 20.0f,
                 Knockback = 0.0f,
                 ProjectileEnergy = 0.0f,
                 DestroysProjectiles = false,

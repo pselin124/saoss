@@ -71,7 +71,8 @@ public static class ShipSoundTable
         /* Wiiii */ [S(WiiiiFire, 1.0f), S(MagnetoFire, 0f), S(WiiiiSpecialFire, 1.0f), S(MagnetoFire, 0f)],
         /* Elephant */ [S(ElephantFire, 0.8f), S(ElephantHit, 0.7f), S(ElephantSpecialFire, 0.8f), S(MagnetoFire, 0.5f)],
         /* Cubix */ [S(CubixFire, 0.6f), S(CubixHit, 1.0f), S(CubixSpecialFire, 0.6f), S(CubixSpecialHit, 1.0f)],
-        /* Electra */ [S(ElectraFire, 0.8f), S(CubixHit, 0f), S(ElectraSpecialFire, 0.6f), S(CubixSpecialHit, 0f)],
+        /* Electra: the special is new, so its boost borrows Bulldog's boost sound and eating (now automatic) is SpecialHit */
+        [S(ElectraFire, 0.8f), S(CubixHit, 0f), S(BulldogSpecialFire, 0.6f), S(ElectraSpecialFire, 0.6f)],
         /* Tongu */ [S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f), S(CubixFire, 0.6f), S(TringuHit, 1.0f)],
         /* SpaceTurtle */ [S(SpaceTurtleFire, 0.7f), S(TringuHit, 0.9f), S(MagnetoFire, 0.5f), S(MagnetoFire, 0.5f)],
         /* StickInsect */ [S(MagnetoFire, 0f), S(MagnetoFire, 0f), S(MagnetoFire, 0f), S(MagnetoFire, 0f)],

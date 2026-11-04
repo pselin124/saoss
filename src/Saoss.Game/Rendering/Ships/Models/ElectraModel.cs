@@ -68,7 +68,17 @@ public static class ElectraModel
 
         gl.PushMatrix();
         gl.Translate(0, -1.3f, 0);
-        gl.Color(2, 2, 2, 1.5f);
+
+        // The sparks glow brighter and bluer during the overcharge boost (not in the original).
+        if (c.Ship.SpecialTimeLeft > 0)
+        {
+            gl.Color(1.5f, 3, 3, 2);
+        }
+        else
+        {
+            gl.Color(2, 2, 2, 1.5f);
+        }
+
         gl.Enable(GlCapability.Texture2D);
         gl.BlendFunc(GlBlend.SrcColor, GlBlend.One);
         DrawSpark(c, spin);

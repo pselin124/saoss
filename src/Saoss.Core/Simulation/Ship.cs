@@ -206,6 +206,7 @@ public sealed class Ship
         }
 
         FireSide = 1;
+        SpecialTimeLeft = 0;
         IsTeleportPending = false;
         IsShieldActive = false;
         WeaponCharge = 0;

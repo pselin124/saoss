@@ -225,9 +225,13 @@ price in credits games.
 
   Electra          24   18  Fire:    Short lightning bolt that zaps the nearest enemy ship (or else
                                      an enemy projectile) in reach.
-                            Special: Eats a nearby asteroid to refill the fuel tank.
+                            Special: Overcharge: triple speed for a second, then a chain lightning
+                                     bursts out, jumping from the nearest enemy to up to 3 more
+                                     enemies or shots nearby, weaker with each jump. Long cooldown -
+                                     use it to close in on a target.
                             Notes:   Always flying; no gravity or inertia. Thrust flips the ship
-                                     180 degrees instead of accelerating.
+                                     180 degrees instead of accelerating. Fuel refills very slowly,
+                                     but flying close to an asteroid eats it for a full tank.
 
   Tongu            28   17  Fire:    A pair of shots from both sides; the longer you hold Fire, the
                                      wider they spread and the farther, faster and stronger they go.

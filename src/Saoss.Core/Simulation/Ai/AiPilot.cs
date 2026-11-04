@@ -1,4 +1,5 @@
 using Saoss.Core.Ships;
+using Saoss.Core.Simulation.Weapons.Behaviors;
 
 namespace Saoss.Core.Simulation.Ai;
 
@@ -73,6 +74,8 @@ public static class AiPilot
         private const double LargeShotRadius = 4;
         private const double SlowShotSpeed = 0.03;
         private const double ElectraKeepFuelRadiusMargin = 1.5;
+        private const double ElectraOverchargeMinReach = 0.5;
+        private const double ElectraOverchargeAimTolerance = 10;
 
         private const double MagnetoProjectileMargin = 1;
         private const double MagnetoSpecialProjectileMargin = 2;
@@ -683,8 +686,10 @@ public static class AiPilot
                     _controls.Special = _distance < ((radius + targetRadius) / 4 * Pi) + UfoReachMargin;
                     break;
                 case ShipType.Thunderbolt:
-                case ShipType.Electra:
                     _controls.Special = true;
+                    break;
+                case ShipType.Electra:
+                    _controls.Special = ShouldOvercharge();
                     break;
                 case ShipType.ScatterRay:
                 case ShipType.StickInsect:
@@ -754,6 +759,16 @@ public static class AiPilot
             return AnyActiveWithin(target.PrimaryProjectiles, targetDefinition.Primary.MaxProjectiles, radius + targetShotRadius + MagnetoProjectileMargin)
                 || AnyActiveWithin(target.SpecialProjectiles, targetDefinition.Special.MaxProjectiles,
                     radius + Exact(targetDefinition.Special.Radius) + MagnetoSpecialProjectileMargin);
+        }
+
+        // Electra overcharges (not in the original) when facing the target from about as far as the boost carries it,
+        // so the chain lightning goes off close to the target.
+        private bool ShouldOvercharge()
+        {
+            var boostReach = _definition.Special.Duration * Exact(_definition.Thrust) * ElectraBehavior.BoostSpeedFactor;
+            var aimError = Math.Abs(Math.IEEERemainder(ToDegrees(_targetAngle) - _ship.Angle, 360));
+            return _distance > boostReach * ElectraOverchargeMinReach && _distance < boostReach
+                && aimError < ElectraOverchargeAimTolerance;
         }
 
         // Wasp stings when touching the target or when close behind it, unless the target is a shielded Magneto.
