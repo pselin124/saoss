@@ -36,26 +36,29 @@ public static class SceneDrawing
     /// <summary>Team color of ship glows and HUD [valitseVari]; alpha above 1 is clamped like GL.</summary>
     public static void TeamColor(LegacyGl gl, int team)
     {
-        var (r, g, b) = team switch
-        {
-            0 => (1f, 0.25f, 0.25f),
-            1 => (0.25f, 0.25f, 1f),
-            2 => (0.25f, 1f, 0.25f),
-            3 => (0f, 1f, 1f),
-            4 => (1f, 1f, 1f),
-            5 => (1f, 0f, 1f),
-            6 => (1f, 1f, 0f),
-            7 => (1f, 0.6f, 0.6f),
-            8 => (0.6f, 1f, 0.6f),
-            9 => (0.6f, 0.6f, 1f),
-            10 => (1f, 0.6f, 1f),
-            11 => (1f, 1f, 0.6f),
-            12 => (0.6f, 1f, 1f),
-            13 => (1f, 0f, 0f),
-            14 => (0f, 1f, 0f),
-            15 => (0f, 0f, 1f),
-            _ => (1f, 0f, 0f),
-        };
+        var (r, g, b) = TeamRgb(team);
         gl.Color(r, g, b, 1f);
     }
+
+    /// <summary>Red, green and blue of a team's color [valitseVari].</summary>
+    public static (float R, float G, float B) TeamRgb(int team) => team switch
+    {
+        0 => (1f, 0.25f, 0.25f),
+        1 => (0.25f, 0.25f, 1f),
+        2 => (0.25f, 1f, 0.25f),
+        3 => (0f, 1f, 1f),
+        4 => (1f, 1f, 1f),
+        5 => (1f, 0f, 1f),
+        6 => (1f, 1f, 0f),
+        7 => (1f, 0.6f, 0.6f),
+        8 => (0.6f, 1f, 0.6f),
+        9 => (0.6f, 0.6f, 1f),
+        10 => (1f, 0.6f, 1f),
+        11 => (1f, 1f, 0.6f),
+        12 => (0.6f, 1f, 1f),
+        13 => (1f, 0f, 0f),
+        14 => (0f, 1f, 0f),
+        15 => (0f, 0f, 1f),
+        _ => (1f, 0f, 0f),
+    };
 }

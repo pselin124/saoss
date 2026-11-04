@@ -133,6 +133,8 @@ Each phase ends with a build that compiles and runs.
 5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
 6. **Networking**: protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
 7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
+   - Victory screen text: words and numbers are placed as separate pieces with fixed gaps (as in the original), which looks uneven. Lay each line out as one string with normal spacing.
+   - Menu wording: fix the original's non-native English labels (e.g. "Musics:" → "Music:").
 8. **Optional**: gamepads, key remapping, LAN host discovery.
 
 ## 7. Decisions

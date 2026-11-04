@@ -54,15 +54,22 @@ public sealed class MenuScene : IDisposable
         return spinDegrees > 180f ? spinDegrees - 360f : spinDegrees;
     }
 
-    /// <summary>Clears the screen, draws the title picture and sets up the menu camera.</summary>
-    public void Begin()
+    /// <summary>
+    /// Clears the screen, draws the title picture unless <paramref name="withBackground"/> is false, and sets up
+    /// the menu camera.
+    /// </summary>
+    public void Begin(bool withBackground = true)
     {
         var device = _graphicsDevice;
         device.Clear(Color.Black);
         device.RasterizerState = LegacyGraphics.NoCulling;
         device.SamplerStates[0] = SamplerState.LinearClamp;
         _effect.Projection = LegacyGraphics.CreateProjection(device.Viewport);
-        DrawBackground();
+        if (withBackground)
+        {
+            DrawBackground();
+        }
+
         _effect.View = Matrix.CreateLookAt(new Vector3(0, 0, CameraZ), Vector3.Zero, Vector3.Up);
     }
 
@@ -79,28 +86,32 @@ public sealed class MenuScene : IDisposable
     }
 
     /// <summary>Draws red menu text at <see cref="TextZ"/> (gl_println after the menus' small scene offset).</summary>
-    public void DrawText(float x, float y, string text)
+    public void DrawText(float x, float y, string text) => DrawText(new Vector3(x, y, TextZ) + SceneOffset, text, TextColor);
+
+    /// <summary>Draws text at exactly <paramref name="position"/> in <paramref name="color"/> (gl_println without offset).</summary>
+    public void DrawText(Vector3 position, string text, Color color)
     {
         _graphicsDevice.BlendState = LegacyGraphics.TextBlend;
         _graphicsDevice.DepthStencilState = DepthStencilState.None;
-        var world = Matrix.CreateTranslation(new Vector3(x, y, TextZ) + SceneOffset);
-        _assets.Font.Draw(_effect, world, text, TextColor);
+        _assets.Font.Draw(_effect, Matrix.CreateTranslation(position), text, color);
     }
 
     /// <summary>
     /// Draws a lit arrow turning around its length at (<paramref name="x"/>, <paramref name="y"/>) on the arrow plane.
-    /// The arrow points right, or left when <paramref name="pointsLeft"/> is set.
+    /// The arrow points right, or left when <paramref name="pointsLeft"/> is set. The settings menus place it
+    /// without the other menus' small scene offset (<paramref name="withSceneOffset"/> false).
     /// </summary>
-    public void DrawArrow(float x, float y, Vector3 scale, float spinDegrees, bool pointsLeft)
+    public void DrawArrow(float x, float y, Vector3 scale, float spinDegrees, bool pointsLeft, bool withSceneOffset = true)
     {
         _graphicsDevice.BlendState = BlendState.Opaque;
         _graphicsDevice.DepthStencilState = DepthStencilState.Default;
         LegacyGraphics.ConfigureLitVertexColors(_effect, lightDirection: -Vector3.UnitZ, diffuse: 0.5f, specularPower: 120f);
         var turn = pointsLeft ? Matrix.CreateRotationZ(MathHelper.Pi) : Matrix.Identity;
+        var offset = withSceneOffset ? SceneOffset : Vector3.Zero;
         _effect.World = Matrix.CreateScale(scale)
             * Matrix.CreateRotationX(MathHelper.ToRadians(spinDegrees))
             * turn
-            * Matrix.CreateTranslation(new Vector3(x, y, 0f) + SceneOffset);
+            * Matrix.CreateTranslation(new Vector3(x, y, 0f) + offset);
         _assets.MenuArrow.Draw(_effect);
     }
 

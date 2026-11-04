@@ -13,6 +13,7 @@ namespace Saoss.Game.Screens;
 public sealed class MainMenuScreen : IScreen, IDisposable
 {
     private const int LocalGameIndex = 0;
+    private const int SettingsIndex = 3;
     private const int QuitIndex = 4;
     private const float TextX = -20f;
     private const float TextTopY = 4f;
@@ -30,15 +31,21 @@ public sealed class MainMenuScreen : IScreen, IDisposable
     private readonly MenuScene _scene;
     private readonly Action _quit;
     private readonly Action _openLocalGame;
+    private readonly Action _openSettings;
     private int _selection;
     private float _arrowSpinDegrees;
 
-    /// <summary>Creates the menu. The callbacks run when the player chooses Quit or Local Game.</summary>
-    public MainMenuScreen(GraphicsDevice graphicsDevice, GameAssets assets, Action quit, Action openLocalGame)
+    /// <summary>
+    /// Creates the menu, highlighting Settings when <paramref name="returningFromSettings"/> is set. The callbacks
+    /// run when the player chooses Quit, Local Game or Settings.
+    /// </summary>
+    public MainMenuScreen(GraphicsDevice graphicsDevice, GameAssets assets, Action quit, Action openLocalGame, Action openSettings, bool returningFromSettings = false)
     {
         _scene = new MenuScene(graphicsDevice, assets);
         _quit = quit;
         _openLocalGame = openLocalGame;
+        _openSettings = openSettings;
+        _selection = returningFromSettings ? SettingsIndex : LocalGameIndex;
     }
 
     /// <inheritdoc/>
@@ -66,6 +73,10 @@ public sealed class MainMenuScreen : IScreen, IDisposable
         else if (keyboard.WasPressed(Keys.Enter) && _selection == LocalGameIndex)
         {
             _openLocalGame();
+        }
+        else if (keyboard.WasPressed(Keys.Enter) && _selection == SettingsIndex)
+        {
+            _openSettings();
         }
     }
 

@@ -15,8 +15,6 @@ namespace Saoss.Game.Screens;
 /// </summary>
 public sealed class GameScreen : IScreen, IDisposable
 {
-    private const int Detail = 2;
-
     private readonly World _world;
     private readonly LegacyGl _gl;
     private readonly SceneTextures _textures;
@@ -31,19 +29,22 @@ public sealed class GameScreen : IScreen, IDisposable
     private ShipChoice? _shownChoice;
     private int _menuTicks;
 
-    /// <summary>Starts a match. Players marked human are mapped to the original keyboard layouts in order.</summary>
-    public GameScreen(GraphicsDevice device, MatchSettings settings, int seed, Action<MatchOutcome?> exit)
+    /// <summary>
+    /// Starts a match drawn at <paramref name="detail"/> (0-3) with <paramref name="cameraMode"/>. Players marked
+    /// human are mapped to the original keyboard layouts in order.
+    /// </summary>
+    public GameScreen(GraphicsDevice device, MatchSettings settings, int detail, CameraMode cameraMode, int seed, Action<MatchOutcome?> exit)
     {
         _exit = exit;
         _world = new World(settings, seed);
         _gl = new LegacyGl(device);
         _textures = new SceneTextures(device);
-        var models = new SharedModels(_gl, Detail);
-        _ships = new ShipRenderer(_gl, _textures, models, Detail);
-        _renderer = new SceneRenderer(_gl, _textures, models, _ships, Detail);
+        var models = new SharedModels(_gl, detail);
+        _ships = new ShipRenderer(_gl, _textures, models, detail);
+        _renderer = new SceneRenderer(_gl, _textures, models, _ships, detail);
         _purchaseRenderer = new ShipPurchaseRenderer(_gl, _textures, _ships);
         _victoryRenderer = new VictoryRenderer(_gl, _textures, _ships);
-        _state = new SceneState(Detail, seed + 1);
+        _state = new SceneState(detail, cameraMode, seed + 1);
         _humans = _world.Ships
             .Where(s => s.IsHuman)
             .Select((ship, i) => (ship.Index, Keys: PlayerKeyBindings.Defaults[i % PlayerKeyBindings.Defaults.Count]))

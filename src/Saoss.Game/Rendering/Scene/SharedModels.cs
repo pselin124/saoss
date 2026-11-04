@@ -10,7 +10,7 @@ public sealed class SharedModels
 {
     private const int FlowerPetals = 6;
 
-    /// <summary>Records all shared lists at the given detail level (0-2).</summary>
+    /// <summary>Records all shared lists at the given detail level (0-3).</summary>
     public SharedModels(LegacyGl gl, int detail)
     {
         Asteroid = gl.NewList();

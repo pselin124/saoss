@@ -1,18 +1,35 @@
 using Saoss.Core.Simulation;
+using Saoss.Game.Settings;
 
 namespace Saoss.Game;
 
 /// <summary>
-/// The players of a local match. Until the player setup menu exists this is a fixed line-up.
+/// Turns the settings into the players and rules of a local match.
 /// </summary>
 public static class LocalPlayerSetup
 {
-    /// <summary>Player 1 is human on team 0; three AI players are on teams 1 to 3.</summary>
-    public static IReadOnlyList<PlayerSetup> Default { get; } =
-    [
-        new PlayerSetup(Team: 0, IsHuman: true),
-        new PlayerSetup(Team: 1, IsHuman: false),
-        new PlayerSetup(Team: 2, IsHuman: false),
-        new PlayerSetup(Team: 3, IsHuman: false),
-    ];
+    /// <summary>
+    /// The first <see cref="GameSettings.PlayerCount"/> slots. Humans beyond the four keyboard layouts play as CPU;
+    /// the match gives the humans the keyboard layouts in slot order.
+    /// </summary>
+    public static IReadOnlyList<PlayerSetup> Players(GameSettings settings)
+    {
+        var humans = 0;
+        var players = new List<PlayerSetup>();
+        foreach (var slot in settings.Players.Take(settings.PlayerCount))
+        {
+            var isHuman = slot.IsHuman && humans < GameSettings.MaxLocalHumans;
+            humans += isHuman ? 1 : 0;
+            players.Add(new PlayerSetup(slot.Team, isHuman));
+        }
+
+        return players;
+    }
+
+    /// <summary>Settings of a new match of <paramref name="kind"/> started from the local game menu.</summary>
+    public static MatchSettings CreateMatch(LocalGameKind kind, GameSettings settings) =>
+        MatchSettings.ForLocalMenu(kind, Players(settings), settings.Credits) with
+        {
+            AiTargetsOnlyEnemies = settings.AiTargetsOnlyEnemies,
+        };
 }

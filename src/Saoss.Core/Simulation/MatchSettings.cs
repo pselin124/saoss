@@ -22,7 +22,7 @@ public sealed record MatchSettings
     public GameMode Mode { get; init; } = GameMode.Deathmatch;
 
     /// <summary>
-    /// When false, an AI pilot with no enemy left attacks the nearest other ship of any team [aikohteet, inverted].
+    /// When false, an AI pilot with no enemy left attacks the nearest other ship of any team [aikohteet].
     /// </summary>
     public bool AiTargetsOnlyEnemies { get; init; }
 

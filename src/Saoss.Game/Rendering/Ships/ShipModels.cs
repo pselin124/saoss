@@ -11,7 +11,7 @@ namespace Saoss.Game.Rendering.Ships;
 /// </summary>
 public sealed class ShipModels
 {
-    /// <summary>Records every ship list at the given detail level (0-2).</summary>
+    /// <summary>Records every ship list at the given detail level (0-3).</summary>
     public ShipModels(LegacyGl gl, SharedModels shared, int detail)
     {
         Shared = shared;

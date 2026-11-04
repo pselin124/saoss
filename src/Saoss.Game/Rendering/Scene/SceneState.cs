@@ -13,22 +13,23 @@ public sealed class SceneState
     private const float SpinZ = 0.12f;
 
     /// <summary>Creates the visual state for a match.</summary>
-    public SceneState(int detail, int seed)
+    public SceneState(int detail, CameraMode cameraMode, int seed)
     {
         Detail = detail;
         Random = new GameRandom(seed);
         Particles = new ParticleSystem(detail);
         Stars = new Starfield(Random);
+        Camera = new GameCamera(cameraMode);
     }
 
-    /// <summary>Detail level 0-2 [sets->detail].</summary>
+    /// <summary>Detail level 0-3 [sets->detail].</summary>
     public int Detail { get; }
 
     /// <summary>Random source for visual effects only; never used by the simulation.</summary>
     public GameRandom Random { get; }
 
-    /// <summary>The chase camera.</summary>
-    public GameCamera Camera { get; } = new();
+    /// <summary>The match camera.</summary>
+    public GameCamera Camera { get; }
 
     /// <summary>Sparks and debris.</summary>
     public ParticleSystem Particles { get; }

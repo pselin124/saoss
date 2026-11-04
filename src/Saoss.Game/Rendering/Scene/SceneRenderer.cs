@@ -14,7 +14,6 @@ public sealed class SceneRenderer
     private const float FieldOfView = 45f;
     private const float NearPlane = 1f;
     private const float FarPlane = 1024f;
-    private const float OriginalPi = 3.14f;
     private const float BackgroundDepth = 200f;
     private const float HudDepth = -30f;
     private const int BorderStarsPerSide = 20;
@@ -67,12 +66,8 @@ public sealed class SceneRenderer
         gl.Disable(GlCapability.Lighting);
         gl.Disable(GlCapability.DepthTest);
 
-        var alpha2 = camera.SmoothedAlpha / 180f * OriginalPi;
-        var beta = camera.Beta / 180f * OriginalPi;
-        gl.LookAt(
-            camera.X / 4f, camera.Y / 4f, camera.Z,
-            camera.X, camera.Y, GameConstants.ShipPlaneZ,
-            MathF.Cos(alpha2) * MathF.Cos(beta), MathF.Sin(alpha2) * MathF.Cos(beta), -MathF.Sin(beta));
+        var (eye, target, up) = camera.View();
+        gl.LookAt(eye.X, eye.Y, eye.Z, target.X, target.Y, target.Z, up.X, up.Y, up.Z);
 
         gl.MaterialSpecular(1, 1, 1, 1);
         gl.LightDiffuse(0, 0.8f, 0.8f, 0.8f, 0.8f);

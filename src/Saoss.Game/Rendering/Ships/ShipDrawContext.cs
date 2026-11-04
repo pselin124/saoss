@@ -11,7 +11,7 @@ namespace Saoss.Game.Rendering.Ships;
 /// <param name="Models">Recorded ship display lists.</param>
 /// <param name="Textures">Scene textures.</param>
 /// <param name="Ship">The ship being drawn [player[numero2]].</param>
-/// <param name="Detail">Detail level 0-2 [sets->detail].</param>
+/// <param name="Detail">Detail level 0-3 [sets->detail].</param>
 public readonly record struct ShipDrawContext(LegacyGl Gl, ShipModels Models, SceneTextures Textures, Ship Ship, int Detail)
 {
     /// <summary>Ship collision radius, the model scale [sade].</summary>

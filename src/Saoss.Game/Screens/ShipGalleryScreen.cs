@@ -29,7 +29,7 @@ public sealed class ShipGalleryScreen : IScreen, IDisposable
     private readonly LegacyGl _gl;
     private readonly SceneTextures _textures;
     private readonly ShipModelRenderer _renderer;
-    private readonly SceneState _state = new(Detail, seed: 1);
+    private readonly SceneState _state = new(Detail, CameraMode.Tilted, seed: 1);
     private readonly List<Ship> _ships = [];
     private readonly Action _exit;
     private bool _thrust;
