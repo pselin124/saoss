@@ -7,5 +7,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <Version>1.0.0</Version>
+    <Product>Space Adventure of Small Ship</Product>
+    <Copyright>Copyright (c) TGO / THP - Paulus Selin</Copyright>
+    <!-- Release binaries carry their PDB inside, so crash.log stack traces keep file names and line numbers. -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
   </PropertyGroup>
 </Project>

@@ -140,9 +140,10 @@ Each phase ends with a build that compiles and runs.
    - 6a: `Saoss.Network` (TCP transport, versioned protocol, lobby, host/client sessions) and full world snapshots.
    - 6b: host/join menus, lobbies, chat, in-match "game settings menu", nicknames around ships and in the HUD. `GameScreen` runs local, host and client matches through `IMatchDriver`. Developer flags: `--host`, `--auto-start <n>`, `--join <host>`.
    - Differences: after a match everybody returns to the lobby (the original ended the network game). Purchases never pause a network match (as in the original), so Core has `MatchSettings.ChoicesPauseMatch`.
-7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
+7. **Polish and release** (done): fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
    - 7a (done): victory, HUD, scoreboard, purchase and menu lines are laid out as whole strings with the font's real advances (victory lines centered over the ships; `--winners <n>` sets the preview's winning team size); English wording fixed ("Musics:" → "Music:", "FPS", "IP", "deathmatch", ...); Ctrl+V / Shift+Insert paste in all text entries; glLineWidth emulated as screen-space quads (widths are pixels at 768 px window height, scaled with the window), used by the Ufo, Peace Cannon, Shapperi and Electra beams.
-   - Network: test with two real PCs on a LAN (only localhost tested so far).
+   - 7c (done): self-contained win-x64 release (single-file ReadyToRun Saoss.exe + SDL2/OpenAL + Content folder, embedded PDBs, no trimming), version 1.0.0; `build/publish.ps1` tests, publishes (`dotnet publish src/Saoss.Game -c Release -p:PublishProfile=win-x64`) and zips to `artifacts/Saoss-<version>-win-x64.zip`.
+   - Network: test with two real PCs on a LAN (only localhost tested so far). Deferred: the user reports problems after testing on a real LAN.
 8. **Optional**: gamepads, key remapping, LAN host discovery.
 
 ## 7. Decisions

@@ -8,6 +8,9 @@
     <RootNamespace>Saoss.Game</RootNamespace>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>Saoss</AssemblyTitle>
+    <!-- All text formatting is culture-invariant and the UI is English only. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>
