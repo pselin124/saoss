@@ -15,19 +15,26 @@ public sealed class ShipModelRenderer(LegacyGl gl, SceneTextures textures, ShipM
 {
     private const float GlowScale = 3.0f;
     private const float GlowDepth = -0.2f;
+    private const float FlowerScaleOffset = 2f;
 
     /// <summary>
-    /// Draws the ship at its position on the ship plane. Steps: disable culling, draw the team glow
-    /// quad, draw the ship type's model, re-enable culling (the original left culling on afterwards).
-    /// Network nicknames and the carried Capture-the-Flower flower are not drawn yet.
+    /// Draws the ship at its position on the ship plane, or at height <paramref name="z"/>. Steps: disable culling,
+    /// draw the team glow quad, draw the ship type's model, draw the Capture-the-Flower flower it carries (if any,
+    /// in the flower team's color), re-enable culling (the original left culling on afterwards).
+    /// Network nicknames are not drawn.
     /// </summary>
-    public void Draw(Ship ship, SceneState state)
+    public void Draw(Ship ship, SceneState state, int? carriedFlowerTeam = null, float z = GameConstants.ShipPlaneZ)
     {
         gl.Disable(GlCapability.CullFace);
         gl.PushMatrix();
-        gl.Translate(ship.X, ship.Y, GameConstants.ShipPlaneZ);
+        gl.Translate(ship.X, ship.Y, z);
         DrawTeamGlow(ship);
         DrawModel(new ShipDrawContext(gl, models, textures, ship, state.Detail));
+        if (carriedFlowerTeam is { } team)
+        {
+            DrawCarriedFlower(ship, team);
+        }
+
         gl.PopMatrix();
         gl.Enable(GlCapability.CullFace);
     }
@@ -63,6 +70,23 @@ public sealed class ShipModelRenderer(LegacyGl gl, SceneTextures textures, ShipM
             _ => throw new ArgumentOutOfRangeException(nameof(c), c.Ship.Type, "Unknown ship type."),
         };
         draw(c);
+    }
+
+    // The flower is drawn in whatever frame the model left behind, as in the original (Alus.cpp, after the switch).
+    private void DrawCarriedFlower(Ship ship, int team)
+    {
+        gl.Enable(GlCapability.Lighting);
+        gl.Disable(GlCapability.Texture2D);
+        gl.Disable(GlCapability.Blend);
+        gl.Enable(GlCapability.DepthTest);
+        gl.PushMatrix();
+        SceneDrawing.TeamColor(gl, team);
+        var size = (ship.Definition.Radius / 2f) + FlowerScaleOffset;
+        gl.Scale(size, size, size);
+        gl.Rotate(90, 1, 0, 0);
+        gl.Rotate(ship.Angle, 0, 1, 0);
+        gl.CallList(models.Shared.Flower4);
+        gl.PopMatrix();
     }
 
     // Local games draw a hollow glow in the team color under the ship [tiimitexture].

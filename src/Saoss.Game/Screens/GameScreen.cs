@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Input;
 using Saoss.Game.Rendering.Legacy;
 using Saoss.Game.Rendering.Scene;
@@ -9,7 +10,8 @@ namespace Saoss.Game.Screens;
 
 /// <summary>
 /// A running local match: reads the local players' keys, steps the simulation and draws the scene.
-/// Escape returns to the main menu.
+/// While a human player must buy a ship, the purchase menu replaces the match. Escape, or the end of the match,
+/// leaves the screen and reports the outcome (null when the match was abandoned).
 /// </summary>
 public sealed class GameScreen : IScreen, IDisposable
 {
@@ -21,11 +23,15 @@ public sealed class GameScreen : IScreen, IDisposable
     private readonly SceneState _state;
     private readonly SceneRenderer _renderer;
     private readonly ShipRenderer _ships;
-    private readonly List<LocalPlayerInput> _inputs;
-    private readonly Action _exit;
+    private readonly ShipPurchaseRenderer _purchaseRenderer;
+    private readonly ShipPurchaseMenu _purchaseMenu = new();
+    private readonly Dictionary<int, (LocalPlayerInput Input, PlayerKeyBindings Keys)> _humans;
+    private readonly Action<MatchOutcome?> _exit;
+    private ShipChoice? _shownChoice;
+    private int _menuTicks;
 
     /// <summary>Starts a match. Players marked human are mapped to the original keyboard layouts in order.</summary>
-    public GameScreen(GraphicsDevice device, MatchSettings settings, int seed, Action exit)
+    public GameScreen(GraphicsDevice device, MatchSettings settings, int seed, Action<MatchOutcome?> exit)
     {
         _exit = exit;
         _world = new World(settings, seed);
@@ -34,46 +40,97 @@ public sealed class GameScreen : IScreen, IDisposable
         var models = new SharedModels(_gl, Detail);
         _ships = new ShipRenderer(_gl, _textures, models, Detail);
         _renderer = new SceneRenderer(_gl, _textures, models, _ships, Detail);
+        _purchaseRenderer = new ShipPurchaseRenderer(_gl, _textures, _ships);
         _state = new SceneState(Detail, seed + 1);
-        _inputs = [.. settings.Players.Where(p => p.IsHuman).Select((_, i) => new LocalPlayerInput(PlayerKeyBindings.Defaults[i % PlayerKeyBindings.Defaults.Count]))];
+        _humans = _world.Ships
+            .Where(s => s.IsHuman)
+            .Select((ship, i) => (ship.Index, Keys: PlayerKeyBindings.Defaults[i % PlayerKeyBindings.Defaults.Count]))
+            .ToDictionary(h => h.Index, h => (new LocalPlayerInput(h.Keys), h.Keys));
     }
+
+    /// <summary>How the match ended, or null while it is running.</summary>
+    public MatchOutcome? Outcome => _world.Outcome;
 
     /// <inheritdoc/>
     public void Update(KeyboardTracker keyboard)
     {
         if (keyboard.WasPressed(Keys.Escape))
         {
-            _exit();
+            _exit(null);
             return;
         }
 
-        var humans = _world.Ships.Where(s => s.IsHuman).ToList();
-        var issued = new ShipControls[humans.Count];
-        for (var i = 0; i < humans.Count && i < _inputs.Count; i++)
+        if (_world.PendingChoice is { } choice)
         {
-            issued[i] = _inputs[i].Read(keyboard);
-            humans[i].Controls = issued[i];
+            UpdatePurchase(keyboard, choice);
+            return;
         }
 
-        _world.Step();
-
-        for (var i = 0; i < humans.Count && i < _inputs.Count; i++)
+        StepMatch(keyboard);
+        if (_world.Outcome is { } outcome)
         {
-            _inputs[i].AfterStep(issued[i], humans[i].Controls);
+            _exit(outcome);
         }
-
-        // Like the original, particles spawned this tick already move once at the end of it.
-        _ships.Update(_world, _state);
-        _state.Update(_world);
     }
 
     /// <inheritdoc/>
-    public void Draw() => _renderer.Draw(_world, _state);
+    public void Draw()
+    {
+        if (_world.PendingChoice is { } choice)
+        {
+            _purchaseRenderer.Draw(_world.Ships[choice.ShipIndex], _purchaseMenu.Selection, _menuTicks, _state);
+            return;
+        }
+
+        _renderer.Draw(_world, _state);
+    }
 
     /// <inheritdoc/>
     public void Dispose()
     {
         _gl.Dispose();
         _textures.Dispose();
+    }
+
+    // The match is paused while the menu is up, like the original's blocking menu loop.
+    private void UpdatePurchase(KeyboardTracker keyboard, ShipChoice choice)
+    {
+        if (!ReferenceEquals(choice, _shownChoice))
+        {
+            _shownChoice = choice;
+            _purchaseMenu.Reset();
+        }
+
+        _menuTicks++;
+        if (!_humans.TryGetValue(choice.ShipIndex, out var human) || !_purchaseMenu.Update(keyboard, human.Keys))
+        {
+            return;
+        }
+
+        if (!_world.ChooseShip(choice.ShipIndex, _purchaseMenu.SelectedType))
+        {
+            _purchaseMenu.JumpToFallback(ShipShop.FallbackShip.Type);
+        }
+    }
+
+    private void StepMatch(KeyboardTracker keyboard)
+    {
+        var issued = new Dictionary<int, ShipControls>();
+        foreach (var (index, human) in _humans)
+        {
+            issued[index] = human.Input.Read(keyboard);
+            _world.Ships[index].Controls = issued[index];
+        }
+
+        _world.Step();
+
+        foreach (var (index, human) in _humans)
+        {
+            human.Input.AfterStep(issued[index], _world.Ships[index].Controls);
+        }
+
+        // Like the original, particles spawned this tick already move once at the end of it.
+        _ships.Update(_world, _state);
+        _state.Update(_world);
     }
 }

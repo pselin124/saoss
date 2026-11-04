@@ -6,7 +6,8 @@ namespace Saoss.Game.Rendering.Scene;
 
 /// <summary>
 /// Draws one frame of a match, a port of the original <c>drawFrame</c>: background galaxies and stars,
-/// ships, pickups, asteroids, planet, the flower-and-star arena border, particles and the HUD.
+/// ships, pickups, asteroids, planet, the flower-and-star arena border, the game mode's objects, particles,
+/// the HUD and the mode's scoreboard.
 /// </summary>
 public sealed class SceneRenderer
 {
@@ -24,6 +25,7 @@ public sealed class SceneRenderer
     private readonly SceneTextures _textures;
     private readonly SharedModels _models;
     private readonly ShipRenderer _ships;
+    private readonly ModeRenderer _modes;
     private readonly int _detail;
 
     /// <summary>Creates the renderer and applies the original global GL setup (setupOpengl).</summary>
@@ -33,6 +35,7 @@ public sealed class SceneRenderer
         _textures = textures;
         _models = models;
         _ships = ships;
+        _modes = new ModeRenderer(gl, textures, models);
         _detail = detail;
         gl.Enable(GlCapability.Lighting);
         gl.Enable(GlCapability.ColorMaterial);
@@ -97,6 +100,7 @@ public sealed class SceneRenderer
         DrawAsteroids(world, state);
         DrawPlanet(state);
         DrawBorder(camera);
+        _modes.DrawMarkers(world);
 
         state.Particles.Draw(gl, _textures, camera);
 
@@ -112,6 +116,7 @@ public sealed class SceneRenderer
             _ships.DrawHud(ship, world, state);
         }
 
+        _modes.DrawScoreboard(world);
         gl.Flush();
     }
 

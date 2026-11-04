@@ -1,5 +1,6 @@
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation.Ai;
+using Saoss.Core.Simulation.Modes;
 using Saoss.Core.Simulation.Weapons;
 
 namespace Saoss.Core.Simulation;
@@ -7,6 +8,8 @@ namespace Saoss.Core.Simulation;
 /// <summary>
 /// The whole match state and the fixed-step update [calculateFrame].
 /// Set each ship's <see cref="Ship.Controls"/>, call <see cref="Step"/>, then read <see cref="Events"/>.
+/// While <see cref="PendingChoice"/> is set the match is paused until <see cref="ChooseShip"/> is called,
+/// and once <see cref="Outcome"/> is set it no longer changes.
 /// </summary>
 public sealed class World
 {
@@ -14,15 +17,22 @@ public sealed class World
     private const float MinPlanetBounceSpeed = 0.1f;
     private const float PlanetEscapeDistance = 5f;
     private const float MothRevivalChance = 50f;
+    private const float DroppedOutScore = -1f;
 
     private readonly List<Ship> _ships;
     private readonly List<GameEvent> _events = [];
+    private readonly Queue<int> _choiceQueue = new();
+    private int _stepEventCount;
 
-    /// <summary>Creates a match and gives every player a random ship.</summary>
+    /// <summary>
+    /// Creates a match and gives every player a random ship. In a credits game every player then gets the
+    /// starting credits and buys a ship; human players who choose their ships leave <see cref="PendingChoice"/> set.
+    /// </summary>
     public World(MatchSettings settings, int seed)
     {
         Settings = settings;
         Random = new GameRandom(seed);
+        Rules = GameModeRules.Create(settings);
         _ships = [.. settings.Players.Select((setup, index) => new Ship(index, setup.Team, setup.IsHuman))];
         Asteroids = new AsteroidField(Random);
         Pickups = [.. Enumerable.Range(0, GameConstants.MaxPickups).Select(_ => new Pickup())];
@@ -30,10 +40,18 @@ public sealed class World
         {
             ship.Respawn(RandomShip(), Random);
         }
+
+        if (settings.UsesCredits)
+        {
+            StartCreditsGame();
+        }
     }
 
     /// <summary>Settings the match was started with.</summary>
     public MatchSettings Settings { get; }
+
+    /// <summary>Rules and state of the game mode.</summary>
+    public GameModeRules Rules { get; }
 
     /// <summary>Random source shared by everything in the match.</summary>
     public GameRandom Random { get; }
@@ -50,16 +68,34 @@ public sealed class World
     /// <summary>Number of completed steps.</summary>
     public int Tick { get; private set; }
 
-    /// <summary>Events produced by the last <see cref="Step"/>.</summary>
+    /// <summary>
+    /// Events produced by the last <see cref="Step"/>, followed by those of any <see cref="ChooseShip"/> call since;
+    /// the next step drops them.
+    /// </summary>
     public IReadOnlyList<GameEvent> Events => _events;
 
     /// <summary>
-    /// Advances the match by one tick. Steps: AI pilots, ship movement and weapons (in ship order), pickups,
-    /// asteroids, planet gravity and impacts, death timers, explosions, and respawns.
+    /// A human player who must buy a ship before the match goes on, or null. AI players buy at once.
+    /// </summary>
+    public ShipChoice? PendingChoice { get; private set; }
+
+    /// <summary>How the match ended, or null while it is still running.</summary>
+    public MatchOutcome? Outcome { get; private set; }
+
+    /// <summary>
+    /// Advances the match by one tick; does nothing while a ship choice is pending or after the match has ended.
+    /// Steps: AI pilots, ship movement and weapons (in ship order), pickups, asteroids, planet gravity and impacts,
+    /// death timers, explosions and respawns, then the mode's scoring and the end-of-match check.
     /// </summary>
     public void Step()
     {
-        _events.Clear();
+        _events.RemoveRange(0, _stepEventCount);
+        _stepEventCount = 0;
+        if (PendingChoice != null || Outcome != null)
+        {
+            return;
+        }
+
         Tick++;
 
         // The original ran the AI for destroyed ships too.
@@ -113,6 +149,39 @@ public sealed class World
                 }
             }
         }
+
+        Rules.Update(this);
+        if (Rules.IsOver(this))
+        {
+            Outcome = MatchOutcome.From(this);
+        }
+
+        _stepEventCount = _events.Count;
+    }
+
+    /// <summary>
+    /// Buys the pending player's ship: <paramref name="type"/>, or a random affordable one when null (the menu's
+    /// "random ship" entry). Returns false and changes nothing when the player cannot afford the type; the
+    /// original menu then jumped to <see cref="ShipShop.FallbackShip"/> and waited for another confirmation.
+    /// </summary>
+    public bool ChooseShip(int shipIndex, ShipType? type)
+    {
+        if (PendingChoice?.ShipIndex != shipIndex)
+        {
+            throw new InvalidOperationException($"Ship {shipIndex} is not choosing a ship.");
+        }
+
+        var ship = _ships[shipIndex];
+        var definition = type is { } chosen ? ShipCatalog.Get(chosen) : ShipShop.RandomAffordable(ship, Random);
+        if (!ShipShop.CanAfford(ship, definition))
+        {
+            return false;
+        }
+
+        _choiceQueue.Dequeue();
+        CompletePurchase(ship, definition);
+        ResolveAiChoices();
+        return true;
     }
 
     /// <summary>Queues an event for the presentation layer.</summary>
@@ -207,8 +276,8 @@ public sealed class World
 
         if (ship.DeathTimer == GameConstants.SpawnTicks)
         {
-            ship.Respawn(RandomShip(), Random);
-            Emit(new ShipRespawning(ship.Index));
+            Rules.OnRespawnPoint(this, ship);
+            ReplaceShip(ship);
         }
 
         if (ship.DeathTimer == 1)
@@ -243,4 +312,87 @@ public sealed class World
     }
 
     private static float Distance(float x, float y) => MathF.Sqrt((x * x) + (y * y));
+
+    private static void DropOut(Ship ship)
+    {
+        ship.Score = DroppedOutScore;
+        ship.IsInGame = false;
+    }
+
+    // The original bought the first ships during the first tick, after one tick with the previous match's ships.
+    private void StartCreditsGame()
+    {
+        foreach (var ship in _ships)
+        {
+            ship.Score = Settings.Credits;
+        }
+
+        foreach (var ship in _ships)
+        {
+            // The original looped forever when the starting credits could not buy any ship.
+            if (ship.Score < ShipShop.FallbackShip.Cost)
+            {
+                DropOut(ship);
+            }
+            else if (Settings.PlayersChooseShips)
+            {
+                _choiceQueue.Enqueue(ship.Index);
+            }
+            else
+            {
+                ShipShop.Buy(ship, ShipShop.RandomAffordable(ship, Random), Random);
+            }
+        }
+
+        ResolveAiChoices();
+    }
+
+    // The new ship at the respawn point: random without credits; with credits the player buys one or drops out.
+    private void ReplaceShip(Ship ship)
+    {
+        if (!Settings.UsesCredits)
+        {
+            ship.Respawn(RandomShip(), Random);
+            Emit(new ShipRespawning(ship.Index));
+            return;
+        }
+
+        ship.IsShieldActive = false;
+        if (ShipShop.MustDropOut(ship))
+        {
+            DropOut(ship);
+        }
+        else if (Settings.PlayersChooseShips)
+        {
+            _choiceQueue.Enqueue(ship.Index);
+            ResolveAiChoices();
+        }
+        else
+        {
+            CompletePurchase(ship, ShipShop.RandomAffordable(ship, Random));
+        }
+    }
+
+    // Players choose one at a time in ship order, so an AI's counter-pick sees the ships bought before it.
+    // The original AI scrolled through the on-screen menu; only its final pick is reproduced.
+    private void ResolveAiChoices()
+    {
+        while (_choiceQueue.TryPeek(out var index) && !_ships[index].IsHuman)
+        {
+            _choiceQueue.Dequeue();
+            var ship = _ships[index];
+            CompletePurchase(ship, ShipShop.AiChoice(this, ship) ?? ShipShop.RandomAffordable(ship, Random));
+        }
+
+        PendingChoice = _choiceQueue.TryPeek(out var pending) ? new ShipChoice(pending) : null;
+    }
+
+    private void CompletePurchase(Ship ship, ShipDefinition definition)
+    {
+        ShipShop.Buy(ship, definition, Random);
+        if (ship.DeathTimer == GameConstants.SpawnTicks)
+        {
+            Emit(new ShipRespawning(ship.Index));
+        }
+    }
 }

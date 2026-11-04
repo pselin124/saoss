@@ -87,20 +87,22 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
 
     private void ShowMainMenu() => ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, StartLocalGame));
 
-    // Until the local game menu is ported: one human against idle ships, like the original default settings.
+    // Until the local game menu is ported: one human against three AI ships. SAOSS_MODE picks the local menu
+    // entry (0, 2-6, see LocalGameKind); the default is the random-ships deathmatch.
     private void StartLocalGame()
     {
-        var settings = new MatchSettings
-        {
-            Players =
+        var kind = int.TryParse(Environment.GetEnvironmentVariable("SAOSS_MODE"), out var value) && Enum.IsDefined((LocalGameKind)value)
+            ? (LocalGameKind)value
+            : LocalGameKind.RandomShips;
+        var settings = MatchSettings.ForLocalMenu(
+            kind,
             [
                 new PlayerSetup(Team: 0, IsHuman: true),
                 new PlayerSetup(Team: 1, IsHuman: false),
                 new PlayerSetup(Team: 2, IsHuman: false),
                 new PlayerSetup(Team: 3, IsHuman: false),
-            ],
-        };
-        ShowScreen(new GameScreen(GraphicsDevice, settings, Environment.TickCount, ShowMainMenu));
+            ]);
+        ShowScreen(new GameScreen(GraphicsDevice, settings, Environment.TickCount, _ => ShowMainMenu()));
     }
 
     private void OnClientSizeChanged(object? sender, EventArgs e)

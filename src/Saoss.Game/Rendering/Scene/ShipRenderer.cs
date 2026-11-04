@@ -1,6 +1,7 @@
 using Saoss.Core;
 using Saoss.Core.Ships;
 using Saoss.Core.Simulation;
+using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Rendering.Legacy;
 using Saoss.Game.Rendering.Ships;
 
@@ -65,7 +66,8 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
     /// </summary>
     public void DrawShip(Ship ship, World world, SceneState state)
     {
-        _models.Draw(ship, state);
+        var carriedFlower = (world.Rules as CaptureTheFlowerMode)?.CarriedBy(ship.Index);
+        _models.Draw(ship, state, carriedFlower?.Team);
         _projectiles.DrawPrimary(ship, state.Camera);
         _projectiles.DrawSpecial(ship);
         _projectiles.DrawSlimes(ship);
@@ -90,7 +92,10 @@ public sealed class ShipRenderer(LegacyGl gl, SceneTextures textures, SharedMode
     }
 
     /// <summary>Draws the ship's block of the HUD.</summary>
-    public void DrawHud(Ship ship, World world, SceneState state) => _hud.Draw(ship, world.Ships.Count);
+    public void DrawHud(Ship ship, World world, SceneState state) => _hud.Draw(ship, world);
+
+    /// <summary>Draws just the ship model and team glow centered at the origin, for the purchase menu.</summary>
+    public void DrawPreview(Ship ship, SceneState state) => _models.Draw(ship, state, z: 0f);
 
     // Ships whose weapons leave lines (special 5, 6, 7, primary 9, 11 or ship 18 in the original).
     private static bool HasBeams(ShipType type) =>

@@ -13,14 +13,16 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
     private const float LeftX = -14.5f;
     private const float RightX = 12.5f;
     private const float TextSize = 0.3f;
+    private const float CreditsTextSize = 0.25f;
+    private const float CreditsY = -0.6f;
     private const float ReferenceScreenWidth = 512f;
     private const float BarColorExponent = 1.7f;
     private const float BarAlpha = 0.8f;
 
     private readonly GlText _text = new(gl, textures.Font);
 
-    /// <summary>Draws the HUD block of <paramref name="ship"/> in a match of <paramref name="playerCount"/> players.</summary>
-    public void Draw(Ship ship, int playerCount)
+    /// <summary>Draws the HUD block of <paramref name="ship"/>; in a credits game it includes the credits line.</summary>
+    public void Draw(Ship ship, World world)
     {
         gl.PushMatrix();
         gl.Enable(GlCapability.Blend);
@@ -28,7 +30,7 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         // glDisable(GL_DEPTH) followed here: GL_DEPTH is not a capability, so the call failed and had no effect.
         gl.BlendFunc(GlBlend.One, GlBlend.One);
         gl.Disable(GlCapability.Lighting);
-        if (Position(ship.Index, playerCount) is var (x, y))
+        if (Position(ship.Index, world.Ships.Count) is var (x, y))
         {
             gl.Translate(x, y, 0);
         }
@@ -37,6 +39,10 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         var scale = MathF.Sqrt(1f / (gl.ViewportWidth / ReferenceScreenWidth));
         gl.Scale(scale, scale, scale);
         DrawLabels(ship);
+        if (world.Settings.UsesCredits)
+        {
+            DrawCredits(ship, world.Settings.Credits);
+        }
         gl.Translate(2f, 0, 0);
         gl.Disable(GlCapability.Texture2D);
         DrawBars(ship);
@@ -70,7 +76,7 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         };
     }
 
-    // Network games showed the nickname instead of "Player N"; credits games also showed credits.
+    // Network games showed the nickname instead of "Player N".
     private void DrawLabels(Ship ship)
     {
         SceneDrawing.TeamColor(gl, ship.Team);
@@ -80,6 +86,15 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         _text.Println(3.7f, 1f, 0, (ship.Team + 1).ToString(CultureInfo.InvariantCulture), TextSize);
         _text.Println(-1f, 0.33f, 0, "shield", TextSize);
         _text.Println(-0.4f, -0.125f, 0, "fuel", TextSize);
+    }
+
+    // "credits 391 / 400", the remaining credits truncated to a whole number.
+    private void DrawCredits(Ship ship, int startingCredits)
+    {
+        _text.Println(-1.5f, CreditsY, 0, "credits", CreditsTextSize);
+        _text.Println(1f, CreditsY, 0, ((int)ship.Score).ToString(CultureInfo.InvariantCulture), CreditsTextSize);
+        _text.Println(2.6f, CreditsY, 0, "/", CreditsTextSize);
+        _text.Println(2.8f, CreditsY, 0, startingCredits.ToString(CultureInfo.InvariantCulture), CreditsTextSize);
     }
 
     // Dim frames behind the bars, then bars that fade from green to red as they empty.
