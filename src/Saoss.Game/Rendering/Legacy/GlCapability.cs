@@ -30,9 +30,15 @@ public enum GlCapability
     /// <summary>GL_LIGHT2.</summary>
     Light2,
 
-    /// <summary>GL_NORMALIZE (normals are always normalized here).</summary>
+    /// <summary>GL_NORMALIZE: renormalize eye-space normals. Starts enabled here, unlike in OpenGL (see <see cref="LegacyGl"/>).</summary>
     Normalize,
 
     /// <summary>GL_LINE_SMOOTH (ignored).</summary>
     LineSmooth,
+
+    /// <summary>GL_STENCIL_TEST.</summary>
+    StencilTest,
+
+    /// <summary>GL_POLYGON_OFFSET_FILL.</summary>
+    PolygonOffsetFill,
 }

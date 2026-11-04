@@ -130,7 +130,12 @@ Each phase ends with a build that compiles and runs.
    - 4c: local game menu (all 9 items, Resume keeps the match), victory screen. Developer flags: `--ship-gallery`, `--victory-preview`, `--victory-preview-credits`.
    - Simplifications: the AI picks its ship instantly instead of scrolling the purchase menu on screen. The first ships are bought when the match is created. The victory screen shows team numbers +1 in all modes (the original showed "team 0" in point modes).
    - The player setup (number of players, human/AI, teams) is a fixed default (`LocalPlayerSetup`) until the settings menus are ported in phase 5.
-5. **Menus, settings, audio**: main/setup menus, JSON settings, SFX on simulation events, and the music player.
+5. **Menus, settings, audio** (done):
+   - 5a: Settings and Player Setup menus, JSON settings in `%LOCALAPPDATA%\Saoss\settings.json` (`--settings-dir` overrides), detail level and top-down camera mode. First start is a 1280x720 window.
+   - 5b: ship sound effects (WAVs converted to 16-bit PCM with ffmpeg, original per-ship volume table) and streaming OGG/MP3 music (NVorbis, NLayer) from the `Content/Music` folder; users can add tracks.
+   - 5c: 3D intro scene (cloth flag, plants, ships, stencil shadows) at startup; `--skip-intro`. LegacyGl gained stencil, polygon offset, GL_BLEND texture mode and two-sided lighting.
+   - XM conversion was not needed: the two XM tracks were in `musics/Musictemp`, which the original never played.
+   - Difference: after the intro a random track starts; the original menu was silent.
 6. **Networking**: protocol, host lobby (slots human/AI/closed, teams, mode), join, state sync, chat, and disconnect handling.
 7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
    - Victory screen text: words and numbers are placed as separate pieces with fixed gaps (as in the original), which looks uneven. Lay each line out as one string with normal spacing.

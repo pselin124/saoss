@@ -29,12 +29,12 @@ public static class StickInsectModel
         return (body, shadow);
     }
 
-    /// <summary>Draws the ship. Matches use the colored list; the shadow list was only drawn by the intro.</summary>
+    /// <summary>Draws the ship: the colored list, or the shadow list when <see cref="ShipDrawContext.Shadow"/> is set.</summary>
     public static void Draw(ShipDrawContext c)
     {
         c.Gl.PushMatrix();
         c.ScaleAndTurn(c.Radius / 1.1f * 0.7f);
-        c.Gl.CallList(c.Models.StickInsectBody);
+        c.Gl.CallList(c.Shadow ? c.Models.StickInsectShadow : c.Models.StickInsectBody);
         c.Gl.PopMatrix();
     }
 

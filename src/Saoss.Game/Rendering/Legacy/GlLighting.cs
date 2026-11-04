@@ -33,6 +33,9 @@ public sealed class GlLighting
     /// <summary>GL_LIGHT_MODEL_LOCAL_VIEWER.</summary>
     public bool LocalViewer { get; set; }
 
+    /// <summary>GL_LIGHT_MODEL_TWO_SIDE: back-facing polygons are lit with the reversed normal.</summary>
+    public bool TwoSide { get; set; }
+
     /// <summary>GL_COLOR_MATERIAL: the current color replaces the ambient and diffuse material.</summary>
     public bool ColorMaterial { get; set; }
 

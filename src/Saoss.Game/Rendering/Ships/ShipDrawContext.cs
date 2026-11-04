@@ -12,7 +12,8 @@ namespace Saoss.Game.Rendering.Ships;
 /// <param name="Textures">Scene textures.</param>
 /// <param name="Ship">The ship being drawn [player[numero2]].</param>
 /// <param name="Detail">Detail level 0-3 [sets->detail].</param>
-public readonly record struct ShipDrawContext(LegacyGl Gl, ShipModels Models, SceneTextures Textures, Ship Ship, int Detail)
+/// <param name="Shadow">Whether to draw the shadow shape where a model has one, as the intro does [varjomode].</param>
+public readonly record struct ShipDrawContext(LegacyGl Gl, ShipModels Models, SceneTextures Textures, Ship Ship, int Detail, bool Shadow = false)
 {
     /// <summary>Ship collision radius, the model scale [sade].</summary>
     public float Radius => Ship.Definition.Radius;

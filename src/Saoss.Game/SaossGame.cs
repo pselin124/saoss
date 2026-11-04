@@ -32,8 +32,8 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     /// Creates the game window with the saved resolution, fullscreen mode and game speed.
     /// </summary>
     /// <param name="settingsStore">Where the settings are loaded from and saved to.</param>
-    /// <param name="startup">The first screen: the main menu or a developer view.</param>
-    public SaossGame(SettingsStore settingsStore, StartupScreen startup = StartupScreen.MainMenu)
+    /// <param name="startup">The first screen: the intro, the main menu or a developer view.</param>
+    public SaossGame(SettingsStore settingsStore, StartupScreen startup = StartupScreen.Intro)
     {
         _startup = startup;
         _settingsStore = settingsStore;
@@ -43,7 +43,7 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
             PreferredBackBufferWidth = _settings.Width,
             PreferredBackBufferHeight = _settings.Height,
             IsFullScreen = _settings.Fullscreen,
-            PreferredDepthStencilFormat = DepthFormat.Depth24,
+            PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8,
             SynchronizeWithVerticalRetrace = true,
             HardwareModeSwitch = false,
         };
@@ -72,8 +72,11 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
                 StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.CreditsRandomShips, VictoryPreview.Players));
                 VictoryPreview.EndOnNextStep(_match!.World);
                 break;
-            default:
+            case StartupScreen.MainMenu:
                 ShowMainMenu();
+                break;
+            default:
+                ShowIntro();
                 break;
         }
     }
@@ -119,6 +122,17 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game
     }
 
     private void ShowMainMenu() => ShowMainMenu(returningFromSettings: false);
+
+    // The start track loops during the intro; leaving it moves on to the main menu and the playlist.
+    private void ShowIntro()
+    {
+        _audio?.BeginIntroMusic();
+        ShowScreen(new IntroScreen(GraphicsDevice, _settings.Detail, _settings.TicksPerSecond, () =>
+        {
+            _audio?.EndIntroMusic();
+            ShowMainMenu();
+        }));
+    }
 
     private void ShowMainMenu(bool returningFromSettings) =>
         ShowScreen(new MainMenuScreen(GraphicsDevice, _assets!, Exit, OpenLocalGameMenu, () => OpenSettings(() => ShowMainMenu(returningFromSettings: true)), returningFromSettings));

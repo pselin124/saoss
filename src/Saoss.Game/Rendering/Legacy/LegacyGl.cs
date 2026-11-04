@@ -8,7 +8,8 @@ namespace Saoss.Game.Rendering.Legacy;
 /// A small OpenGL 1.x fixed-function emulation on top of MonoGame, so the original drawing code can be
 /// translated call by call. Vertices are transformed to eye space and lit on the CPU (including point
 /// lights), then batched by render state and drawn with a <see cref="BasicEffect"/>.
-/// Method names follow GL without the <c>gl</c> prefix; angles are degrees.
+/// Method names follow GL without the <c>gl</c> prefix; angles are degrees. Unlike OpenGL, GL_NORMALIZE starts
+/// enabled, the state the game's own setup left for everything but the intro.
 /// </summary>
 public sealed partial class LegacyGl : IDisposable
 {
@@ -17,6 +18,7 @@ public sealed partial class LegacyGl : IDisposable
     private readonly Stack<Matrix> _modelViewStack = new();
     private readonly Stack<Matrix> _projectionStack = new();
     private readonly List<VertexPositionColorTexture> _primitive = [];
+    private readonly List<XnaColor> _primitiveBackColors = [];
     private readonly Dictionary<(GlBlend, GlBlend), BlendState> _blendStates = [];
     private readonly DepthStencilState _depthTestState = new() { DepthBufferEnable = true, DepthBufferWriteEnable = true, DepthBufferFunction = CompareFunction.LessEqual };
 
@@ -31,6 +33,7 @@ public sealed partial class LegacyGl : IDisposable
     private bool _texture2D;
     private bool _cullFace;
     private bool _lighting;
+    private bool _normalize = true;
     private bool _frontFaceClockwise;
     private GlBlend _sourceBlend = GlBlend.One;
     private GlBlend _destinationBlend = GlBlend.Zero;
@@ -43,7 +46,7 @@ public sealed partial class LegacyGl : IDisposable
 
     private VertexPositionColorTexture[] _batch = new VertexPositionColorTexture[4096];
     private int _batchCount;
-    private BatchKey _batchKey;
+    private GlBatchKey _batchKey;
 
     private GlDisplayList? _recording;
 
@@ -290,11 +293,12 @@ public sealed partial class LegacyGl : IDisposable
         _clearColor = new XnaColor(r, g, b, a);
     }
 
-    /// <summary>glClear of color and depth.</summary>
-    public void Clear()
+    /// <summary>glClear of color and depth, and of the stencil buffer (to 0) when <paramref name="includeStencil"/> is set.</summary>
+    public void Clear(bool includeStencil = false)
     {
         Flush();
-        _device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, _clearColor, 1f, 0);
+        var options = ClearOptions.Target | ClearOptions.DepthBuffer | (includeStencil ? ClearOptions.Stencil : 0);
+        _device.Clear(options, _clearColor, 1f, 0);
     }
 
     /// <summary>glViewport, with OpenGL's bottom-left origin.</summary>
@@ -317,6 +321,7 @@ public sealed partial class LegacyGl : IDisposable
 
         _currentPrimitive = primitive;
         _primitive.Clear();
+        _primitiveBackColors.Clear();
     }
 
     /// <summary>glVertex3f: transforms, lights and stores the vertex with the current attributes.</summary>
@@ -331,7 +336,13 @@ public sealed partial class LegacyGl : IDisposable
         var color = _color;
         if (_lighting)
         {
-            color = Lighting.Shade(eyePosition, EyeNormal(), Vector4.Clamp(_color, Vector4.Zero, Vector4.One));
+            var normal = EyeNormal();
+            var material = Vector4.Clamp(_color, Vector4.Zero, Vector4.One);
+            color = Lighting.Shade(eyePosition, normal, material);
+            if (Lighting.TwoSide)
+            {
+                _primitiveBackColors.Add(new XnaColor(Lighting.Shade(eyePosition, -normal, material)));
+            }
         }
 
         _primitive.Add(new VertexPositionColorTexture(eyePosition, new XnaColor(Vector4.Clamp(color, Vector4.Zero, Vector4.One)), _texCoord));
@@ -466,9 +477,9 @@ public sealed partial class LegacyGl : IDisposable
         }
 
         var key = _batchKey;
-        _device.BlendState = key.Blend;
-        _device.DepthStencilState = key.DepthTest ? _depthTestState : DepthStencilState.None;
-        _device.RasterizerState = key.Cull;
+        _device.BlendState = key.Blend is { } blend ? GetBlendState(blend.Source, blend.Destination) : BlendState.Opaque;
+        _device.DepthStencilState = GetDepthStencilState(key.DepthTest, key.Stencil);
+        _device.RasterizerState = GetRasterizerState(key.Cull, key.PolygonOffset);
         _device.SamplerStates[0] = SamplerState.LinearWrap;
         _effect.Projection = key.Projection;
         _effect.TextureEnabled = key.Texture != null;
@@ -498,6 +509,8 @@ public sealed partial class LegacyGl : IDisposable
         {
             state.Dispose();
         }
+
+        DisposeFragmentStates();
     }
 
     private Matrix CurrentMatrix => _matrixMode == GlMatrixMode.ModelView ? _modelView : _projection;
@@ -538,6 +551,11 @@ public sealed partial class LegacyGl : IDisposable
         }
 
         var normal = Vector3.TransformNormal(_normal, _normalMatrix);
+        if (!_normalize)
+        {
+            return normal;
+        }
+
         var length = normal.Length();
         return length > 0 ? normal / length : Vector3.UnitZ;
     }
@@ -575,6 +593,14 @@ public sealed partial class LegacyGl : IDisposable
                 Lighting.Lights[capability - GlCapability.Light0].Enabled = enabled;
                 break;
             case GlCapability.Normalize:
+                _normalize = enabled;
+                break;
+            case GlCapability.StencilTest:
+                _stencilTest = enabled;
+                break;
+            case GlCapability.PolygonOffsetFill:
+                _polygonOffsetFill = enabled;
+                break;
             case GlCapability.LineSmooth:
             default:
                 break;
@@ -584,11 +610,13 @@ public sealed partial class LegacyGl : IDisposable
     // Starts a new batch when any state that affects drawing differs from the current batch.
     private void PrepareBatch(bool isLine)
     {
-        var key = new BatchKey(
-            _texture2D ? _boundTexture : null,
-            _blend ? GetBlendState(_sourceBlend, _destinationBlend) : BlendState.Opaque,
+        var key = new GlBatchKey(
+            _texture2D ? ResolveTexture(_boundTexture) : null,
+            _blend ? (_sourceBlend, _destinationBlend) : null,
             _depthTest,
-            !_cullFace ? RasterizerState.CullNone : _frontFaceClockwise ? RasterizerState.CullCounterClockwise : RasterizerState.CullClockwise,
+            !_cullFace ? CullMode.None : _frontFaceClockwise ? CullMode.CullCounterClockwiseFace : CullMode.CullClockwiseFace,
+            _stencilTest ? _stencil : null,
+            _polygonOffsetFill && !isLine ? _polygonOffset : null,
             _projection,
             isLine);
         if (_batchCount > 0 && !key.Equals(_batchKey))
@@ -599,13 +627,31 @@ public sealed partial class LegacyGl : IDisposable
         _batchKey = key;
     }
 
+    // With two-sided lighting, back-facing triangles take the colors lit with the reversed normal.
     private void AddTriangle(int a, int b, int c)
     {
         EnsureBatchSpace(3);
+        if (_primitiveBackColors.Count == _primitive.Count && !IsFrontFacing(a, b, c))
+        {
+            _batch[_batchCount++] = WithColor(_primitive[a], _primitiveBackColors[a]);
+            _batch[_batchCount++] = WithColor(_primitive[b], _primitiveBackColors[b]);
+            _batch[_batchCount++] = WithColor(_primitive[c], _primitiveBackColors[c]);
+            return;
+        }
+
         _batch[_batchCount++] = _primitive[a];
         _batch[_batchCount++] = _primitive[b];
         _batch[_batchCount++] = _primitive[c];
     }
+
+    private static VertexPositionColorTexture WithColor(VertexPositionColorTexture vertex, XnaColor color) =>
+        new(vertex.Position, color, vertex.TextureCoordinate);
+
+    private bool IsFrontFacing(int a, int b, int c) => GlFacing.IsFrontFacing(
+        Vector4.Transform(new Vector4(_primitive[a].Position, 1f), _projection),
+        Vector4.Transform(new Vector4(_primitive[b].Position, 1f), _projection),
+        Vector4.Transform(new Vector4(_primitive[c].Position, 1f), _projection),
+        _frontFaceClockwise);
 
     private void AddLine(int a, int b)
     {
@@ -653,6 +699,4 @@ public sealed partial class LegacyGl : IDisposable
         GlBlend.OneMinusDstAlpha => Blend.InverseDestinationAlpha,
         _ => Blend.One,
     };
-
-    private readonly record struct BatchKey(Texture2D? Texture, BlendState Blend, bool DepthTest, RasterizerState Cull, Matrix Projection, bool IsLine);
 }

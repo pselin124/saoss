@@ -36,6 +36,9 @@ public sealed class MusicPlayer : IDisposable
     /// <summary>Path of the playing track, or null.</summary>
     public string? CurrentTrack { get; private set; }
 
+    /// <summary>Whether a track that ends starts again instead of a random one, as the start track does during the intro.</summary>
+    public bool RepeatCurrentTrack { get; set; }
+
     /// <summary>Gain 0-1, applied to the playing track at once.</summary>
     public float Volume
     {
@@ -70,7 +73,14 @@ public sealed class MusicPlayer : IDisposable
         FillBuffers();
         if (_trackDecoded && _instance.PendingBufferCount == 0)
         {
-            PlayRandomTrack();
+            if (RepeatCurrentTrack && CurrentTrack != null)
+            {
+                PlayFirstWorking(CurrentTrack);
+            }
+            else
+            {
+                PlayRandomTrack();
+            }
         }
     }
 

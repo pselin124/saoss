@@ -39,6 +39,20 @@ public sealed class ShipModelRenderer(LegacyGl gl, SceneTextures textures, ShipM
         gl.Enable(GlCapability.CullFace);
     }
 
+    /// <summary>
+    /// Draws only the model at the current origin, as the intro does (<c>Alus::piirra</c> with <c>debugmode</c> set):
+    /// no team glow and no carried flower. <paramref name="shadow"/> selects the Stick Insect's shadow list
+    /// [varjomode]; other models ignore it. Culling is disabled while drawing and enabled afterwards.
+    /// </summary>
+    public void DrawModelOnly(Ship ship, int detail, bool shadow = false)
+    {
+        gl.Disable(GlCapability.CullFace);
+        gl.PushMatrix();
+        DrawModel(new ShipDrawContext(gl, models, textures, ship, detail, shadow));
+        gl.PopMatrix();
+        gl.Enable(GlCapability.CullFace);
+    }
+
     private static void DrawModel(ShipDrawContext c)
     {
         Action<ShipDrawContext> draw = c.Ship.Type switch

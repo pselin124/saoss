@@ -74,6 +74,17 @@ public sealed partial class LegacyGl
         Lighting.LocalViewer = enabled;
     }
 
+    /// <summary>glLightModeli(GL_LIGHT_MODEL_TWO_SIDE).</summary>
+    public void LightModelTwoSide(bool enabled)
+    {
+        if (TryRecord(g => g.LightModelTwoSide(enabled)))
+        {
+            return;
+        }
+
+        Lighting.TwoSide = enabled;
+    }
+
     /// <summary>glMaterialfv(GL_FRONT, GL_SPECULAR).</summary>
     public void MaterialSpecular(float r, float g, float b, float a)
     {

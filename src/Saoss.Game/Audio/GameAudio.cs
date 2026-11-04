@@ -76,6 +76,22 @@ public sealed class GameAudio : IDisposable
     /// <summary>Sets the music volume (0-100) at once, while it is being changed in the settings menu.</summary>
     public void PreviewMusicVolume(int musicVolume) => _music.Volume = AudioVolume.Music(musicVolume);
 
+    /// <summary>Makes the start track loop while the intro runs, like the original's stop callback before the game began.</summary>
+    public void BeginIntroMusic() => _music.RepeatCurrentTrack = true;
+
+    /// <summary>
+    /// Leaving the intro stops the start track and, when music is playing, starts a random track. (The original
+    /// stopped the music here and stayed silent until music was switched on again in the settings.)
+    /// </summary>
+    public void EndIntroMusic()
+    {
+        _music.RepeatCurrentTrack = false;
+        if (_music.IsPlaying)
+        {
+            _music.PlayRandomTrack();
+        }
+    }
+
     /// <summary>Plays the sounds of the events of <paramref name="world"/>'s last step.</summary>
     public void PlayEvents(World world) => _ships.Play(world.Events);
 

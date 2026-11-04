@@ -8,7 +8,8 @@ var startup = args switch
     _ when args.Contains("--ship-gallery") => StartupScreen.ShipGallery,
     _ when args.Contains("--victory-preview") => StartupScreen.VictoryPreview,
     _ when args.Contains("--victory-preview-credits") => StartupScreen.CreditsVictoryPreview,
-    _ => StartupScreen.MainMenu,
+    _ when args.Contains("--skip-intro") => StartupScreen.MainMenu,
+    _ => StartupScreen.Intro,
 };
 
 // "--settings-dir <path>" keeps test runs away from the player's own settings file.
