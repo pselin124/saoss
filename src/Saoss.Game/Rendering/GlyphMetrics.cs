@@ -48,6 +48,21 @@ public static class GlyphMetrics
     }
 
     /// <summary>
+    /// Pen start that centers the drawn line on x = 0. Glyphs sit in the middle of their cells, so the line's
+    /// ink runs from half the first advance before the start to half the last advance after the last pen position.
+    /// </summary>
+    public static float CenteredStart(string text, float size = 1f)
+    {
+        if (text.Length == 0)
+        {
+            return 0f;
+        }
+
+        var penSpan = MeasureWidth(text, size) - ((Advance(text[0], size) + Advance(text[^1], size)) / 2f);
+        return -penSpan / 2f;
+    }
+
+    /// <summary>
     /// Texture coordinates of the glyph cell, inset slightly so the grid lines in the image are not sampled.
     /// </summary>
     public static (Vector2 TopLeft, Vector2 BottomRight) TextureBounds(char c)

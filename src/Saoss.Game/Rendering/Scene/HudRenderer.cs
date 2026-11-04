@@ -15,6 +15,9 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
     private const float TextSize = 0.3f;
     private const float CreditsTextSize = 0.25f;
     private const float CreditsY = -0.6f;
+    private const float NameX = -1f;
+    private const float TeamX = 2f;
+    private const float LabelY = 1f;
     private const float ReferenceScreenWidth = 512f;
     private const float BarColorExponent = 1.7f;
     private const float BarAlpha = 0.8f;
@@ -23,7 +26,7 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
 
     /// <summary>
     /// Draws the HUD block of <paramref name="ship"/>; in a credits game it includes the credits line. A network
-    /// game shows <paramref name="nickname"/> instead of "Player N".
+    /// game shows <paramref name="nickname"/> instead of "player N".
     /// </summary>
     public void Draw(Ship ship, World world, string? nickname = null)
     {
@@ -79,34 +82,23 @@ public sealed class HudRenderer(LegacyGl gl, SceneTextures textures)
         };
     }
 
-    // Network games showed the nickname instead of "Player N".
+    // Network games showed the nickname instead of "player N"; "team N" moves right after a long name.
     private void DrawLabels(Ship ship, string? nickname)
     {
         SceneDrawing.TeamColor(gl, ship.Team);
-        if (nickname != null)
-        {
-            _text.Println(-1f, 1f, 0, nickname, TextSize);
-        }
-        else
-        {
-            _text.Println(-1f, 1f, 0, "Player", TextSize);
-            _text.Println(1f, 1f, 0, (ship.Index + 1).ToString(CultureInfo.InvariantCulture), TextSize);
-        }
-
-        _text.Println(2f, 1f, 0, "team", TextSize);
-        _text.Println(3.7f, 1f, 0, (ship.Team + 1).ToString(CultureInfo.InvariantCulture), TextSize);
+        var name = nickname ?? $"player {Number(ship.Index + 1)}";
+        _text.Println(NameX, LabelY, 0, name, TextSize);
+        var teamX = MathF.Max(TeamX, NameX + GlyphMetrics.MeasureWidth(name + " ", TextSize));
+        _text.Println(teamX, LabelY, 0, $"team {Number(ship.Team + 1)}", TextSize);
         _text.Println(-1f, 0.33f, 0, "shield", TextSize);
         _text.Println(-0.4f, -0.125f, 0, "fuel", TextSize);
     }
 
     // "credits 391 / 400", the remaining credits truncated to a whole number.
-    private void DrawCredits(Ship ship, int startingCredits)
-    {
-        _text.Println(-1.5f, CreditsY, 0, "credits", CreditsTextSize);
-        _text.Println(1f, CreditsY, 0, ((int)ship.Score).ToString(CultureInfo.InvariantCulture), CreditsTextSize);
-        _text.Println(2.6f, CreditsY, 0, "/", CreditsTextSize);
-        _text.Println(2.8f, CreditsY, 0, startingCredits.ToString(CultureInfo.InvariantCulture), CreditsTextSize);
-    }
+    private void DrawCredits(Ship ship, int startingCredits) =>
+        _text.Println(-1.5f, CreditsY, 0, $"credits {Number((int)ship.Score)} / {Number(startingCredits)}", CreditsTextSize);
+
+    private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 
     // Dim frames behind the bars, then bars that fade from green to red as they empty.
     private void DrawBars(Ship ship)

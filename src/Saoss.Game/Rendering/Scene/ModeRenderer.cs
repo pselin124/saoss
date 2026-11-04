@@ -24,7 +24,9 @@ public sealed class ModeRenderer(LegacyGl gl, SceneTextures textures, SharedMode
     private const float EntryWidth = 3.5f;
     private const float RowHeight = 1.2f;
     private const int TeamsPerRow = 5;
-    private const int WideScore = 1000;
+
+    // Pen position of the slash: a three-digit score starts at the entry's left edge.
+    private const float SlashX = 1.1f;
 
     private readonly GlText _text = new(gl, textures.Font);
 
@@ -92,14 +94,12 @@ public sealed class ModeRenderer(LegacyGl gl, SceneTextures textures, SharedMode
         gl.PopMatrix();
     }
 
+    // "team N" over "score / target"; scores are right-aligned so the slash stays in one column.
     private void DrawEntry(Ship ship, string target)
     {
-        var score = (int)ship.Score;
-        _text.Println(0, 1f, 0, "team", EntrySize);
-        _text.Println(2f, 1f, 0, (ship.Team + 1).ToString(CultureInfo.InvariantCulture), EntrySize);
-        _text.Println(score < WideScore ? 0f : -0.4f, 0.5f, 0, score.ToString(CultureInfo.InvariantCulture), EntrySize);
-        _text.Println(1.3f, 0.5f, 0, "/", EntrySize);
-        _text.Println(1.6f, 0.5f, 0, target, EntrySize);
+        var score = ((int)ship.Score).ToString(CultureInfo.InvariantCulture);
+        _text.Println(0, 1f, 0, $"team {(ship.Team + 1).ToString(CultureInfo.InvariantCulture)}", EntrySize);
+        _text.Println(SlashX - GlyphMetrics.MeasureWidth(score + " ", EntrySize), 0.5f, 0, $"{score} / {target}", EntrySize);
         gl.Translate(EntryWidth, 0, 0);
     }
 

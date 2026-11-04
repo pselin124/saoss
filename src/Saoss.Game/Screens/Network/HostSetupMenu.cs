@@ -6,7 +6,7 @@ using Saoss.Game.Settings;
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
-/// The first host menu (net.cpp montakoHostia and drawMontakoHostia): "players from this machine:" with the count,
+/// The first host menu (net.cpp montakoHostia and drawMontakoHostia): "players on this computer:" with the count,
 /// "change nicknames", "next" and "exit"; "next" is highlighted at first. Left lowers and Right or Enter raises the
 /// count, 1-4 with wrap-around (the original also allowed 0, a host without players).
 /// </summary>
@@ -30,7 +30,7 @@ public static class HostSetupMenu
         OptionMenuScreen? menu = null;
         OptionMenuEntry[] entries =
         [
-            new("players from this machine:", direction => shell.ApplySettings(shell.Settings with
+            new("players on this computer:", direction => shell.ApplySettings(shell.Settings with
             {
                 NetworkPlayerCount = StepPlayerCount(shell.Settings.NetworkPlayerCount, direction),
             }))

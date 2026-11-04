@@ -24,6 +24,15 @@ public sealed class GlyphMetricsTests
     }
 
     [TestMethod]
+    public void CenteredStart_PutsTheInkMiddleAtZero()
+    {
+        // "il": i=0.2, l=0.2 -> pens at x and x+0.4; ink from x-0.2 to x+0.6.
+        Assert.AreEqual(-0.2f, GlyphMetrics.CenteredStart("il"), Tolerance);
+        Assert.AreEqual(0f, GlyphMetrics.CenteredStart("A"), Tolerance);
+        Assert.AreEqual(0f, GlyphMetrics.CenteredStart(string.Empty), Tolerance);
+    }
+
+    [TestMethod]
     public void TextureBounds_LocatesAsciiCellInSixteenBySixteenGrid()
     {
         // 'A' = 0x41 -> column 1, row 4 of 64 px cells in a 1024 px texture.

@@ -7,8 +7,8 @@ using Saoss.Network.Lobby;
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
-/// The host's settings (net.cpp hostSettingsMenu and drawHostSettingsMenu): "maximum players:", "credits/limit:",
-/// "visual &amp; audio settings", "game mode:" and "exit menu". Left lowers and Right raises a value; Enter raises the
+/// The host's settings (net.cpp hostSettingsMenu and drawHostSettingsMenu): "maximum players:", "credits / score limit:",
+/// "audio &amp; visual settings", "game mode:" and "exit menu". Left lowers and Right raises a value; Enter raises the
 /// player count and the mode but leaves the credits alone, as in the original. Values wrap around.
 /// </summary>
 public static class HostSettingsMenu
@@ -16,7 +16,7 @@ public static class HostSettingsMenu
     private const float LabelX = -32f;
     private const float TextZ = -60f;
     private const float MaxPlayersX = -13f;
-    private const float CreditsX = -18f;
+    private const float CreditsX = -9f;
     private const float ModeX = -20f;
     private const float ArrowX = -7.5f;
 
@@ -38,7 +38,7 @@ public static class HostSettingsMenu
                 ValueX = MaxPlayersX,
                 ValueColor = ValueColor,
             },
-            new("credits/limit:", d =>
+            new("credits / score limit:", d =>
             {
                 if (d != MenuDirection.Enter)
                 {
@@ -50,7 +50,7 @@ public static class HostSettingsMenu
                 ValueX = CreditsX,
                 ValueColor = ValueColor,
             },
-            new("visual & audio settings", _ => menu!.Child.Open(NetworkSettingsMenu.Create(shell, new NetworkSettingsMenuOptions(menu.Child.Close) { CanChangeSpeed = true }))),
+            new("audio & visual settings", _ => menu!.Child.Open(NetworkSettingsMenu.Create(shell, new NetworkSettingsMenuOptions(menu.Child.Close) { CanChangeSpeed = true }))),
             new("game mode:", d => lobby.SetMode(StepMode(lobby.Mode, up: d != MenuDirection.Left)))
             {
                 Value = () => LobbyTexts.Mode(lobby.Mode),

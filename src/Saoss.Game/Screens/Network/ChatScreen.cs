@@ -108,7 +108,7 @@ public sealed class ChatScreen : IScreen, IDisposable
         }
         else
         {
-            _buffer.Type(keyboard.TypedCharacters);
+            _buffer.Edit(keyboard);
         }
     }
 }

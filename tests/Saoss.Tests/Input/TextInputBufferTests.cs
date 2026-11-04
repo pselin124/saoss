@@ -61,5 +61,47 @@ public sealed class TextInputBufferTests
         Assert.AreEqual("hello world", buffer.VisibleTail(85));
     }
 
+    [TestMethod]
+    public void Paste_FiltersLikeTyping_AndStopsAtTheLimit()
+    {
+        var buffer = Nicknames();
+        buffer.SetText("ab");
+
+        var changed = buffer.Paste("c<d\b-ef.ghijklmn");
+
+        Assert.IsTrue(changed);
+        Assert.AreEqual("abcd-ef.gh", buffer.Text);
+    }
+
+    [TestMethod]
+    public void Paste_KeepsOnlyTheFirstLine_WithTabsAsSpaces()
+    {
+        var buffer = new TextInputBuffer(ChatText.MaxLength, c => c);
+
+        buffer.Paste("hello\tthere\r\nsecond line");
+
+        Assert.AreEqual("hello there", buffer.Text);
+    }
+
+    [TestMethod]
+    public void Paste_HostAddress_IsLowerCasedWithoutSpaces()
+    {
+        var buffer = new TextInputBuffer(HostAddress.MaxLength, HostAddress.Accept);
+
+        buffer.Paste(" 192.168.1.20 \n");
+
+        Assert.AreEqual("192.168.1.20", buffer.Text);
+    }
+
+    [TestMethod]
+    public void Paste_OfEmptyText_ChangesNothing()
+    {
+        var buffer = Nicknames();
+
+        Assert.IsFalse(buffer.Paste(string.Empty));
+        Assert.IsFalse(buffer.Paste("\r\nabc"));
+        Assert.AreEqual(string.Empty, buffer.Text);
+    }
+
     private static TextInputBuffer Nicknames() => new(Nickname.MaxLength, c => Nickname.IsAllowed(c) ? c : null);
 }

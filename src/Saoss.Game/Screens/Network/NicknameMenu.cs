@@ -6,7 +6,7 @@ using Saoss.Network.Protocol;
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
-/// The nickname menu (net.cpp nikinVaihtoMenu and drawNikinVaihtoMenu): "change nick 1:" to "change nick 4:" with
+/// The nickname menu (net.cpp nikinVaihtoMenu and drawNikinVaihtoMenu): "nickname 1:" to "nickname 4:" with
 /// the current nicknames, then "exit". Choosing a nickname opens the "enter nickname:" entry; a valid result is
 /// saved at once.
 /// </summary>
@@ -26,7 +26,7 @@ public static class NicknameMenu
     {
         OptionMenuScreen? menu = null;
         var entries = Enumerable.Range(0, shell.Settings.Nicknames.Count)
-            .Select(i => new OptionMenuEntry($"change nick {i + 1}:", _ => menu!.Child.Open(CreateEntry(shell, i, menu.Child.Close)))
+            .Select(i => new OptionMenuEntry($"nickname {i + 1}:", _ => menu!.Child.Open(CreateEntry(shell, i, menu.Child.Close)))
             {
                 Value = () => shell.Settings.Nicknames[i],
                 ValueX = ValueX,

@@ -37,7 +37,7 @@ public sealed class TextEntryScreen : IScreen, IDisposable
             return;
         }
 
-        _buffer.Type(keyboard.TypedCharacters);
+        _buffer.Edit(keyboard);
     }
 
     /// <inheritdoc/>

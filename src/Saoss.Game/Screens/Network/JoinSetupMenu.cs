@@ -7,8 +7,8 @@ using Saoss.Game.Settings;
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
-/// The join menu (net.cpp joinMenu and drawJoinMPMenu): "change ip" with the current host below it, "players from
-/// this machine:", "audio & visual settings", "change nicknames", "connect" and "exit"; "connect" is highlighted at
+/// The join menu (net.cpp joinMenu and drawJoinMPMenu): "change IP" with the current host below it, "players on
+/// this computer:", "audio & visual settings", "change nicknames", "connect" and "exit"; "connect" is highlighted at
 /// first. The host is remembered in the settings (the original's lasthost.txt).
 /// </summary>
 public static class JoinSetupMenu
@@ -18,8 +18,7 @@ public static class JoinSetupMenu
     private const float TextZ = -60f;
     private const float HostZ = -80f;
     private const float HostY = 6.5f;
-    private const float NowX = -37f;
-    private const float HostX = -27f;
+    private const float CurrentHostX = -37f;
     private const float ArrowX = -7.2f;
     private const float FirstArrowY = 1.6f;
     private const float ArrowTopY = 1f;
@@ -35,8 +34,8 @@ public static class JoinSetupMenu
         OptionMenuScreen? menu = null;
         OptionMenuEntry[] entries =
         [
-            new("change ip", _ => menu!.Child.Open(CreateHostEntry(shell, menu.Child.Close))),
-            new("players from this machine:", direction => shell.ApplySettings(shell.Settings with
+            new("change IP", _ => menu!.Child.Open(CreateHostEntry(shell, menu.Child.Close))),
+            new("players on this computer:", direction => shell.ApplySettings(shell.Settings with
             {
                 NetworkPlayerCount = HostSetupMenu.StepPlayerCount(shell.Settings.NetworkPlayerCount, direction),
             }))
@@ -55,11 +54,7 @@ public static class JoinSetupMenu
             ArrowX = ArrowX,
             ArrowY = i => i == 0 ? FirstArrowY : ArrowTopY - (ArrowStep * i),
             Panel = Panel,
-            Texts =
-            [
-                new MenuText(new Vector3(NowX, HostY, HostZ), () => "now:", Color.Red),
-                new MenuText(new Vector3(HostX, HostY, HostZ), () => shell.Settings.LastHost, Color.Red),
-            ],
+            Texts = [new MenuText(new Vector3(CurrentHostX, HostY, HostZ), () => $"current: {shell.Settings.LastHost}", Color.Red)],
         };
         menu = new OptionMenuScreen(shell.GraphicsDevice, shell.Assets, layout, entries, ConnectItem);
         return menu;
@@ -69,7 +64,7 @@ public static class JoinSetupMenu
     {
         var buffer = new TextInputBuffer(HostAddress.MaxLength, HostAddress.Accept);
         buffer.SetText(shell.Settings.LastHost);
-        return new TextEntryScreen(shell.GraphicsDevice, shell.Assets, "enter ip/host:", buffer, text =>
+        return new TextEntryScreen(shell.GraphicsDevice, shell.Assets, "enter IP address or host name:", buffer, text =>
         {
             if (HostAddress.IsValid(text))
             {

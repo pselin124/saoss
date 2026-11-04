@@ -12,7 +12,7 @@ namespace Saoss.Game.Screens.Network;
 public sealed class MessageScreen : IScreen, IDisposable
 {
     /// <summary>The original's hint under an error.</summary>
-    public const string ContinueHint = "press enter to continue..";
+    public const string ContinueHint = "press enter to continue";
 
     private static readonly Vector3 MessagePosition = new(-30f, 12f, -60f);
     private static readonly Vector3 HintPosition = new(-30f, 8f, -60f);

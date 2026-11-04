@@ -11,6 +11,8 @@ public sealed class TextInputBuffer(int maxLength, Func<char, char?> accept)
 {
     private const char Backspace = '\b';
 
+    private static readonly char[] LineBreaks = ['\r', '\n'];
+
     /// <summary>The text typed so far.</summary>
     public string Text { get; private set; } = string.Empty;
 
@@ -39,6 +41,20 @@ public sealed class TextInputBuffer(int maxLength, Func<char, char?> accept)
 
         return Text != before;
     }
+
+    /// <summary>
+    /// Appends pasted text as if its first line were typed (the same filter and length limit); returns true when the
+    /// text changed. Tabs become spaces.
+    /// </summary>
+    public bool Paste(string text)
+    {
+        var lineEnd = text.IndexOfAny(LineBreaks);
+        var line = (lineEnd < 0 ? text : text[..lineEnd]).Replace('\t', ' ');
+        return Type([.. line.Where(c => c != Backspace)]);
+    }
+
+    /// <summary>Applies this update's typed characters and pasted text from <paramref name="keyboard"/>.</summary>
+    public bool Edit(KeyboardTracker keyboard) => Type(keyboard.TypedCharacters) | Paste(keyboard.PastedText);
 
     /// <summary>Empties the text.</summary>
     public void Clear() => Text = string.Empty;

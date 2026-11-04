@@ -8,12 +8,14 @@ using Saoss.Game.Settings;
 //   --ship-gallery               the ship model gallery
 //   --victory-preview            a Flower Domination match that ends at once
 //   --victory-preview-credits    a credits game that ends at once
+//   --winners <n>                with a victory preview: n ships on the winning team
 //   --host                       host a network game at once (saved nicknames and player count), skipping the menus
 //   --auto-start <n>             with --host: start the first match once n human players are in the lobby
 //   --join <host>                connect to a host at once with the saved nicknames and player count
 const string settingsDirOption = "--settings-dir";
 const string joinOption = "--join";
 const string autoStartOption = "--auto-start";
+const string winnersOption = "--winners";
 
 string? ValueOf(string option)
 {
@@ -34,7 +36,8 @@ var screen = args switch
 };
 
 var autoStart = int.TryParse(ValueOf(autoStartOption), NumberStyles.None, CultureInfo.InvariantCulture, out var players) && players > 0 ? players : (int?)null;
-var startup = new StartupOptions(screen) { JoinHost = joinHost, AutoStartPlayers = autoStart };
+var winners = int.TryParse(ValueOf(winnersOption), NumberStyles.None, CultureInfo.InvariantCulture, out var count) ? count : VictoryPreview.DefaultWinners;
+var startup = new StartupOptions(screen) { JoinHost = joinHost, AutoStartPlayers = autoStart, PreviewWinners = winners };
 var settingsDirectory = ValueOf(settingsDirOption) ?? SettingsStore.DefaultDirectory;
 
 using var game = new SaossGame(new SettingsStore(settingsDirectory), startup);

@@ -15,7 +15,7 @@ public enum SettingsMenuItem
     Players,
 
     /// <summary>Background music on or off.</summary>
-    Musics,
+    Music,
 
     /// <summary>Sound effects on or off.</summary>
     SoundEffects,

@@ -366,7 +366,13 @@ public sealed partial class LegacyGl : IDisposable
 
         _currentPrimitive = null;
         var isLine = primitive is GlPrimitive.Lines or GlPrimitive.LineStrip or GlPrimitive.LineLoop;
-        PrepareBatch(isLine);
+        if (isLine && IsWideLine)
+        {
+            EndWideLines(primitive);
+            return;
+        }
+
+        PrepareBatch(isLine, isLine);
         switch (primitive)
         {
             case GlPrimitive.Triangles:
@@ -607,18 +613,19 @@ public sealed partial class LegacyGl : IDisposable
         }
     }
 
-    // Starts a new batch when any state that affects drawing differs from the current batch.
-    private void PrepareBatch(bool isLine)
+    // Starts a new batch when any state that affects drawing differs from the current batch. Line primitives are
+    // never culled or offset, also when drawn as triangles.
+    private void PrepareBatch(bool drawAsLines, bool isLinePrimitive)
     {
         var key = new GlBatchKey(
             _texture2D ? ResolveTexture(_boundTexture) : null,
             _blend ? (_sourceBlend, _destinationBlend) : null,
             _depthTest,
-            !_cullFace ? CullMode.None : _frontFaceClockwise ? CullMode.CullCounterClockwiseFace : CullMode.CullClockwiseFace,
+            !_cullFace || isLinePrimitive ? CullMode.None : _frontFaceClockwise ? CullMode.CullCounterClockwiseFace : CullMode.CullClockwiseFace,
             _stencilTest ? _stencil : null,
-            _polygonOffsetFill && !isLine ? _polygonOffset : null,
+            _polygonOffsetFill && !isLinePrimitive ? _polygonOffset : null,
             _projection,
-            isLine);
+            drawAsLines);
         if (_batchCount > 0 && !key.Equals(_batchKey))
         {
             Flush();

@@ -14,6 +14,8 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
     private const float ShotDepth = 1f;
     private const float SlimeSize = 0.5f;
     private const float BeamAlpha = 0.9f;
+    private const float WideBeamWidth = 2f;
+    private const float ElectraBeamWidth = 1.5f;
 
     /// <summary>
     /// Draws the primary projectiles [piirraPadit]. Power Vacuum, Rollu and Wiiii have their own look;
@@ -127,8 +129,7 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
     {
         gl.Disable(GlCapability.Texture2D);
         gl.Enable(GlCapability.LineSmooth);
-
-        // glLineWidth (1, 1.5 or 2 pixels depending on the weapon) is not emulated; lines are 1 pixel wide.
+        gl.LineWidth(BeamWidth(ship.Type));
         foreach (var beam in ship.Beams)
         {
             if (!beam.IsActive)
@@ -148,6 +149,14 @@ public sealed class ProjectileRenderer(LegacyGl gl, SceneTextures textures)
 
         gl.Enable(GlCapability.Texture2D);
     }
+
+    /// <summary>Beam line width of a ship's weapon in pixels at the reference resolution.</summary>
+    public static float BeamWidth(ShipType type) => type switch
+    {
+        ShipType.Ufo or ShipType.PeaceCannon or ShipType.Shapperi => WideBeamWidth,
+        ShipType.Electra => ElectraBeamWidth,
+        _ => 1f,
+    };
 
     private static IEnumerable<(int Index, Projectile Projectile)> ActiveWithIndex(Projectile[] pool, int count)
     {

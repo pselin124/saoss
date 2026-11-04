@@ -20,7 +20,7 @@ public sealed class LobbyTextsTests
 
         var names = LobbyTexts.SlotNames(lobby);
 
-        CollectionAssert.AreEqual(new[] { "tgo", "cpu 1", "-", "cpu 2", "-" }, names.Take(5).ToArray());
+        CollectionAssert.AreEqual(new[] { "tgo", "CPU 1", "-", "CPU 2", "-" }, names.Take(5).ToArray());
     }
 
     [TestMethod]
@@ -33,7 +33,7 @@ public sealed class LobbyTextsTests
 
         var names = LobbyTexts.ShipNames(lobby, lobby.PlayerSlots());
 
-        CollectionAssert.AreEqual(new[] { "tgo", "joku", "cpu 1" }, names.ToArray());
+        CollectionAssert.AreEqual(new[] { "tgo", "joku", "CPU 1" }, names.ToArray());
     }
 
     [TestMethod]
@@ -45,6 +45,6 @@ public sealed class LobbyTextsTests
         Assert.AreEqual("team 0", LobbyTexts.Team(lobby.Slots[1]));
         Assert.AreEqual("human", LobbyTexts.Status(SlotStatus.Human));
         Assert.AreEqual("open", LobbyTexts.Status(SlotStatus.Open));
-        Assert.AreEqual("death match with random ships", LobbyTexts.Mode(GameMode.RandomShipsDeathmatch));
+        Assert.AreEqual("deathmatch with random ships", LobbyTexts.Mode(GameMode.RandomShipsDeathmatch));
     }
 }

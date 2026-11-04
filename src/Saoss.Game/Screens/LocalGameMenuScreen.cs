@@ -17,8 +17,6 @@ public sealed class LocalGameMenuScreen : IScreen, IDisposable
     private const float TextX = -25f;
     private const float TextTopY = 4f;
     private const float TextLineSpacing = 2f;
-    private const float CreditsNumberX = -12f;
-    private const float CreditsWordX = -5f;
     private const float ArrowX = -7.8f;
     private const float PanelLeft = -2.6f;
     private const float PanelBottom = -1.2f;
@@ -27,12 +25,12 @@ public sealed class LocalGameMenuScreen : IScreen, IDisposable
 
     private static readonly LocalGameMenuItem LastItem = Enum.GetValues<LocalGameMenuItem>().Max();
 
-    // In menu order; the credits entry continues with the number and "Credits".
+    // In menu order; the credits entry gets the number of starting credits.
     private static readonly string[] Lines =
     [
         "Start With Random Ships",
         "Resume Game",
-        "Start With",
+        "Start With {0} Credits",
         "Start With Credits & Random Ships",
         "Flower Domination",
         "Capture The Flower",
@@ -111,17 +109,12 @@ public sealed class LocalGameMenuScreen : IScreen, IDisposable
     /// <inheritdoc/>
     public void Dispose() => _scene.Dispose();
 
-    // The credits entry is three pieces of text on one line, so the number has a fixed slot.
     private void DrawItems()
     {
         for (var i = 0; i < Lines.Length; i++)
         {
-            _scene.DrawText(TextX, LineY(i), Lines[i]);
+            _scene.DrawText(TextX, LineY(i), string.Format(CultureInfo.InvariantCulture, Lines[i], _credits));
         }
-
-        var creditsY = LineY((int)LocalGameMenuItem.StartWithCredits);
-        _scene.DrawText(CreditsNumberX, creditsY, _credits);
-        _scene.DrawText(CreditsWordX, creditsY, "Credits");
     }
 
     private static float LineY(int line) => TextTopY - (line * TextLineSpacing);

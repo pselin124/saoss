@@ -9,7 +9,7 @@ namespace Saoss.Game.Screens;
 
 /// <summary>
 /// The player setup menu (Menu.cpp playerMenu and drawPlayerMenu): for each player, Human or CPU in the left column
-/// and the team in the right column, then "previous menu". Up and Down move within a column with wrap-around,
+/// and the team in the right column, then "Previous Menu". Up and Down move within a column with wrap-around,
 /// Left and Right switch columns, Enter changes the value under the arrow and Escape goes back. Only players 1-4
 /// can be human, as there are four keyboard layouts. The original's "ai attacks ai" line was commented out of the
 /// menu, so the setting is kept in the file but not shown here.
@@ -22,14 +22,9 @@ public sealed class PlayerSetupMenuScreen : IScreen
     private const float RowTopY = 14f;
     private const float RowSpacing = 2f;
     private const float PlayerWordX = -20f;
-    private const float PlayerNumberX = -14f;
-    private const float KindColonX = -11f;
     private const float KindX = -10f;
     private const float TeamPlayerWordX = 0f;
-    private const float TeamPlayerNumberX = 6f;
-    private const float TeamWordX = 9f;
-    private const float TeamColonX = 15f;
-    private const float TeamNumberX = 16f;
+    private const float TeamWordX = 10f;
     private const float ArrowX = -6.7f;
     private const float ArrowColumnStep = 5.5f;
     private const float ArrowTopY = 3.8f;
@@ -103,7 +98,7 @@ public sealed class PlayerSetupMenuScreen : IScreen
     {
         _scene.Begin(withBackground: false);
         _scene.DrawText(new Vector3(TitleX, TitleY, TitleZ), "Player Setup", Color.Red);
-        _scene.DrawText(new Vector3(PlayerWordX, RowY(PreviousMenuRow), MenuScene.TextZ), "previous menu", Color.Red);
+        _scene.DrawText(new Vector3(PlayerWordX, RowY(PreviousMenuRow), MenuScene.TextZ), "Previous Menu", Color.Red);
         for (var i = 0; i < _settings.PlayerCount; i++)
         {
             DrawPlayerRow(i);
@@ -131,24 +126,18 @@ public sealed class PlayerSetupMenuScreen : IScreen
         }
     }
 
-    // "Player N: Human/CPU" on the left and "Player N Team: T" in the team's color on the right.
+    // "Player N: Human/CPU" on the left and "Player N  Team T" in the team's color on the right; values in columns.
     private void DrawPlayerRow(int index)
     {
         var y = RowY(index);
         var slot = _players[index];
-        var number = (index + 1).ToString(CultureInfo.InvariantCulture);
-        DrawAt(PlayerWordX, y, "Player", Color.Red);
-        DrawAt(PlayerNumberX, y, number, Color.Red);
-        DrawAt(KindColonX, y, ":", Color.Red);
+        var player = $"Player {(index + 1).ToString(CultureInfo.InvariantCulture)}";
+        DrawAt(PlayerWordX, y, player + ":", Color.Red);
         DrawAt(KindX, y, slot.IsHuman ? "Human" : "CPU", slot.IsHuman ? HumanColor : CpuColor);
 
-        DrawAt(TeamPlayerWordX, y, "Player", Color.Red);
-        DrawAt(TeamPlayerNumberX, y, number, Color.Red);
+        DrawAt(TeamPlayerWordX, y, player, Color.Red);
         var (r, g, b) = SceneDrawing.TeamRgb(slot.Team);
-        var teamColor = new Color(r, g, b);
-        DrawAt(TeamWordX, y, "Team", teamColor);
-        DrawAt(TeamColonX, y, ":", teamColor);
-        DrawAt(TeamNumberX, y, (slot.Team + 1).ToString(CultureInfo.InvariantCulture), teamColor);
+        DrawAt(TeamWordX, y, $"Team {(slot.Team + 1).ToString(CultureInfo.InvariantCulture)}", new Color(r, g, b));
     }
 
     private void DrawAt(float x, float y, string text, Color color) => _scene.DrawText(new Vector3(x, y, MenuScene.TextZ), text, color);

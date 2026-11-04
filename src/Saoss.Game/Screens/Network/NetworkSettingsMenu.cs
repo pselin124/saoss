@@ -7,7 +7,7 @@ using Saoss.Game.Settings;
 namespace Saoss.Game.Screens.Network;
 
 /// <summary>
-/// The "game settings menu" of network play (netgamesets.cpp netGameSets and netGameSetsDraw), opened from the
+/// The "game settings" menu of network play (netgamesets.cpp netGameSets and netGameSetsDraw), opened from the
 /// join menu, the host settings and, with Escape, during a network match, which keeps running behind it. Changes
 /// stay in the menu until "apply & save settings"; "resume" closes it and, during a match, "exit multiplayer" leaves
 /// the game. Escape chooses the last entry, as in the original. Camera and detail apply to the next match.
@@ -19,8 +19,6 @@ public static class NetworkSettingsMenu
     private const float LineSpacing = 2f;
     private const float TextZ = -40f;
     private const float ValueX = 3f;
-    private const float CrossX = 11f;
-    private const float HeightX = 13f;
     private const float ArrowX = -7.3f;
     private const float ArrowTopY = 1f;
     private const float ArrowStep = 0.55f;
@@ -45,16 +43,16 @@ public static class NetworkSettingsMenu
                 Change(s => s with { Width = resolutions[resolutionIndex].Width, Height = resolutions[resolutionIndex].Height });
             })
             {
-                Value = () => Number(settings.Width),
+                Value = () => $"{Number(settings.Width)} x {Number(settings.Height)}",
                 ValueX = ValueX,
             },
             Toggle("fullscreen:", () => settings.Fullscreen, () => Change(s => s with { Fullscreen = !s.Fullscreen })),
             new("camera mode:", _ => Change(s => s with { CameraMode = s.CameraMode == CameraMode.Tilted ? CameraMode.TopDown : CameraMode.Tilted }))
             {
-                Value = () => settings.CameraMode == CameraMode.Tilted ? "3d" : "2d",
+                Value = () => settings.CameraMode == CameraMode.Tilted ? "3D" : "2D",
                 ValueX = ValueX,
             },
-            Toggle("musics:", () => settings.MusicEnabled, () => Change(s => s with { MusicEnabled = !s.MusicEnabled })),
+            Toggle("music:", () => settings.MusicEnabled, () => Change(s => s with { MusicEnabled = !s.MusicEnabled })),
             Toggle("sound effects:", () => settings.SoundEffectsEnabled, () => Change(s => s with { SoundEffectsEnabled = !s.SoundEffectsEnabled })),
             new("music volume:", d =>
             {
@@ -70,7 +68,7 @@ public static class NetworkSettingsMenu
                 Value = () => Number(settings.SoundVolume),
                 ValueX = ValueX,
             },
-            new("fps:", d =>
+            new("FPS:", d =>
             {
                 if (options.CanChangeSpeed)
                 {
@@ -102,12 +100,7 @@ public static class NetworkSettingsMenu
             ArrowScale = new Vector3(0.3f),
             WithSceneOffset = true,
             Panel = Panel,
-            Texts =
-            [
-                new MenuText(TitlePosition, () => "game settings menu", Color.Blue, TitleSize),
-                new MenuText(new Vector3(CrossX, TopY, TextZ), () => "x", Color.Red),
-                new MenuText(new Vector3(HeightX, TopY, TextZ), () => Number(settings.Height), Color.Red),
-            ],
+            Texts = [new MenuText(TitlePosition, () => "game settings", Color.Blue, TitleSize)],
         };
         return new OptionMenuScreen(shell.GraphicsDevice, shell.Assets, layout, entries);
     }

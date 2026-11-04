@@ -11,7 +11,7 @@ namespace Saoss.Game.Screens.Network;
 public static class LobbyTexts
 {
     /// <summary>
-    /// Name of every slot: the nickname of a human, "cpu N" for the N-th AI slot in use and "-" for open or closed
+    /// Name of every slot: the nickname of a human, "CPU N" for the N-th AI slot in use and "-" for open or closed
     /// slots.
     /// </summary>
     public static IReadOnlyList<string> SlotNames(LobbyState lobby)
@@ -22,7 +22,7 @@ public static class LobbyTexts
             .. lobby.Slots.Select((slot, i) => slot.Status switch
             {
                 SlotStatus.Human => slot.Nickname,
-                SlotStatus.Ai when i < lobby.MaxPlayers => "cpu " + (++cpu).ToString(CultureInfo.InvariantCulture),
+                SlotStatus.Ai when i < lobby.MaxPlayers => "CPU " + (++cpu).ToString(CultureInfo.InvariantCulture),
                 _ => "-",
             }),
         ];
@@ -35,12 +35,12 @@ public static class LobbyTexts
         return [.. shipSlots.Select(slot => names[slot])];
     }
 
-    /// <summary>The status column: "open", "closed", "cpu" or "human".</summary>
+    /// <summary>The status column: "open", "closed", "CPU" or "human".</summary>
     public static string Status(SlotStatus status) => status switch
     {
         SlotStatus.Open => "open",
         SlotStatus.Closed => "closed",
-        SlotStatus.Ai => "cpu",
+        SlotStatus.Ai => "CPU",
         _ => "human",
     };
 
@@ -51,10 +51,10 @@ public static class LobbyTexts
     /// <summary>Name of a game mode as the lobby shows it.</summary>
     public static string Mode(GameMode mode) => mode switch
     {
-        GameMode.RandomShipsDeathmatch => "death match with random ships",
+        GameMode.RandomShipsDeathmatch => "deathmatch with random ships",
         GameMode.FlowerDomination => "flower domination",
         GameMode.CaptureTheFlower => "capture the flower",
         GameMode.EatTheMushroom => "eat the mushroom",
-        _ => "death match",
+        _ => "deathmatch",
     };
 }

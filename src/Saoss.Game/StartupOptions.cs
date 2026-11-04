@@ -9,4 +9,7 @@ public sealed record StartupOptions(StartupScreen Screen = StartupScreen.Intro)
 
     /// <summary>With <see cref="StartupScreen.HostLobby"/>: start the first match once this many humans are in the lobby.</summary>
     public int? AutoStartPlayers { get; init; }
+
+    /// <summary>Size of the winning team on the victory preview screens.</summary>
+    public int PreviewWinners { get; init; } = VictoryPreview.DefaultWinners;
 }

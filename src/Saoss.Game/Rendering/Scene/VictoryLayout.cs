@@ -28,6 +28,7 @@ public sealed class VictoryLayout
     private const float SlotSpacing = 8f;
     private const float TitleY = 12f;
     private const float CreditsY = 6f;
+    private const float DrawY = 0f;
 
     private VictoryLayout(IReadOnlyList<Ship> ships, IReadOnlyList<VictoryText> texts)
     {
@@ -42,7 +43,7 @@ public sealed class VictoryLayout
     /// <summary>Scale of the ship row; it shrinks when five or more ships are shown.</summary>
     public float ShipScale { get; }
 
-    /// <summary>The text: "team N won" (and "with N credits"), or "draw" when nobody is shown.</summary>
+    /// <summary>The lines: "team N won" (and "with N credits"), or "draw" when nobody is shown; each centered.</summary>
     public IReadOnlyList<VictoryText> Texts { get; }
 
     /// <summary>Horizontal position of ship <paramref name="slot"/> in the row, before <see cref="ShipScale"/>.</summary>
@@ -64,14 +65,7 @@ public sealed class VictoryLayout
         }
 
         var team = (outcome.WinningTeam ?? 0) + 1;
-        return new VictoryLayout(
-            ships,
-            [
-                .. TeamWon(team),
-                new VictoryText(-16, CreditsY, "with"),
-                new VictoryText(-2, CreditsY, Number(outcome.WinnerCredits)),
-                new VictoryText(6, CreditsY, "credits"),
-            ]);
+        return new VictoryLayout(ships, [TeamWon(team), Centered(CreditsY, $"with {Number(outcome.WinnerCredits)} credits")]);
     }
 
     // The winner is the team of the last player that reached the target score.
@@ -84,17 +78,15 @@ public sealed class VictoryLayout
         }
 
         var ships = world.Ships.Where(s => s.Team == winner.Team).ToList();
-        return new VictoryLayout(ships, TeamWon(winner.Team + 1));
+        return new VictoryLayout(ships, [TeamWon(winner.Team + 1)]);
     }
 
-    private static VictoryLayout Draw(IReadOnlyList<Ship> ships) => new(ships, [new VictoryText(-4, 0, "draw")]);
+    private static VictoryLayout Draw(IReadOnlyList<Ship> ships) => new(ships, [Centered(DrawY, "draw")]);
 
-    private static VictoryText[] TeamWon(int team) =>
-    [
-        new VictoryText(-17, TitleY, "team"),
-        new VictoryText(-4, TitleY, Number(team)),
-        new VictoryText(1, TitleY, "won"),
-    ];
+    private static VictoryText TeamWon(int team) => Centered(TitleY, $"team {Number(team)} won");
+
+    // The original placed each word at a fixed x with wide gaps; whole lines centered over the ship row read better.
+    private static VictoryText Centered(float y, string text) => new(GlyphMetrics.CenteredStart(text), y, text);
 
     private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
 }

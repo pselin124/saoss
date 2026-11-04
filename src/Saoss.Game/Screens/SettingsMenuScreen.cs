@@ -22,8 +22,6 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private const float TitleZ = -8f;
     private const float LabelX = -20f;
     private const float ValueX = -4f;
-    private const float ResolutionCrossX = 2f;
-    private const float ResolutionHeightX = 5f;
     private const float RowTopY = 14f;
     private const float RowSpacing = 2f;
     private const float ArrowX = -6.7f;
@@ -38,10 +36,10 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         "Resolution:",
         "Fullscreen:",
         "Players:",
-        "Musics:",
+        "Music:",
         "Sound Effects:",
         "Credits:",
-        "Fps:",
+        "FPS:",
         "Music Volume:",
         "Sound Volume:",
         "Player Setup",
@@ -189,7 +187,7 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
         {
             SettingsMenuItem.Fullscreen => s with { Fullscreen = !s.Fullscreen },
             SettingsMenuItem.Players => s with { PlayerCount = SettingsSteps.PlayerCount(s.PlayerCount, increase) },
-            SettingsMenuItem.Musics => s with { MusicEnabled = !s.MusicEnabled },
+            SettingsMenuItem.Music => s with { MusicEnabled = !s.MusicEnabled },
             SettingsMenuItem.SoundEffects => s with { SoundEffectsEnabled = !s.SoundEffectsEnabled },
             SettingsMenuItem.Credits => s with { Credits = SettingsSteps.Credits(s.Credits, increase) },
             SettingsMenuItem.Fps => s with { TicksPerSecond = SettingsSteps.TicksPerSecond(s.TicksPerSecond, increase) },
@@ -210,18 +208,16 @@ public sealed class SettingsMenuScreen : IScreen, IDisposable
     private void DrawValues()
     {
         var s = _settings;
-        DrawAt(ValueX, RowY(SettingsMenuItem.Resolution), Number(s.Width));
-        DrawAt(ResolutionCrossX, RowY(SettingsMenuItem.Resolution), "x");
-        DrawAt(ResolutionHeightX, RowY(SettingsMenuItem.Resolution), Number(s.Height));
+        DrawValue(SettingsMenuItem.Resolution, $"{Number(s.Width)} x {Number(s.Height)}");
         DrawValue(SettingsMenuItem.Fullscreen, OnOff(s.Fullscreen));
         DrawValue(SettingsMenuItem.Players, Number(s.PlayerCount));
-        DrawValue(SettingsMenuItem.Musics, OnOff(s.MusicEnabled));
+        DrawValue(SettingsMenuItem.Music, OnOff(s.MusicEnabled));
         DrawValue(SettingsMenuItem.SoundEffects, OnOff(s.SoundEffectsEnabled));
         DrawValue(SettingsMenuItem.Credits, Number(s.Credits));
         DrawValue(SettingsMenuItem.Fps, Number(s.TicksPerSecond));
         DrawValue(SettingsMenuItem.MusicVolume, Number(s.MusicVolume));
         DrawValue(SettingsMenuItem.SoundVolume, Number(s.SoundVolume));
-        DrawValue(SettingsMenuItem.CameraMode, s.CameraMode == CameraMode.Tilted ? "3d" : "2d");
+        DrawValue(SettingsMenuItem.CameraMode, s.CameraMode == CameraMode.Tilted ? "3D" : "2D");
         DrawValue(SettingsMenuItem.Detail, Number(s.Detail));
     }
 

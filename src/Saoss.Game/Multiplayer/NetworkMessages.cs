@@ -7,7 +7,7 @@ namespace Saoss.Game.Multiplayer;
 public static class NetworkMessages
 {
     /// <summary>Shown while the connection is being opened.</summary>
-    public static string Connecting(string host) => $"connecting to {host}..";
+    public static string Connecting(string host) => $"connecting to {host}...";
 
     /// <summary>Hint under <see cref="Connecting"/>.</summary>
     public const string CancelHint = "press escape to cancel";
@@ -23,7 +23,7 @@ public static class NetworkMessages
         {
             RejectReason.LobbyFull => "the game is full",
             RejectReason.GameInProgress => "the game has already started",
-            _ => "the host runs another version of saoss",
+            _ => "the host has a different version of saoss",
         },
         DisconnectReason.HostLeft => "the host quit the game",
         DisconnectReason.ProtocolError => "the host sent something strange",

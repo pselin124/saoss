@@ -92,11 +92,11 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
                 ShowScreen(new ShipGalleryScreen(GraphicsDevice, Exit));
                 break;
             case StartupScreen.VictoryPreview:
-                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.FlowerDomination, VictoryPreview.Players));
+                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.FlowerDomination, VictoryPreview.Players(_startup.PreviewWinners)));
                 VictoryPreview.EndOnNextStep(_match!.World);
                 break;
             case StartupScreen.CreditsVictoryPreview:
-                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.CreditsRandomShips, VictoryPreview.Players));
+                StartMatch(MatchSettings.ForLocalMenu(LocalGameKind.CreditsRandomShips, VictoryPreview.Players(_startup.PreviewWinners)));
                 VictoryPreview.EndOnNextStep(_match!.World);
                 break;
             case StartupScreen.MainMenu:

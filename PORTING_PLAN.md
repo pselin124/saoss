@@ -88,7 +88,7 @@ Principles:
 | Sound effects | FMOD samples, `a_<ship>_<event>.wav` | MonoGame `SoundEffect` | Rename files (e.g. `ship05_fire.wav`) |
 | Music | FMOD: MP3, OGG, XM, random playlist from the music folder | OGG + MP3 streaming player | Convert the 2 XM files to OGG once (approved) |
 | Network play | TCP port 9999, struct memcpy, host-authoritative, lobby, chat, `lasthost.txt` | TCP, versioned binary protocol, same model. Main scenario: 2 PCs on the same LAN, and the host also plays | Not compatible with old clients (OK). Remember the last host in settings. Windows Firewall asks for permission the first time you host. Optional: find LAN hosts automatically via UDP broadcast |
-| Chat clipboard paste | Win32 `GetClipboardData` | `net10.0-windows` clipboard | Small |
+| Chat clipboard paste | Win32 `GetClipboardData` | Win32 clipboard P/Invoke, Ctrl+V / Shift+Insert | Done (7a) |
 | Dedicated server | `-d` flag, but `dmenu()` is an empty infinite loop (not functional) | Not needed | Dropped. The host plays from the hosting machine |
 | Settings | `sets.txt` key=value | JSON | Old settings are not migrated |
 | Timing | Frame counter at `fps` (100), catch-up by skipping frames | Fixed 100 Hz accumulator, vsync rendering | Keep 100 Hz so gameplay feel stays the same |
@@ -123,7 +123,7 @@ Each phase ends with a build that compiles and runs.
    - 3b: all 24 ship models (`aluspiirto.cpp`, `Alus::piirra`); developer gallery with `Saoss.exe --ship-gallery`.
    - 3c: projectiles, slime, beams, exhaust trails, respawn sparks, thrust and damage particles, explosions, all weapon effects, HUD.
    - Result: one human against idle ships is playable from Main menu > Local Game.
-   - Left for later phases: game-mode markers and HUD (phase 4), credits line in the HUD, nicknames (phase 6), beam line width (MonoGame has no wide lines).
+   - Left for later phases: game-mode markers and HUD (phase 4), credits line in the HUD, nicknames (phase 6), beam line width (MonoGame has no wide lines). All done: credits line and markers in 4b, nicknames in 6b, line width in 7a.
 4. **AI + game modes + local game** (done):
    - 4a: AI pilot (`ailiiku`) in Core, deterministic. "ai vs ai" setting → `MatchSettings.AiTargetsOnlyEnemies`.
    - 4b: Flower Domination, Capture The Flower, Eat The Mushroom, credits games with ship purchase (human purchase menu, AI counter-picks), drop-out and match outcome. Mode markers, scoreboard and the carried flower are drawn.
@@ -141,9 +141,8 @@ Each phase ends with a build that compiles and runs.
    - 6b: host/join menus, lobbies, chat, in-match "game settings menu", nicknames around ships and in the HUD. `GameScreen` runs local, host and client matches through `IMatchDriver`. Developer flags: `--host`, `--auto-start <n>`, `--join <host>`.
    - Differences: after a match everybody returns to the lobby (the original ended the network game). Purchases never pause a network match (as in the original), so Core has `MatchSettings.ChoicesPauseMatch`.
 7. **Polish and release**: fullscreen/resolution options, widescreen decision, performance check, and a self-contained publish.
-   - Victory screen text: words and numbers are placed as separate pieces with fixed gaps (as in the original), which looks uneven. Lay each line out as one string with normal spacing.
-   - Menu wording: fix the original's non-native English labels (e.g. "Musics:" → "Music:").
-   - Network: clipboard paste in text entry; test with two real PCs on a LAN (only localhost tested so far).
+   - 7a (done): victory, HUD, scoreboard, purchase and menu lines are laid out as whole strings with the font's real advances (victory lines centered over the ships; `--winners <n>` sets the preview's winning team size); English wording fixed ("Musics:" → "Music:", "FPS", "IP", "deathmatch", ...); Ctrl+V / Shift+Insert paste in all text entries; glLineWidth emulated as screen-space quads (widths are pixels at 768 px window height, scaled with the window), used by the Ufo, Peace Cannon, Shapperi and Electra beams.
+   - Network: test with two real PCs on a LAN (only localhost tested so far).
 8. **Optional**: gamepads, key remapping, LAN host discovery.
 
 ## 7. Decisions

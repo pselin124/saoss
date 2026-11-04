@@ -22,6 +22,10 @@ public sealed class ShipPurchaseRenderer(LegacyGl gl, SceneTextures textures, Sh
     private const float StatValueX = 12f;
     private const float StatTopY = -5f;
     private const float StatLineSpacing = 3f;
+    private const float InfoLabelX = -25f;
+    private const float InfoValueX = -5f;
+    private const float InfoTopY = 6f;
+    private const float InfoLineSpacing = 2.5f;
     private const float InfoZ = -40f;
     private const float HeaderZ = -25f;
     private const float SpeedDisplayScale = 1000f;
@@ -97,24 +101,24 @@ public sealed class ShipPurchaseRenderer(LegacyGl gl, SceneTextures textures, Sh
         return preview;
     }
 
-    // "player N / choose your ship", remaining credits, ship number and name, and price.
+    // "player N / choose your ship", then a small table: remaining credits, ship number and name, and price.
     // The random entry's name slot read past the end of the original ship table; it is left empty.
     private void DrawHeader(Ship buyer, int selection, ShipDefinition? definition)
     {
-        _text.Println(-5, 13, HeaderZ, "player");
-        _text.Println(3, 13, HeaderZ, Number(buyer.Index + 1));
+        _text.Println(-5, 13, HeaderZ, $"player {Number(buyer.Index + 1)}");
         _text.Println(-10, 8, HeaderZ, "choose your ship");
-        _text.Println(-25, 6, InfoZ, "remaining credits:");
-        _text.Println(-5, 6, InfoZ, Number((int)buyer.Score));
-        _text.Println(-25, 3.5f, InfoZ, "ship number:");
-        _text.Println(-10, 3.5f, InfoZ, definition == null ? Unknown : Number(selection + 1));
-        if (definition != null)
+        (string Label, string Value)[] rows =
+        [
+            ("remaining credits:", Number((int)buyer.Score)),
+            ("ship number:", definition == null ? Unknown : $"{Number(selection + 1)} {definition.Name}"),
+            ("ship cost:", definition == null ? Unknown : Number(definition.Cost)),
+        ];
+        for (var i = 0; i < rows.Length; i++)
         {
-            _text.Println(-5, 3.5f, InfoZ, definition.Name);
+            var y = InfoTopY - (i * InfoLineSpacing);
+            _text.Println(InfoLabelX, y, InfoZ, rows[i].Label);
+            _text.Println(InfoValueX, y, InfoZ, rows[i].Value);
         }
-
-        _text.Println(-25, 1, InfoZ, "ship cost:");
-        _text.Println(-13, 1, InfoZ, definition == null ? Unknown : Number(definition.Cost));
     }
 
     private void DrawStats(ShipDefinition? definition)
