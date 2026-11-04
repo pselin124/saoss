@@ -27,5 +27,7 @@
   <ItemGroup>
     <EmbeddedResource Include="Icon.bmp" LogicalName="Icon.bmp" />
     <None Include="Content\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Player-facing readme at the root of the release package. -->
+    <None Include="README.txt" CopyToPublishDirectory="PreserveNewest" ExcludeFromSingleFile="true" />
   </ItemGroup>
 </Project>
