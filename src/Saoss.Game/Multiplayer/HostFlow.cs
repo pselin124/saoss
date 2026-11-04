@@ -2,6 +2,7 @@ using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Match;
 using Saoss.Game.Screens;
 using Saoss.Game.Screens.Network;
+using Saoss.Network.Discovery;
 using Saoss.Network.Lobby;
 using Saoss.Network.Sessions;
 
@@ -10,12 +11,13 @@ namespace Saoss.Game.Multiplayer;
 /// <summary>
 /// Hosting a network game (net.cpp hostMenu, hostStart and netpeli.cpp netHostPeli): the lobby, the match with its
 /// in-match menu, the end-of-match screen and back to the lobby. "exit" in the lobby or "exit multiplayer" in the
-/// match ends hosting; clients are told the host quit.
+/// match ends hosting; clients are told the host quit. Joiners on the LAN can find the game meanwhile.
 /// </summary>
 public sealed class HostFlow : IMultiplayerFlow
 {
     private readonly IGameShell _shell;
     private readonly HostSession _session;
+    private readonly LanAnnouncer? _announcer = LanAnnouncer.TryStart();
     private readonly Action _end;
     private int? _autoStartPlayers;
     private GameScreen? _match;
@@ -52,6 +54,7 @@ public sealed class HostFlow : IMultiplayerFlow
     public void Update()
     {
         _session.Update();
+        _announcer?.Update(() => LanGameInfo.FromSession(_session));
         if (_isInLobby && _autoStartPlayers is { } players && _session.Lobby.Slots.Count(s => s.Status == SlotStatus.Human) >= players)
         {
             _autoStartPlayers = null;
@@ -63,6 +66,7 @@ public sealed class HostFlow : IMultiplayerFlow
     public void Dispose()
     {
         _session.Dispose();
+        _announcer?.Dispose();
         _match?.Dispose();
     }
 

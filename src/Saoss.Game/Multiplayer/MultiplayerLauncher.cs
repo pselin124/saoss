@@ -20,6 +20,9 @@ public sealed class MultiplayerLauncher(IGameShell shell) : IDisposable
     /// <summary>Shows the join menu.</summary>
     public void ShowJoinSetup() => shell.Show(JoinSetupMenu.Create(shell, Join, shell.ShowMainMenu));
 
+    /// <summary>Shows the join menu with its list of games on the LAN open.</summary>
+    public void ShowLanGames() => shell.Show(JoinSetupMenu.Create(shell, Join, shell.ShowMainMenu, showLanGames: true));
+
     /// <summary>
     /// Starts listening with the players from this machine and opens the lobby; the first match starts by itself
     /// once <paramref name="autoStartPlayers"/> humans are in, when given.
@@ -43,8 +46,8 @@ public sealed class MultiplayerLauncher(IGameShell shell) : IDisposable
         flow.ShowLobby();
     }
 
-    /// <summary>Connects to <paramref name="host"/>.</summary>
-    public void Join(string host) => _flow = new ClientFlow(shell, host, toJoinMenu => End(toJoinMenu));
+    /// <summary>Connects to <paramref name="host"/> on TCP <paramref name="port"/>.</summary>
+    public void Join(string host, int port = ProtocolVersion.DefaultPort) => _flow = new ClientFlow(shell, host, port, toJoinMenu => End(toJoinMenu));
 
     /// <summary>Updates the running network game, if any.</summary>
     public void Update() => _flow?.Update();

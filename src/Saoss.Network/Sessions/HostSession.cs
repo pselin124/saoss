@@ -43,6 +43,9 @@ public sealed class HostSession : IDisposable
     /// <summary>The port listened on.</summary>
     public int Port => _net.Port;
 
+    /// <summary>Nickname of the host's first player, as it signs chat lines.</summary>
+    public string HostNickname => _chatSender;
+
     /// <summary>The running match, or null while in the lobby.</summary>
     public World? World { get; private set; }
 

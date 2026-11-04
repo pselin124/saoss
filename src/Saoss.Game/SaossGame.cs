@@ -129,6 +129,9 @@ public sealed class SaossGame : Microsoft.Xna.Framework.Game, IGameShell
             case StartupScreen.Join when _startup.JoinHost is { } host:
                 _multiplayer.Join(host);
                 break;
+            case StartupScreen.FindGames:
+                _multiplayer.ShowLanGames();
+                break;
             case StartupScreen.BenchmarkMatch:
                 StartMatch(BenchmarkMatch.Create(_settings, _startup.BenchmarkPlayers), BenchmarkMatch.Seed);
                 break;

@@ -3,7 +3,6 @@ using Saoss.Core.Simulation.Modes;
 using Saoss.Game.Match;
 using Saoss.Game.Screens;
 using Saoss.Game.Screens.Network;
-using Saoss.Network.Protocol;
 using Saoss.Network.Sessions;
 
 namespace Saoss.Game.Multiplayer;
@@ -24,16 +23,17 @@ public sealed class ClientFlow : IMultiplayerFlow
     private World? _matchWorld;
 
     /// <summary>
-    /// Starts connecting to <paramref name="host"/> with the players from this machine. <paramref name="end"/> runs
-    /// when the session is over, with true to go back to the join menu (it never got to the lobby).
+    /// Starts connecting to <paramref name="host"/> on TCP <paramref name="port"/> with the players from this machine.
+    /// <paramref name="end"/> runs when the session is over, with true to go back to the join menu (it never got to
+    /// the lobby).
     /// </summary>
-    public ClientFlow(IGameShell shell, string host, Action<bool> end)
+    public ClientFlow(IGameShell shell, string host, int port, Action<bool> end)
     {
         _shell = shell;
         _host = host;
         _end = end;
         var settings = shell.Settings;
-        _session = ClientSession.Connect(host, ProtocolVersion.DefaultPort, [.. settings.Nicknames.Take(settings.NetworkPlayerCount)]);
+        _session = ClientSession.Connect(host, port, [.. settings.Nicknames.Take(settings.NetworkPlayerCount)]);
         shell.Show(new MessageScreen(shell.GraphicsDevice, shell.Assets, NetworkMessages.Connecting(host), Cancel, NetworkMessages.CancelHint));
     }
 

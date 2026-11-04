@@ -144,7 +144,10 @@ Each phase ends with a build that compiles and runs.
    - 7a (done): victory, HUD, scoreboard, purchase and menu lines are laid out as whole strings with the font's real advances (victory lines centered over the ships; `--winners <n>` sets the preview's winning team size); English wording fixed ("Musics:" → "Music:", "FPS", "IP", "deathmatch", ...); Ctrl+V / Shift+Insert paste in all text entries; glLineWidth emulated as screen-space quads (widths are pixels at 768 px window height, scaled with the window), used by the Ufo, Peace Cannon, Shapperi and Electra beams.
    - 7c (done): self-contained win-x64 release (single-file ReadyToRun Saoss.exe + SDL2/OpenAL + Content folder, embedded PDBs, no trimming), version 1.0.0; `build/publish.ps1` tests, publishes (`dotnet publish src/Saoss.Game -c Release -p:PublishProfile=win-x64`) and zips to `artifacts/Saoss-<version>-win-x64.zip`.
    - Network: test with two real PCs on a LAN (only localhost tested so far). Deferred: the user reports problems after testing on a real LAN.
-8. **Optional**: gamepads, key remapping, LAN host discovery.
+8. **Optional** (done): 8a AI difficulty, 8b controls/gamepads, 8c LAN discovery.
+   - 8a: AI levels Space Cadet / Rocket Ace / Galactic Terror (settings and host menu).
+   - 8b: Controls menu in Settings with key remapping; gamepads 1-4 per player (untested on real hardware).
+   - 8c: "find games on LAN" in the join menu lists hosts found by a UDP broadcast request on port 9998 (`--find-games`).
 
 ## 7. Decisions
 

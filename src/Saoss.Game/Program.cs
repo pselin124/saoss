@@ -14,6 +14,7 @@ using Saoss.Game.Settings;
 //   --host                       host a network game at once (saved nicknames and player count), skipping the menus
 //   --auto-start <n>             with --host: start the first match once n human players are in the lobby
 //   --join <host>                connect to a host at once with the saved nicknames and player count
+//   --find-games                 the join menu's list of games found on the LAN; leaving it returns to the join menu
 //   --perf                       frame statistics in the window title and on standard output, once a second (vsync
 //                                and frame rate cap stay as in normal play)
 //   --bench <seconds>            measure the startup screen uncapped (no vsync, one update per frame) at 1920x1080 after
@@ -55,6 +56,7 @@ var screen = args switch
     _ when args.Contains("--victory-preview-credits") => StartupScreen.CreditsVictoryPreview,
     _ when args.Contains("--host") => StartupScreen.HostLobby,
     _ when joinHost != null && HostAddress.IsValid(joinHost) => StartupScreen.Join,
+    _ when args.Contains("--find-games") => StartupScreen.FindGames,
     _ when args.Contains("--skip-intro") => StartupScreen.MainMenu,
     _ => StartupScreen.Intro,
 };
