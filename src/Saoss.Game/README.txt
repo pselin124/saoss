@@ -23,6 +23,23 @@ Menus: arrow keys move, Enter chooses, Escape goes back. A gamepad works too
 Settings are saved in %LOCALAPPDATA%\Saoss\settings.json. If the game crashes, the details go
 to crash.log in the same folder.
 
+BUILDING FROM SOURCE
+--------------------
+
+Requirements: Windows 10 or 11 (64-bit), the .NET 10 SDK (10.0.100 or later), and
+Visual Studio 2026 (18.0 or later) with the .NET desktop development workload, if using Visual
+Studio. An internet connection is needed to restore the public NuGet packages.
+
+Open Saoss.slnx in Visual Studio and build the solution, or run these commands from the
+repository root:
+
+  dotnet restore Saoss.slnx
+  dotnet build Saoss.slnx
+  dotnet test --solution Saoss.slnx
+
+The project uses public packages from nuget.org. The included original-game source archive is
+not needed to build Saoss. See LICENSE.txt in the repository root for reuse and music terms.
+
 
 THE BASICS
 ----------
@@ -112,7 +129,8 @@ AI levels: Space Cadet (easy), Rocket Ace (medium), Galactic Terror (the origina
 Computer pilots fight well in the deathmatch and credits games, but they ignore flowers and
 mushrooms - in those modes they just hunt other ships.
 
-Music: drop your own .mp3 or .ogg files into Content\Music and they join the random playlist.
+Music: add .mp3 or .ogg files that you have permission to use to Content\Music and they join
+the random playlist. The included music is subject to the restrictions in LICENSE.txt.
 
 
 NETWORK GAMES

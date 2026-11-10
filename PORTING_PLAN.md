@@ -100,7 +100,7 @@ Principles:
 Each phase ends with a build that compiles and runs.
 
 0. **Preparation** (done)
-   - Local git repo, `original/` committed untouched.
+   - Local reference files under `original/`; excluded from the public Git repository.
    - The original runs. Reference screenshots are in `docs/reference/`.
    - Assets are copied and renamed to English as each feature is ported, not all up front. XM to OGG conversion happens in phase 5.
 1. **Skeleton** (done): `Saoss.slnx`, Core/Game/Tests projects, central package versions, warnings as errors, `.editorconfig`. The main menu is ported: title picture, bitmap font, 3D arrows, `MeshBuilder` with a GL-style matrix stack and `gluSphere`.

@@ -1,0 +1,18 @@
+SAOSS SOURCE LICENSE
+
+Copyright (c) TGO / THP - Paulus Selin
+
+Permission is granted to use, copy, modify, and redistribute the Saoss software,
+in source or binary form, provided that the original author, Paulus Selin, is
+credited in the documentation or other materials accompanying any redistributed
+copy or substantial reuse.
+
+The music files included with Saoss are not covered by the permission above.
+They may be used or redistributed only as part of a complete Saoss package, with
+the included music files kept unchanged. You may build Saoss yourself from the
+source; this does not permit extracting, modifying, or distributing the included
+music separately or as part of another product.
+
+The software is provided "as is", without warranty of any kind. The authors
+shall not be liable for any claim, damages, or other liability arising from its
+use or distribution.
